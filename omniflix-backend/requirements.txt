@@ -1,0 +1,7 @@
+fastapi[standard]
+sqlalchemy
+asyncpg
+pydantic
+pydantic-settings
+PyJWT
+pwdlib[argon2]
