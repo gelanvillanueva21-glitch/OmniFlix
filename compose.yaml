@@ -1,0 +1,130 @@
+
+services:
+  # =========================================================
+  # DATABASE SERVICE
+  # Runs PostgreSQL, which stores OmniFlix's application data.
+  # =========================================================
+  db:
+    # Downloads and runs the official PostgreSQL 18 image.
+    image: postgres:18
+
+    # Automatically restart the container unless you explicitly
+    # stop it or Docker itself is configured to keep it stopped.
+    restart: unless-stopped
+
+    # Environment variables used by the PostgreSQL image
+    # when initializing a new, empty database data directory.
+    environment:
+      # The database PostgreSQL creates on first initialization.
+      POSTGRES_DB: omniflix_db
+
+      # The PostgreSQL user created during initialization.
+      POSTGRES_USER: omniflix_user
+
+      # Reads the password from DATABASE_PASSWORD in the
+      # root .env file used by Docker Compose.
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+
+    # Maps ports in HOST:CONTAINER format.
+    # Host port 5000 -> PostgreSQL container port 5432.
+    # Use localhost:5000 when connecting from your host machine.
+    # Other Compose services should connect using db:5432.
+    ports:
+      - "5000:5432"
+
+    # Creates persistent storage for PostgreSQL's database files.
+    # The data survives container removal and recreation.
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+    # Checks whether PostgreSQL is ready to accept connections.
+    # This helps prevent the backend from starting too early.
+    healthcheck:
+      # pg_isready checks the specified database connection target.
+      test: ["CMD-SHELL", "pg_isready -U omniflix_user -d omniflix_db"]
+
+      # Wait 10 seconds between health checks.
+      interval: 10s
+
+      # Allow each health check up to 10 seconds.
+      timeout: 10s
+
+      # Retry up to 5 times before marking the container unhealthy.
+      retries: 5
+
+
+  # =========================================================
+  # BACKEND SERVICE
+  # Runs the FastAPI application and connects it to PostgreSQL.
+  # =========================================================
+  backend:
+    # Builds the backend image using the Dockerfile located in
+    # ./omniflix-backend, relative to the Compose file.
+    build: ./omniflix-backend
+
+    # Restarts the backend automatically unless explicitly stopped.
+    restart: unless-stopped
+
+    # Loads additional environment variables from the backend's
+    # own .env file into the backend container.
+    env_file:
+      - ./omniflix-backend/.env
+
+    # Sets or overrides environment variables for this container.
+    environment:
+      # SQLAlchemy async database connection URL.
+      # postgresql+asyncpg   = PostgreSQL using the asyncpg driver.
+      # omniflix_user        = PostgreSQL username.
+      # ${DATABASE_PASSWORD} = password from the root .env file.
+      # db                   = database service hostname in Compose.
+      # 5432                 = PostgreSQL's internal container port.
+      # omniflix_db          = database name.
+      DATABASE_URL: "postgresql+asyncpg://omniflix_user:${DATABASE_PASSWORD}@db:5432/omniflix_db"
+
+    # Exposes the FastAPI service on host port 8888.
+    # The application inside the container must listen on port 8888.
+    ports:
+      - "8888:8888"
+
+    # Starts the backend only after the database reports healthy.
+    # This is more reliable than merely starting the database first.
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+  # =========================================================
+  # FRONTEND SERVICE
+  # Runs the OmniFlix frontend application.
+  # =========================================================
+  frontend:
+    # Builds the frontend image using the Dockerfile in this folder.
+    build: ./omniflix-frontend
+
+    # Loads frontend-specific environment variables into the
+    # frontend container, based on this file on the host.
+    env_file:
+      - ./omniflix-frontend/.env
+
+    environment:
+      DATABASE_URL: "postgresql://omniflix_user:${DATABASE_PASSWORD}@db:5432/omniflix_db"
+
+    # Maps host port 5555 to container port 5555.
+    # The frontend development server must listen on that port
+    # and bind to 0.0.0.0 inside the container.
+    ports:
+      - "5555:5555"
+
+    # Starts the backend before starting the frontend.
+    # This does not guarantee the backend is ready to serve requests.
+    depends_on:
+      - backend
+
+
+# =========================================================
+# NAMED VOLUMES
+# Docker manages the persistent storage declared below.
+# =========================================================
+volumes:
+  # Stores PostgreSQL data independently of the container lifecycle.
+  postgres_data:

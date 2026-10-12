@@ -4,10 +4,99 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+    provider = "prisma-client"
+    output   = "../app/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+    provider = "postgresql"
+}
+
+// ENUM VARIABLeS
+
+enum Role {
+    NORMAL
+    ADMIN
+}
+
+enum EntertainmentType {
+    COMIC
+    MANGA
+    MANHWA
+    MANHUA
+    NOVEL
+    SERIES
+    MOVIE
+}
+
+enum EntertainmentListType {
+    FAVORITE
+    WATCHLIST
+    COMPLETED
+    ON_HOLD
+    PLAN_TO_WATCH
+    PLAN_TO_READ
+    DROPPED
+}
+
+// DATABASE MODEL FOR POSTGRESQL
+model User {
+    id           Int      @id @default(autoincrement())
+    username     String   @unique
+    hashPassword String
+    role         Role     @default(NORMAL)
+    createdAt    DateTime @default(now())
+
+    profile Profile?
+}
+
+model Profile {
+    id                Int      @id @default(autoincrement())
+    userId            Int      @unique
+    displayName       String
+    profileUrlPicture String
+    createdAt         DateTime @default(now())
+    updateAt          DateTime @updatedAt
+
+    entertainment Entertainment[]
+    activity      Activity[]
+    search        SearchHistory[]
+    user          User            @relation(fields: [userId], references: [id])
+}
+
+model Entertainment {
+    id                Int                   @id @default(autoincrement())
+    profileId         Int
+    externalId        String
+    apiSource         String
+    purpose           EntertainmentListType
+    entertainmentType EntertainmentType
+    createdAt         DateTime              @default(now())
+
+    profileOwner Profile @relation(fields: [profileId], references: [id])
+}
+
+model Activity {
+    id         Int               @id @default(autoincrement())
+    profileId  Int
+    externalId String
+    apiSource  String
+    type       EntertainmentType
+    hasRead    Boolean           @default(false)
+    hasWatch   Boolean           @default(false)
+    createdAt  DateTime          @default(now())
+
+    activityOwner Profile @relation(fields: [profileId], references: [id])
+}
+
+model SearchHistory {
+    id        Int               @id @default(autoincrement())
+    profileId Int
+    title     String?
+    genre     String?
+    type      EntertainmentType
+    isGlobal  Boolean           @default(false)
+    createdAt DateTime          @default(now())
+
+    searchedOwner Profile @relation(fields: [profileId], references: [id])
 }
