@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.database import get_db_session
 from app.repository.user_repository import UserRepository
+from app.repository.profile_repository import ProfileRepository
 from app.schema.user_schema import UserResponse
 from app.service.auth_service import AuthService
 from app.utils.security import create_access_token, decode_token
@@ -30,8 +31,9 @@ def get_auth_service(
     settings: SettingsDeps,
 ) -> AuthService:
     """Build an AuthService wired to the current request's DB session."""
-    repository = UserRepository(db)
-    return AuthService(repository, settings)
+    user_repository = UserRepository(db)
+    prof_repository = ProfileRepository(db)
+    return AuthService(user_repository, prof_repository, settings)
 
 
 AuthServiceDeps = Annotated[AuthService, Depends(get_auth_service)]
@@ -101,8 +103,9 @@ async def get_current_user(
             raise credentials_error
 
     # ── Step 3: fetch user from DB ──
-    repository = UserRepository(db)
-    service = AuthService(repository, settings)
+    user_repository = UserRepository(db)
+    prof_repository = ProfileRepository(db)
+    service = AuthService(user_repository, prof_repository, settings)
     return await service.get_current_user(user_id)
 
 

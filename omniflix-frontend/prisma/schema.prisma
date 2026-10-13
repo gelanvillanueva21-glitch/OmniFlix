@@ -53,10 +53,10 @@ model User {
 model Profile {
     id                Int      @id @default(autoincrement())
     userId            Int      @unique
-    displayName       String
-    profileUrlPicture String
+    displayName       String?
+    profileUrlPicture String?
     createdAt         DateTime @default(now())
-    updateAt          DateTime @updatedAt
+    updateAt          DateTime? @updatedAt
 
     entertainment Entertainment[]
     activity      Activity[]

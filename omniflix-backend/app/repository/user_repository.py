@@ -8,19 +8,19 @@ class UserRepository:
     """Handles all database operations for the User table using SQLAlchemy ORM."""
 
     def __init__(self, database_session: AsyncSession) -> None:
-        self._database_session: AsyncSession = database_session
+        self._database_session = database_session
 
     async def get_by_id(self, user_identifier: int) -> Optional[User]:
         """Fetch a single user by primary key using SQLAlchemy ORM select."""
         select_query = select(User).where(User.id == user_identifier)
         query_result = await self._database_session.execute(select_query)
-        return query_result.scalars().first()
+        return query_result.scalar_one_or_none()
 
     async def get_by_username(self, username: str) -> Optional[User]:
         """Fetch a single user by username using SQLAlchemy ORM select."""
         select_query = select(User).where(User.username == username)
         query_result = await self._database_session.execute(select_query)
-        return query_result.scalars().first()
+        return query_result.scalar_one_or_none()
 
     async def create(
         self, username: str, hashed_password: str

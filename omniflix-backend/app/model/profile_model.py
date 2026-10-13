@@ -23,10 +23,10 @@ class ProfileModel(Base):
         nullable=False,
     )
     displayName: Mapped[str] = mapped_column(
-        nullable=False,
+        nullable=True,
     )
     profileUrlPicture: Mapped[str] = mapped_column(
-        nullable=False,
+        nullable=True,
     )
     createdAt: Mapped[datetime] = mapped_column(
         DateTime,
@@ -35,7 +35,7 @@ class ProfileModel(Base):
     )
     updateAt: Mapped[datetime] = mapped_column(
         DateTime,
-        nullable=False,
+        nullable=True,
     )
 
     # One-to-one relationship with UserModel

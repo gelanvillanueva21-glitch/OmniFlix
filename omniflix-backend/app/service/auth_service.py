@@ -3,8 +3,9 @@ from typing import Optional
 from fastapi import HTTPException, status
 
 from app.config import Settings
-from app.model.user_model import UserModel
+from app.model.user_model import UserModel as User
 from app.repository.user_repository import UserRepository
+from app.repository.profile_repository import ProfileRepository
 from app.schema.user_schema import (
     PasswordChange,
     UserCreate,
@@ -29,16 +30,18 @@ class AuthService:
     def __init__(
         self,
         user_repository: UserRepository,
+        prof_repository: ProfileRepository,
         configuration_settings: Settings,
     ) -> None:
-        self._user_repository: UserRepository = user_repository
-        self._configuration_settings: Settings = configuration_settings
+        self._user_repository = user_repository
+        self.prof_repository = prof_repository
+        self._configuration_settings = configuration_settings
 
     async def register(
         self, user_create_data: UserCreate
     ) -> tuple[UserResponse, str, str]:
         """Create a new user account and return (user, access, refresh)."""
-        existing_user: Optional[UserModel] = (
+        existing_user: Optional[User] = (
             await self._user_repository.get_by_username(
                 user_create_data.username
             )
@@ -50,11 +53,12 @@ class AuthService:
             )
 
         hashed_password = hash_password(user_create_data.password)
-        created_user: UserModel = await self._user_repository.create(
+        created_user = await self._user_repository.create(
             user_create_data.username,
             hashed_password,
         )
 
+        await self.prof_repository.create(created_user.id, created_user.username)
         user_response = self._user_model_to_response(created_user)
         access_token = create_access_token(
             user_response.id, self._configuration_settings
@@ -68,7 +72,7 @@ class AuthService:
         self, user_login_data: UserLogin
     ) -> tuple[UserResponse, str, str]:
         """Authenticate a user and return (user, access, refresh)."""
-        existing_user: Optional[UserModel] = (
+        existing_user: Optional[User] = (
             await self._user_repository.get_by_username(
                 user_login_data.username
             )
@@ -100,7 +104,7 @@ class AuthService:
         self, user_identifier: int, password_change_data: PasswordChange
     ) -> None:
         """Change the password for an authenticated user."""
-        existing_user: Optional[UserModel] = (
+        existing_user: Optional[User] = (
             await self._user_repository.get_by_id(user_identifier)
         )
         if existing_user is None:
@@ -124,7 +128,7 @@ class AuthService:
 
     async def get_current_user(self, user_identifier: int) -> UserResponse:
         """Fetch the authenticated user's public information."""
-        existing_user: Optional[UserModel] = (
+        existing_user: Optional[User] = (
             await self._user_repository.get_by_id(user_identifier)
         )
         if existing_user is None:
@@ -135,7 +139,7 @@ class AuthService:
         return self._user_model_to_response(existing_user)
 
     @staticmethod
-    def _user_model_to_response(user_model: UserModel) -> UserResponse:
+    def _user_model_to_response(user_model: User) -> UserResponse:
         """Map a UserModel instance to the public UserResponse schema."""
         role_value: str = (
             user_model.role.value
