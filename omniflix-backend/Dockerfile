@@ -28,6 +28,6 @@ EXPOSE 8888
 # Start the FastAPI CLI server.
 # --host 0.0.0.0 allows connections from outside the container.
 # --port 8888 tells the server which port to listen on.
-CMD ["fastapi", "run", "app/main.py", "--host", "0.0.0.0", "--port", "8888"]
+CMD ["fastapi", "dev", "app/main.py", "--host", "0.0.0.0", "--port", "8888"]
 
 

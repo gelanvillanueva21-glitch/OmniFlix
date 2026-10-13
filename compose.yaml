@@ -61,6 +61,8 @@ services:
     # Builds the backend image using the Dockerfile located in
     # ./omniflix-backend, relative to the Compose file.
     build: ./omniflix-backend
+    volumes:
+      - ./omniflix-backend:/app
 
     # Restarts the backend automatically unless explicitly stopped.
     restart: unless-stopped
@@ -100,6 +102,9 @@ services:
   frontend:
     # Builds the frontend image using the Dockerfile in this folder.
     build: ./omniflix-frontend
+    volumes:
+      - ./omniflix-frontend:/app
+      - /app/node_modules
 
     # Loads frontend-specific environment variables into the
     # frontend container, based on this file on the host.
