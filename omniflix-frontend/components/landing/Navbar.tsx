@@ -75,13 +75,13 @@ export function Navbar() {
                 {/* Right section: Account Actions */}
                 <div className="flex items-center justify-end gap-4">
                     <Link
-                        href="/auth/login"
+                        href="/auth/signin"
                         className="text-sm font-medium text-[#F5F5F5] px-4 py-2 rounded-full border border-transparent hover:border-[#27272A] hover:bg-[#1C1C1F]/60 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
                     >
                         Sign in
                     </Link>
                     <Link
-                        href="/auth/register"
+                        href="/auth/signup"
                         className="text-sm font-medium text-white px-5 py-2 rounded-full bg-[#8B5CF6] hover:bg-[#7C3AED] transition-all duration-200 shadow-sm shadow-[#8B5CF6]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF]"
                     >
                         Sign up

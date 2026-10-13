@@ -30,3 +30,30 @@ body {
     overflow-x: hidden;
 }
 
+/* ── Auth Image Collage Custom Classes ── */
+/* Allows independent adjustment of width, height, position, rotation, opacity, and styling */
+.auth-image-top {
+    width: 290px;
+    height: 190px;
+    transform: rotate(4deg);
+    border-radius: 1rem;
+    opacity: 0.85;
+}
+
+.auth-image-middle {
+    width: 310px;
+    height: 200px;
+    transform: rotate(-3deg);
+    border-radius: 1rem;
+    opacity: 0.9;
+}
+
+.auth-image-bottom {
+    width: 290px;
+    height: 190px;
+    transform: rotate(3deg);
+    border-radius: 1rem;
+    opacity: 0.85;
+}
+
+
