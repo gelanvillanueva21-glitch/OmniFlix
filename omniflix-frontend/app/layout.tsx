@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { QueryProvider } from '../components/QueryProvider';
 
 const inter = Inter({
     variable: "--font-inter",
@@ -18,6 +20,8 @@ export const metadata: Metadata = {
     description: "Free entertainment website",
 };
 
+
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
     return (
         <html
@@ -25,7 +29,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         className={`${inter.variable} ${spaceGrotesk.variable} h-full antialiased`}
         >
             <body className="min-h-full flex flex-col">
-                {children}
+                <QueryProvider>
+                    <AuthProvider>
+                        {children}
+                    </AuthProvider>
+                </QueryProvider>
             </body>
         </html>
     );

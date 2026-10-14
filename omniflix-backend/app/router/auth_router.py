@@ -57,7 +57,7 @@ async def login(
 # ── Protected endpoints ──────────────────────────────────────────
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/logout", status_code=status.HTTP_200_OK)
 async def logout(
     response: Response,
     _current_user: CurrentUserDeps,
@@ -65,6 +65,7 @@ async def logout(
     """Clear auth cookies (requires a valid session)."""
     response.delete_cookie("access_token", path="/")
     response.delete_cookie("refresh_token", path="/")
+    return { "status": "successfully logout" }
 
 
 @router.put("/change-password", status_code=status.HTTP_204_NO_CONTENT)
@@ -75,6 +76,7 @@ async def change_password(
 ) -> None:
     """Change the authenticated user's password."""
     await service.change_password(current_user.id, data)
+    return { "status": "successfully changed password" }
 
 
 @router.get("/me", response_model=UserResponse)
