@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -21,22 +22,16 @@ export function Navbar() {
     const currentPathname = usePathname();
 
     return (
-        <header className="w-full border-b border-[#27272A]/70 bg-[#111111]/80 backdrop-blur-md sticky top-0 z-50">
-            {/* 
-                3-column CSS Grid: 
-                - Left: Logo (auto)
-                - Center: Navigation items (centered independently in the entire viewport)
-                - Right: Action buttons (auto, aligned to the far right)
-            */}
+        <header className="sticky top-0 z-50 w-full border-b border-[#27272A]/70 bg-[#111111]/80 backdrop-blur-md">
             <nav
-                className="max-w-1440px mx-auto px-8 h-20 grid grid-cols-[1fr_auto_1fr] items-center"
+                className="mx-auto grid h-16 w-full max-w-1440px grid-cols-[1fr_auto] items-center px-4 sm:h-20 sm:grid-cols-[1fr_auto_1fr] sm:px-8"
                 aria-label="Main Navigation"
             >
-                {/* Left section: Clickable Logo */}
+                {/* Logo */}
                 <div className="flex items-center justify-start">
                     <Link
                         href="/"
-                        className="inline-flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] rounded-md transition-opacity hover:opacity-90"
+                        className="inline-flex items-center rounded-md transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
                         aria-label="OmniFlix Home"
                     >
                         <Image
@@ -45,24 +40,27 @@ export function Navbar() {
                             width={170}
                             height={50}
                             priority
-                            className="h-10 w-auto"
+                            className="h-7 w-auto sm:h-10"
                         />
                     </Link>
                 </div>
 
-                {/* Middle section: Centered Navigation */}
-                <ul className="flex items-center gap-9" role="list">
+                {/* Desktop category navigation */}
+                <ul className="hidden items-center gap-9 sm:flex" role="list">
                     {NAVIGATION_ITEMS.map((item) => {
-                        const isRouteActive = currentPathname === item.href || currentPathname?.startsWith(`${item.href}/`);
+                        const isRouteActive =
+                            currentPathname === item.href ||
+                            currentPathname?.startsWith(`${item.href}/`);
+
                         const navigationItemClasses = isRouteActive
                             ? "text-[#F5F5F5] font-semibold"
                             : "text-[#A1A1AA] hover:text-[#F5F5F5] font-normal";
 
                         return (
-                            <li key={item.label} className="flex items-center justify-center">
+                            <li key={item.label}>
                                 <Link
                                     href={item.href}
-                                    className={`text-sm tracking-wide transition-colors duration-200 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] rounded ${navigationItemClasses}`}
+                                    className={`rounded py-1 text-sm tracking-wide transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] ${navigationItemClasses}`}
                                     aria-current={isRouteActive ? "page" : undefined}
                                 >
                                     {item.label}
@@ -72,17 +70,18 @@ export function Navbar() {
                     })}
                 </ul>
 
-                {/* Right section: Account Actions */}
-                <div className="flex items-center justify-end gap-4">
+                {/* Account actions */}
+                <div className="flex items-center justify-end gap-1.5 sm:gap-4">
                     <Link
                         href="/auth/signin"
-                        className="text-sm font-medium text-[#F5F5F5] px-4 py-2 rounded-full border border-transparent hover:border-[#27272A] hover:bg-[#1C1C1F]/60 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                        className="rounded-full px-2.5 py-2 text-xs font-medium text-[#F5F5F5] transition-all duration-200 hover:bg-[#1C1C1F]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] sm:border sm:border-transparent sm:px-4 sm:text-sm sm:hover:border-[#27272A]"
                     >
                         Sign in
                     </Link>
+
                     <Link
                         href="/auth/signup"
-                        className="text-sm font-medium text-white px-5 py-2 rounded-full bg-[#8B5CF6] hover:bg-[#7C3AED] transition-all duration-200 shadow-sm shadow-[#8B5CF6]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF]"
+                        className="rounded-full bg-[#8B5CF6] px-3.5 py-2 text-xs font-medium text-white shadow-sm shadow-[#8B5CF6]/30 transition-all duration-200 hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] sm:px-5 sm:text-sm"
                     >
                         Sign up
                     </Link>
@@ -91,4 +90,3 @@ export function Navbar() {
         </header>
     );
 }
-
