@@ -56,4 +56,17 @@ body {
     opacity: 0.85;
 }
 
-
+@keyframes shimmer {
+    100% { transform: translateX(100%); }
+}
+.skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(245, 245, 245, 0.04), transparent);
+    animation: shimmer 2s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer::after { animation: none; }
+}

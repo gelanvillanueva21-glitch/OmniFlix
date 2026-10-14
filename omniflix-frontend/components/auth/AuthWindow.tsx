@@ -5,6 +5,7 @@ import { EyeToggleIcon } from "./EyeToggleIcon";
 import { signin, signup } from "@/service/user.service";
 import { ApiError } from "@/service/client.service";
 import { WindowSuccess } from "./TestWindowSuccess";
+import { useRouter } from "next/navigation";
 
 
 
@@ -14,6 +15,8 @@ interface AuthWindowProps {
 }
 
 export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
+    const router = useRouter();
+
     // ── Sign In Form State ──
     const [signInUsername, setSignInUsername] = useState("");
     const [signInPassword, setSignInPassword] = useState("");
@@ -58,6 +61,7 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
             });
             setIsSuccess(true);
             setDescription("Successfully login.");
+            router.replace("/explore");
         } catch (error) {
             if (error instanceof ApiError)
                 setSignInErrorMessage(error.message);
@@ -106,6 +110,7 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
             })
             setIsSuccess(true);
             setDescription("Successfully created an account.");
+            router.replace("/explore");
         } catch (error) {
             if (error instanceof ApiError)
                 setSignUpErrorMessage(error.message);
