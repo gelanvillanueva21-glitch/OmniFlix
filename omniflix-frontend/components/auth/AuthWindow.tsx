@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type FormEvent } from "react";
@@ -7,8 +8,6 @@ import { ApiError } from "@/service/client.service";
 import { WindowSuccess } from "./TestWindowSuccess";
 import { useRouter } from "next/navigation";
 
-
-
 interface AuthWindowProps {
     readonly mode: "signin" | "signup";
     readonly onSwitchMode: (targetMode: "signin" | "signup") => void;
@@ -17,13 +16,11 @@ interface AuthWindowProps {
 export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
     const router = useRouter();
 
-    // ── Sign In Form State ──
     const [signInUsername, setSignInUsername] = useState("");
     const [signInPassword, setSignInPassword] = useState("");
     const [showSignInPassword, setShowSignInPassword] = useState(false);
     const [signInErrorMessage, setSignInErrorMessage] = useState("");
 
-    // ── Sign Up Form State ──
     const [signUpUsername, setSignUpUsername] = useState("");
     const [signUpPassword, setSignUpPassword] = useState("");
     const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
@@ -31,14 +28,10 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
     const [showSignUpConfirmPassword, setShowSignUpConfirmPassword] = useState(false);
     const [signUpErrorMessage, setSignUpErrorMessage] = useState("");
 
-    // ── Other state ──
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // ── Small Window State ──
     const [isSuccess, setIsSuccess] = useState(false);
     const [description, setDescription] = useState("");
 
-    // ── Handle Sign In Submit ──
     const handleSignInSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setSignInErrorMessage("");
@@ -63,16 +56,16 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
             setDescription("Successfully login.");
             router.replace("/explore");
         } catch (error) {
-            if (error instanceof ApiError)
+            if (error instanceof ApiError) {
                 setSignInErrorMessage(error.message);
-            else
+            } else {
                 setSignInErrorMessage("Something went wrong. Please try again.");
+            }
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // ── Handle Sign Up Submit ──
     const handleSignUpSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setSignUpErrorMessage("");
@@ -107,35 +100,32 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
             await signup({
                 username: signUpUsername,
                 password: signUpPassword
-            })
+            });
             setIsSuccess(true);
             setDescription("Successfully created an account.");
             router.replace("/explore");
         } catch (error) {
-            if (error instanceof ApiError)
+            if (error instanceof ApiError) {
                 setSignUpErrorMessage(error.message);
-            else {
+            } else {
                 console.log(error);
                 setSignUpErrorMessage("Something went wrong. Please try again.");
             }
         } finally {
             setIsSubmitting(false);
         }
-
     };
 
     const isSignInMode = mode === "signin";
 
     return (
         <div
-            className="w-full max-w-150 bg-[#191919] border border-[#3A3A40] rounded-2xl p-8 sm:p-9 shadow-2xl shadow-black/90 backdrop-blur-sm relative z-20 transition-all duration-300"
+            className="w-full min-w-0 max-w-150 bg-[#191919] border border-[#3A3A40] rounded-2xl p-5 min-[390px]:p-6 sm:p-9 shadow-2xl shadow-black/90 backdrop-blur-sm relative z-20 transition-all duration-300"
             role="region"
             aria-label={isSignInMode ? "Sign in window" : "Sign up window"}
         >
-            {/* Subtle top-edge accent highlight */}
             <div className="absolute top-0 left-8 right-8 h-px bg-linear-to-r from-transparent via-[#8B5CF6]/40 to-transparent pointer-events-none" />
 
-            {/* ── Heading and Supporting Text ── */}
             <div className="mb-7">
                 <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-[#F5F5F5] mb-2 font-sans">
                     {isSignInMode ? "Welcome back." : "Join OmniFlix."}
@@ -147,7 +137,6 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                 </p>
             </div>
 
-            {/* ── Sign In Form ── */}
             {isSignInMode ? (
                 <form onSubmit={handleSignInSubmit} noValidate className="space-y-5">
                     {signInErrorMessage && (
@@ -159,7 +148,6 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                         </div>
                     )}
 
-                    {/* Username Input */}
                     <div className="space-y-1.5">
                         <label
                             htmlFor="signin-username"
@@ -180,7 +168,6 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                         />
                     </div>
 
-                    {/* Password Input with Show/Hide Toggle */}
                     <div className="space-y-1.5">
                         <label
                             htmlFor="signin-password"
@@ -211,15 +198,14 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                         </div>
                     </div>
 
-                    {/* Primary Sign In Button */}
                     <button
                         type="submit"
+                        disabled={isSubmitting}
                         className="w-full py-2.5 px-4 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] active:bg-[#6D28D9] text-white font-medium text-sm transition-all duration-200 shadow-lg shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] cursor-pointer"
                     >
-                        Sign in
+                        {isSubmitting ? "Signing in..." : "Sign in"}
                     </button>
 
-                    {/* Mode Switch Prompt */}
                     <div className="pt-2 text-center text-xs text-[#A1A1AA]">
                         Don&apos;t have an account?{" "}
                         <button
@@ -232,7 +218,6 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                     </div>
                 </form>
             ) : (
-                /* ── Sign Up Form ── */
                 <form onSubmit={handleSignUpSubmit} noValidate className="space-y-4">
                     {signUpErrorMessage && (
                         <div
@@ -243,7 +228,6 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                         </div>
                     )}
 
-                    {/* Username Input */}
                     <div className="space-y-1.5">
                         <label
                             htmlFor="signup-username"
@@ -264,7 +248,6 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                         />
                     </div>
 
-                    {/* Password Input with Show/Hide Toggle */}
                     <div className="space-y-1.5">
                         <label
                             htmlFor="signup-password"
@@ -295,7 +278,6 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                         </div>
                     </div>
 
-                    {/* Confirm Password Input with Show/Hide Toggle */}
                     <div className="space-y-1.5">
                         <label
                             htmlFor="signup-confirm-password"
@@ -326,15 +308,14 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                         </div>
                     </div>
 
-                    {/* Primary Create Account Button */}
                     <button
                         type="submit"
+                        disabled={isSubmitting}
                         className="w-full py-2.5 px-4 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] active:bg-[#6D28D9] text-white font-medium text-sm transition-all duration-200 shadow-lg shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] cursor-pointer mt-1"
                     >
-                        {isSubmitting ? 'Creating account...' : 'Creat account'}
+                        {isSubmitting ? "Creating account..." : "Creat account"}
                     </button>
 
-                    {/* Mode Switch Prompt */}
                     <div className="pt-2 text-center text-xs text-[#A1A1AA]">
                         Already have an account?{" "}
                         <button
@@ -347,10 +328,13 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                     </div>
                 </form>
             )}
+
             {isSuccess && (
-                <WindowSuccess onClose={() => setIsSuccess(false)} description={description} />
+                <WindowSuccess
+                    onClose={() => setIsSuccess(false)}
+                    description={description}
+                />
             )}
         </div>
     );
 }
-
