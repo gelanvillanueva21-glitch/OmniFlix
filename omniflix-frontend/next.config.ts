@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   },
   allowedDevOrigins: ["192.168.1.7"],
   devIndicators: false,
+  images: {
+    // Temporary: allows the mock placeholder images on /explore to load.
+    // Remove once real cover art is served from the app or an integrated API.
+    remotePatterns: [{ protocol: "https", hostname: "picsum.photos" }],
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
