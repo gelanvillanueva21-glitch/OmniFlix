@@ -14,6 +14,7 @@ import {
     BellIcon,
     SearchIcon,
 } from "@/components/icons/icons";
+import { UtilityNavbar, NotificationsPlaceholder } from "./UtilityNavbar";
 
 interface ExploreLayoutProps {
     /** Center column content. */
@@ -32,13 +33,18 @@ export function ExploreLayout({ children, utilities, popular }: ExploreLayoutPro
     const { user, isAuthenticated, logout } = useAuth();
     const router = useRouter();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
-    // Close the drawer on Escape and lock scroll while open.
+    useDismissableOverlay(isDrawerOpen, () => setIsDrawerOpen(false));
+    useDismissableOverlay(isLibraryOpen, () => setIsLibraryOpen(false));
+
+/** Drawer/overlay effect: close on Escape and lock body scroll while open. */
+function useDismissableOverlay(isOpen: boolean, onClose: () => void) {
     useEffect(() => {
-        if (!isDrawerOpen) return;
+        if (!isOpen) return;
 
         function handleKeyDown(event: KeyboardEvent) {
-            if (event.key === "Escape") setIsDrawerOpen(false);
+            if (event.key === "Escape") onClose();
         }
         document.addEventListener("keydown", handleKeyDown);
         document.body.style.overflow = "hidden";
@@ -47,7 +53,8 @@ export function ExploreLayout({ children, utilities, popular }: ExploreLayoutPro
             document.removeEventListener("keydown", handleKeyDown);
             document.body.style.overflow = "";
         };
-    }, [isDrawerOpen]);
+    }, [isOpen, onClose]);
+}
 
     async function handleSignOut() {
         await logout();
@@ -76,12 +83,24 @@ export function ExploreLayout({ children, utilities, popular }: ExploreLayoutPro
         </div>
     );
 
+    const hasRightContent = utilities !== undefined || popular !== undefined;
+
     return (
         <div className="min-h-screen bg-[#111111] text-[#F5F5F5]">
             {/* ── Desktop left sidebar (hidden below lg) ── */}
             <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-[#29292E] bg-[#171719] px-4 py-4 lg:block xl:w-64">
                 {sidebarContent()}
             </aside>
+
+            {/* ── Compact utility navbar (lg–xl: left sidebar fits, right
+                utilities sidebar does not) ── */}
+            <UtilityNavbar
+                searchContent={utilities}
+                notificationsContent={
+                    <NotificationsPlaceholder />
+                }
+                onOpenLibrary={() => setIsLibraryOpen(true)}
+            />
 
             {/* ── Mobile top header (lg and below) ── */}
             <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-[#29292E] bg-[#111111]/90 px-4 backdrop-blur-md lg:hidden">
@@ -142,6 +161,40 @@ export function ExploreLayout({ children, utilities, popular }: ExploreLayoutPro
                 </div>
             )}
 
+            {/* ── Library drawer (lg–xl): the existing right-sidebar content,
+                rendered from the same nodes — no duplicated data ── */}
+            {isLibraryOpen && hasRightContent && (
+                <div className="fixed inset-0 z-50 lg:block xl:hidden" role="dialog" aria-modal="true" aria-label="Library">
+                    <button
+                        type="button"
+                        aria-label="Close library"
+                        onClick={() => setIsLibraryOpen(false)}
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                    />
+                    <div
+                        id="library-drawer"
+                        className="absolute inset-y-0 right-0 w-80 max-w-[90vw] overflow-y-auto border-l border-[#29292E] bg-[#171719] px-5 py-6 shadow-xl"
+                    >
+                        <button
+                            type="button"
+                            onClick={() => setIsLibraryOpen(false)}
+                            aria-label="Close library"
+                            className="absolute top-4 right-3 inline-flex h-11 w-11 items-center justify-center rounded-lg text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                        >
+                            <CloseIcon className="h-5 w-5" />
+                        </button>
+                        <div className="space-y-8 pr-10">
+                            {utilities}
+                            {popular !== undefined && (
+                                <div className="space-y-8 border-t border-[#29292E] pt-6">
+                                    {popular}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ── Main content ── */}
             <div className="flex lg:pl-60 xl:pl-64">
                 <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
@@ -149,7 +202,7 @@ export function ExploreLayout({ children, utilities, popular }: ExploreLayoutPro
                 </main>
 
                 {/* ── Right sidebar (xl and up) ── */}
-                {(utilities !== undefined || popular !== undefined) && (
+                {hasRightContent && (
                     <aside className="hidden w-80 shrink-0 border-l border-[#29292E] bg-[#171719]/50 px-5 py-8 xl:block">
                         {utilities}
                         {popular !== undefined && (

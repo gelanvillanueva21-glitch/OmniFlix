@@ -82,9 +82,9 @@ export default function AuthPageClient({ mode }: AuthPageClientProps) {
                                 />
                             </div>
 
-                            {/* Hide collage on screens 650px and narrower */}
+                            {/* Hide collage below lg (1024px); desktop keeps it */}
                             <div
-                                className={`max-[650px]:hidden flex items-center justify-center w-full transition-all duration-600 ease-in-out motion-reduce:transition-none ${
+                                className={`max-lg:hidden flex items-center justify-center w-full transition-all duration-600 ease-in-out motion-reduce:transition-none ${
                                     isSignIn
                                         ? "lg:order-2 opacity-100 translate-x-0"
                                         : "lg:order-1 opacity-100 translate-x-0"

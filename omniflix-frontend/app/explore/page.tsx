@@ -85,18 +85,12 @@ export default function ExplorePage() {
 
             {/* 3. Trending Now */}
             <section aria-labelledby="trending-heading" className="mb-8 space-y-4">
-                <h2 id="trending-heading" className="sr-only">
-                    Trending now
-                </h2>
                 <SectionHeader title="Trending Now" />
                 <MediaCarousel items={MOCK_TRENDING} label="Trending Now" />
             </section>
 
             {/* 4. Recommended (general selection — not personalized yet) */}
             <section aria-labelledby="recommended-heading" className="mb-8 space-y-4">
-                <h2 id="recommended-heading" className="sr-only">
-                    Recommended for you
-                </h2>
                 <SectionHeader title="Recommended for You" />
                 {recommendedItems.length === 0 ? (
                     <EmptyState
@@ -118,9 +112,6 @@ export default function ExplorePage() {
 
             {/* 6. Discover More (incrementally loaded grid) */}
             <section aria-labelledby="discover-heading" className="space-y-4">
-                <h2 id="discover-heading" className="sr-only">
-                    Discover more
-                </h2>
                 <SectionHeader title="Discover More" />
                 {discoverItems.length === 0 ? (
                     <EmptyState

@@ -39,13 +39,10 @@ const ACCOUNT_NAVIGATION: readonly NavItem[] = [
     { label: "My Library", Icon: LibraryIcon },
 ];
 
+
 export function SidebarLogo() {
     return (
-        <Link
-            href="/"
-            className="inline-flex items-center rounded-md transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
-            aria-label="OmniFlix Home"
-        >
+        <div className="inline-flex items-center">
             <Image
                 src="/omniflix-orbit.svg"
                 alt="OmniFlix"
@@ -54,7 +51,7 @@ export function SidebarLogo() {
                 priority
                 className="h-7 w-auto sm:h-9"
             />
-        </Link>
+        </div>
     );
 }
 

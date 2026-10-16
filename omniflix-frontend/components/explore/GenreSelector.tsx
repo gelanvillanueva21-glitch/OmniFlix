@@ -27,9 +27,6 @@ export function GenreSelector({ genres, items }: GenreSelectorProps) {
     return (
         <section aria-labelledby="genres-heading" className="space-y-4">
             <SectionHeader title="Browse by Genre" />
-            <h3 id="genres-heading" className="sr-only">
-                Browse by genre
-            </h3>
             {genres.length === 0 ? (
                 <EmptyState
                     title="No genres yet"
