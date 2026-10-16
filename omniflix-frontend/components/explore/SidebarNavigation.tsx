@@ -35,9 +35,12 @@ const MAIN_NAVIGATION: readonly NavItem[] = [
 ];
 
 const ACCOUNT_NAVIGATION: readonly NavItem[] = [
-    { label: "Profile", Icon: UserIcon },
+    { label: "Profile", href: "/profile", Icon: UserIcon },
     { label: "My Library", Icon: LibraryIcon },
 ];
+
+const GUEST_BENEFITS_MESSAGE =
+    "Sign in or create an account to save favorites, build your watchlist, and organize your entertainment.";
 
 
 export function SidebarLogo() {
@@ -142,25 +145,46 @@ export function AccountNavigation({
     onSignOut,
     onNavigate,
 }: AccountNavigationProps) {
+    const pathname = usePathname();
+
     if (!isAuthenticated) {
         return (
             <div className="space-y-1.5">
                 <p className="px-4 pb-2 text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase">
                     Account
                 </p>
+                {/* Guest profile section: avatar, name, link to /profile */}
+                <Link
+                    href="/profile"
+                    onClick={onNavigate}
+                    aria-current={pathname === "/profile" ? "page" : undefined}
+                    className={`flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] ${
+                        pathname === "/profile"
+                            ? "bg-[#8B5CF6]/15 text-[#A78BFA] font-medium"
+                            : "text-[#A1A1AA] hover:bg-[#242429]/70 hover:text-[#F5F5F5]"
+                    }`}
+                >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#242429] text-[#A1A1AA]">
+                        <UserIcon className="h-4 w-4" />
+                    </span>
+                    <span className="truncate">Guest</span>
+                </Link>
+                <p className="px-4 pb-1 text-xs leading-relaxed text-[#A1A1AA]">
+                    {GUEST_BENEFITS_MESSAGE}
+                </p>
                 <Link
                     href="/auth/signin"
                     onClick={onNavigate}
                     className="flex min-h-11 items-center rounded-lg px-4 text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
                 >
-                    Sign in
+                    Sign In
                 </Link>
                 <Link
                     href="/auth/signup"
                     onClick={onNavigate}
                     className="flex min-h-11 items-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF]"
                 >
-                    Sign up
+                    Sign Up
                 </Link>
             </div>
         );
@@ -172,12 +196,26 @@ export function AccountNavigation({
                 Account
             </p>
             {username !== undefined && (
-                <p className="truncate px-4 pb-1 text-sm text-[#F5F5F5]">
-                    {username}
-                </p>
+                <div className="flex items-center gap-3 px-4 pb-1">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/15 text-[#A78BFA]">
+                        <UserIcon className="h-4 w-4" />
+                    </span>
+                    <p className="truncate text-sm text-[#F5F5F5]">
+                        {username}
+                    </p>
+                </div>
             )}
             {ACCOUNT_NAVIGATION.map((item) => (
-                <NavButton key={item.label} item={item} onClick={onNavigate} />
+                <NavButton
+                    key={item.label}
+                    item={item}
+                    isActive={
+                        item.href !== undefined &&
+                        (pathname === item.href ||
+                            pathname?.startsWith(`${item.href}/`) === true)
+                    }
+                    onClick={onNavigate}
+                />
             ))}
             <button
                 type="button"
