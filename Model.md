@@ -36,7 +36,7 @@ USER_ENUME_TYPE:
 
 
 
-Table User [user_model.py]:
+Table User:
     Columns:
         id
         username
@@ -46,7 +46,7 @@ Table User [user_model.py]:
         profile: Relation to Profile Table
 
 
-Table User_Profile [profile_model.py]:
+Table User_Profile:
     Columns:
         id
         user_id: Fk users.id
@@ -66,7 +66,7 @@ Table User_Profile [profile_model.py]:
         search_hsitory: Relation with Search[]
 
 
-Table User_Entertainment [user_entertainment_model.py]:
+Table User_Entertainment:
     Columns:
         id
         profile_id: Fk profile.id
@@ -77,7 +77,7 @@ Table User_Entertainment [user_entertainment_model.py]:
         created_at: default time
 
 
-Table User_Activity [user_activity_model.py]:
+Table User_Activity:
     Columns:
         id
         profile_id: Fk profile.id
@@ -89,7 +89,7 @@ Table User_Activity [user_activity_model.py]:
         created_at: default datetime
 
 
-Table User_Search [user_entetainment_search_model.py]:
+Table User_Search:
     Columns:
         id
         profile_id: Fk profile.id

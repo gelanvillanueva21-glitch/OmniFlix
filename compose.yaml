@@ -114,6 +114,7 @@ services:
 
     environment:
       DATABASE_URL: "postgresql://omniflix_user:${DATABASE_PASSWORD}@db:5432/omniflix_db"
+      FAST_API_INTERNAL_URL: "http://backend:8888"
 
     # Maps host port 5555 to container port 5555.
     # The frontend development server must listen on that port
