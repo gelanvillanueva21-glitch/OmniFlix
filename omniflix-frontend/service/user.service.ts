@@ -21,8 +21,8 @@ export function signup(data: UserAuth): Promise<UserResponse> {
 }
 
 
-export function getCurrentUser(): Promise<UserResponse> {
-    return FastApiRequest(`auth/me`);
+export function getCurrentUser(options: RequestInit = {}): Promise<UserResponse> {
+    return FastApiRequest(`auth/me`, options);
 }
 
 

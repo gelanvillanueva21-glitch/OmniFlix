@@ -1,6 +1,10 @@
-
-
-const FAST_API_URL = process.env.NEXT_PUBLIC_FAST_API_URL
+// Browser requests use the host-facing URL. Server-side requests use the
+// Compose service name when available, because localhost means the frontend
+// container itself inside Docker.
+const FAST_API_URL =
+    typeof window === "undefined"
+        ? process.env.FAST_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_FAST_API_URL
+        : process.env.NEXT_PUBLIC_FAST_API_URL;
 
 
 export class ApiError extends Error {
@@ -14,6 +18,10 @@ export class ApiError extends Error {
 
 export async function FastApiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
     const isFormData = options.body instanceof FormData
+
+    if (!FAST_API_URL) {
+        throw new Error("FastAPI URL is not configured");
+    }
 
     const response = await fetch(`${FAST_API_URL}/${path}`, {
         ...options,
