@@ -31,7 +31,7 @@ export function changePassword(
     newPassword: string
 ): Promise<{ message: string }> {
     return FastApiRequest(`auth/change-password`, {
-        method: "POST",
+        method: "PUT",
         body: JSON.stringify({
             current_password: currentPassword,
             new_password: newPassword

@@ -9,7 +9,6 @@ import {
     FilmIcon,
     MonitorPlayIcon,
     UserIcon,
-    LibraryIcon,
     LogOutIcon,
 } from "@/components/icons/icons";
 import type { ComponentType } from "react";
@@ -34,10 +33,20 @@ const MAIN_NAVIGATION: readonly NavItem[] = [
     { label: "Series", Icon: MonitorPlayIcon },
 ];
 
-const ACCOUNT_NAVIGATION: readonly NavItem[] = [
-    { label: "Profile", Icon: UserIcon },
-    { label: "My Library", Icon: LibraryIcon },
-];
+const PROFILE_SOURCE_ROUTES = [
+    "/explore",
+    "/comics",
+    "/novels",
+    "/movies",
+    "/series",
+] as const;
+
+function profileHref(pathname: string | null) {
+    const source = PROFILE_SOURCE_ROUTES.find(
+        (route) => pathname === route || pathname?.startsWith(`${route}/`),
+    );
+    return source === undefined ? "/profile" : `/profile?from=${encodeURIComponent(pathname ?? source)}`;
+}
 
 
 export function SidebarLogo() {
@@ -142,25 +151,41 @@ export function AccountNavigation({
     onSignOut,
     onNavigate,
 }: AccountNavigationProps) {
+    const pathname = usePathname();
+
     if (!isAuthenticated) {
         return (
             <div className="space-y-1.5">
                 <p className="px-4 pb-2 text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase">
                     Account
                 </p>
+                {/* Guest profile section: avatar, name, link to /profile */}
+                <Link
+                    href={profileHref(pathname)}
+                    onClick={onNavigate}
+                    aria-current={pathname === "/profile" ? "page" : undefined}
+                    className={`flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] ${
+                        pathname === "/profile"
+                            ? "bg-[#8B5CF6]/15 text-[#A78BFA] font-medium"
+                            : "text-[#A1A1AA] hover:bg-[#242429]/70 hover:text-[#F5F5F5]"
+                    }`}
+                >
+                    <UserIcon className="h-5 w-5 shrink-0" />
+                    <span className="truncate">Profile</span>
+                </Link>
                 <Link
                     href="/auth/signin"
                     onClick={onNavigate}
                     className="flex min-h-11 items-center rounded-lg px-4 text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
                 >
-                    Sign in
+                    Sign In
                 </Link>
                 <Link
                     href="/auth/signup"
                     onClick={onNavigate}
                     className="flex min-h-11 items-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF]"
                 >
-                    Sign up
+                    Sign Up
                 </Link>
             </div>
         );
@@ -172,13 +197,19 @@ export function AccountNavigation({
                 Account
             </p>
             {username !== undefined && (
-                <p className="truncate px-4 pb-1 text-sm text-[#F5F5F5]">
-                    {username}
-                </p>
+                <Link
+                    href={profileHref(pathname)}
+                    onClick={onNavigate}
+                    className="flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm text-[#F5F5F5] transition-colors hover:bg-[#242429]/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/15 text-[#A78BFA]">
+                        <UserIcon className="h-4 w-4" />
+                    </span>
+                    <span className="truncate">
+                        {username}
+                    </span>
+                </Link>
             )}
-            {ACCOUNT_NAVIGATION.map((item) => (
-                <NavButton key={item.label} item={item} onClick={onNavigate} />
-            ))}
             <button
                 type="button"
                 onClick={onSignOut}

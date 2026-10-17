@@ -22,6 +22,8 @@ interface ExploreLayoutProps {
     /** Right sidebar utilities + popular lists. */
     utilities?: ReactNode;
     popular?: ReactNode;
+    /** Profile uses its own information sidebar instead of browse navigation. */
+    showBrowseSidebar?: boolean;
 }
 
 /**
@@ -29,7 +31,12 @@ interface ExploreLayoutProps {
  * below xl and reappears as part of the mobile drawer; the left sidebar
  * becomes a slide-in drawer below lg. Single implementation, responsive CSS.
  */
-export function ExploreLayout({ children, utilities, popular }: ExploreLayoutProps) {
+export function ExploreLayout({
+    children,
+    utilities,
+    popular,
+    showBrowseSidebar = true,
+}: ExploreLayoutProps) {
     const { user, isAuthenticated, logout } = useAuth();
     const router = useRouter();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -88,9 +95,11 @@ function useDismissableOverlay(isOpen: boolean, onClose: () => void) {
     return (
         <div className="min-h-screen bg-[#111111] text-[#F5F5F5]">
             {/* ── Desktop left sidebar (hidden below lg) ── */}
-            <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-[#29292E] bg-[#171719] px-4 py-4 lg:block xl:w-64">
-                {sidebarContent()}
-            </aside>
+            {showBrowseSidebar && (
+                <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-[#29292E] bg-[#171719] px-4 py-4 lg:block xl:w-64">
+                    {sidebarContent()}
+                </aside>
+            )}
 
             {/* ── Compact utility navbar (lg–xl: left sidebar fits, right
                 utilities sidebar does not) ── */}
@@ -104,16 +113,18 @@ function useDismissableOverlay(isOpen: boolean, onClose: () => void) {
 
             {/* ── Mobile top header (lg and below) ── */}
             <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-[#29292E] bg-[#111111]/90 px-4 backdrop-blur-md lg:hidden">
-                <button
-                    type="button"
-                    onClick={() => setIsDrawerOpen(true)}
-                    aria-label="Open navigation menu"
-                    aria-expanded={isDrawerOpen}
-                    aria-controls="mobile-nav-drawer"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#F5F5F5] transition-colors hover:bg-[#242429] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
-                >
-                    <MenuIcon className="h-5 w-5" />
-                </button>
+                {showBrowseSidebar && (
+                    <button
+                        type="button"
+                        onClick={() => setIsDrawerOpen(true)}
+                        aria-label="Open navigation menu"
+                        aria-expanded={isDrawerOpen}
+                        aria-controls="mobile-nav-drawer"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#F5F5F5] transition-colors hover:bg-[#242429] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                    >
+                        <MenuIcon className="h-5 w-5" />
+                    </button>
+                )}
                 <SidebarLogo />
                 <div className="ml-auto flex items-center gap-1">
                     <button
@@ -134,7 +145,7 @@ function useDismissableOverlay(isOpen: boolean, onClose: () => void) {
             </header>
 
             {/* ── Mobile drawer ── */}
-            {isDrawerOpen && (
+            {showBrowseSidebar && isDrawerOpen && (
                 <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
                     <button
                         type="button"
@@ -196,7 +207,7 @@ function useDismissableOverlay(isOpen: boolean, onClose: () => void) {
             )}
 
             {/* ── Main content ── */}
-            <div className="flex lg:pl-60 xl:pl-64">
+            <div className={`flex ${showBrowseSidebar ? "lg:pl-60 xl:pl-64" : ""}`}>
                 <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                     {children}
                 </main>
