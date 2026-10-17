@@ -42,7 +42,7 @@ export function ProfileSidebar({ onSignOut }: ProfileSidebarProps) {
                     <SidebarLogo />
                 </div>
 
-                <div className="mt-6 space-y-4 px-2">
+                <div className="mt-6 flex flex-1 flex-col px-2">
                     <div className="flex items-center gap-3">
                         <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#242429] text-[#A1A1AA]">
                             <UserIcon className="h-7 w-7" />
@@ -55,7 +55,7 @@ export function ProfileSidebar({ onSignOut }: ProfileSidebarProps) {
                         watchlist, and organize your entertainment.
                     </p>
 
-                    <div className="flex flex-col gap-2 pt-2">
+                    <div className="mt-auto flex flex-col gap-2 pt-8">
                         <Link
                             href="/auth/signin"
                             className="flex min-h-11 items-center justify-center rounded-lg px-4 text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
@@ -80,7 +80,7 @@ export function ProfileSidebar({ onSignOut }: ProfileSidebarProps) {
                 <SidebarLogo />
             </div>
 
-            <div className="mt-4 space-y-5 px-2">
+            <div className="mt-4 flex flex-1 flex-col space-y-5 px-2">
                 {/* Avatar + name (UserResponse has no profile picture or display
                     name yet — fallback: username + default avatar icon) */}
                 <div className="flex items-center gap-3">
@@ -95,7 +95,7 @@ export function ProfileSidebar({ onSignOut }: ProfileSidebarProps) {
                 </div>
 
                 {/* History box — empty state until the activity API exists */}
-                <div className="rounded-lg border border-[#29292E] bg-[#171719] p-3">
+                <div className="min-h-40 rounded-lg border border-[#29292E] bg-[#171719] p-4">
                     <p className="text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase">
                         History
                     </p>
@@ -105,7 +105,7 @@ export function ProfileSidebar({ onSignOut }: ProfileSidebarProps) {
                     {/* TODO: render real recent activity once the activity API exists. */}
                 </div>
 
-                <div className="flex flex-col gap-2 pt-2">
+                <div className="mt-auto flex flex-col gap-2 pt-8">
                     {/* Change Password: no existing UI flow is wired, so render as
                         a disabled placeholder rather than a broken control. */}
                     <button

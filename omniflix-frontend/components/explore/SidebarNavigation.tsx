@@ -9,7 +9,6 @@ import {
     FilmIcon,
     MonitorPlayIcon,
     UserIcon,
-    LibraryIcon,
     LogOutIcon,
 } from "@/components/icons/icons";
 import type { ComponentType } from "react";
@@ -34,13 +33,20 @@ const MAIN_NAVIGATION: readonly NavItem[] = [
     { label: "Series", Icon: MonitorPlayIcon },
 ];
 
-const ACCOUNT_NAVIGATION: readonly NavItem[] = [
-    { label: "Profile", href: "/profile", Icon: UserIcon },
-    { label: "My Library", Icon: LibraryIcon },
-];
+const PROFILE_SOURCE_ROUTES = [
+    "/explore",
+    "/comics",
+    "/novels",
+    "/movies",
+    "/series",
+] as const;
 
-const GUEST_BENEFITS_MESSAGE =
-    "Sign in or create an account to save favorites, build your watchlist, and organize your entertainment.";
+function profileHref(pathname: string | null) {
+    const source = PROFILE_SOURCE_ROUTES.find(
+        (route) => pathname === route || pathname?.startsWith(`${route}/`),
+    );
+    return source === undefined ? "/profile" : `/profile?from=${encodeURIComponent(pathname ?? source)}`;
+}
 
 
 export function SidebarLogo() {
@@ -155,7 +161,7 @@ export function AccountNavigation({
                 </p>
                 {/* Guest profile section: avatar, name, link to /profile */}
                 <Link
-                    href="/profile"
+                    href={profileHref(pathname)}
                     onClick={onNavigate}
                     aria-current={pathname === "/profile" ? "page" : undefined}
                     className={`flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] ${
@@ -164,14 +170,9 @@ export function AccountNavigation({
                             : "text-[#A1A1AA] hover:bg-[#242429]/70 hover:text-[#F5F5F5]"
                     }`}
                 >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#242429] text-[#A1A1AA]">
-                        <UserIcon className="h-4 w-4" />
-                    </span>
-                    <span className="truncate">Guest</span>
+                    <UserIcon className="h-5 w-5 shrink-0" />
+                    <span className="truncate">Profile</span>
                 </Link>
-                <p className="px-4 pb-1 text-xs leading-relaxed text-[#A1A1AA]">
-                    {GUEST_BENEFITS_MESSAGE}
-                </p>
                 <Link
                     href="/auth/signin"
                     onClick={onNavigate}
@@ -196,27 +197,19 @@ export function AccountNavigation({
                 Account
             </p>
             {username !== undefined && (
-                <div className="flex items-center gap-3 px-4 pb-1">
+                <Link
+                    href={profileHref(pathname)}
+                    onClick={onNavigate}
+                    className="flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm text-[#F5F5F5] transition-colors hover:bg-[#242429]/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/15 text-[#A78BFA]">
                         <UserIcon className="h-4 w-4" />
                     </span>
-                    <p className="truncate text-sm text-[#F5F5F5]">
+                    <span className="truncate">
                         {username}
-                    </p>
-                </div>
+                    </span>
+                </Link>
             )}
-            {ACCOUNT_NAVIGATION.map((item) => (
-                <NavButton
-                    key={item.label}
-                    item={item}
-                    isActive={
-                        item.href !== undefined &&
-                        (pathname === item.href ||
-                            pathname?.startsWith(`${item.href}/`) === true)
-                    }
-                    onClick={onNavigate}
-                />
-            ))}
             <button
                 type="button"
                 onClick={onSignOut}

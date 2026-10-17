@@ -138,10 +138,12 @@ export function ProfileContent({ isGuest, collections, guestHistory }: ProfileCo
                     <SectionHeader title="History" />
                     <h3 className="sr-only">Browsing history</h3>
                     {guestHistory.length === 0 ? (
-                        <EmptyState
-                            title="No browsing history yet"
-                            description="Titles you browse will appear here. Sign in to keep your history across devices."
-                        />
+                        <div className="min-h-48">
+                            <EmptyState
+                                title="No browsing history yet"
+                                description="Titles you browse will appear here. Sign in to keep your history across devices."
+                            />
+                        </div>
                     ) : (
                         <MediaCarousel items={guestHistory} label="History" />
                     )}
