@@ -43,6 +43,9 @@ interface ProfileContentProps {
     >;
     /** Guest browsing history. Empty until guest-history storage exists. */
     readonly guestHistory: MediaItem[];
+    readonly selectedCollection?: EntertainmentListType;
+    readonly onCollectionChange?: (collection: EntertainmentListType) => void;
+    readonly mobileLibrary?: boolean;
 }
 
 function MediaCategoryRow({
@@ -69,9 +72,22 @@ function MediaCategoryRow({
  * Profile main content. Authenticated: collection tab row (7 types) + four
  * media-category rows for the selected collection. Guest: History only.
  */
-export function ProfileContent({ isGuest, collections, guestHistory }: ProfileContentProps) {
-    const [selectedCollection, setSelectedCollection] =
+export function ProfileContent({
+    isGuest,
+    collections,
+    guestHistory,
+    selectedCollection: selectedCollectionProp,
+    onCollectionChange,
+    mobileLibrary = false,
+}: ProfileContentProps) {
+    const [internalSelectedCollection, setInternalSelectedCollection] =
         useState<EntertainmentListType>("FAVORITE");
+    const selectedCollection = selectedCollectionProp ?? internalSelectedCollection;
+
+    function setSelectedCollection(collection: EntertainmentListType) {
+        setInternalSelectedCollection(collection);
+        onCollectionChange?.(collection);
+    }
 
     const collectionLabel =
         COLLECTIONS.find((c) => c.key === selectedCollection)?.label ??
@@ -85,7 +101,7 @@ export function ProfileContent({ isGuest, collections, guestHistory }: ProfileCo
             {!isGuest && (
                 <nav
                     aria-label="Collections"
-                    className="mb-8 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    className={`mb-8 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${mobileLibrary ? "sticky top-0 z-10 -mx-4 bg-[#111111] px-4 py-3 sm:-mx-6 sm:px-6" : ""}`}
                 >
                     {COLLECTIONS.map((collection) => {
                         const isSelected = selectedCollection === collection.key;

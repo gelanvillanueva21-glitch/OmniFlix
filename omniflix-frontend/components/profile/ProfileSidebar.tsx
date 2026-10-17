@@ -10,6 +10,7 @@ import {
 
 interface ProfileSidebarProps {
     readonly onSignOut: () => void;
+    readonly onOpenLibrary?: () => void;
 }
 
 /**
@@ -17,7 +18,7 @@ interface ProfileSidebarProps {
  * state until the activity API exists), Change Password + Sign Out. Guest:
  * avatar, "Guest", Sign In/Up, benefits message — no History box.
  */
-export function ProfileSidebar({ onSignOut }: ProfileSidebarProps) {
+export function ProfileSidebar({ onSignOut, onOpenLibrary }: ProfileSidebarProps) {
     const { user, isAuthenticated, isLoading } = useAuth();
 
     if (isLoading) {
@@ -104,6 +105,16 @@ export function ProfileSidebar({ onSignOut }: ProfileSidebarProps) {
                     </p>
                     {/* TODO: render real recent activity once the activity API exists. */}
                 </div>
+
+                {onOpenLibrary && (
+                    <button
+                        type="button"
+                        onClick={onOpenLibrary}
+                        className="flex min-h-12 items-center justify-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF]"
+                    >
+                        Open Library
+                    </button>
+                )}
 
                 <div className="mt-auto flex flex-col gap-2 pt-8">
                     {/* Change Password: no existing UI flow is wired, so render as
