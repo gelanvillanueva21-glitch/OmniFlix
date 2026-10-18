@@ -21,13 +21,16 @@ export type EntertainmentListType =
 
 export interface ProfileResponse {
     id: number;
+    userId: number;
     displayName: string | null;
-    profilePicture: string | null;
+    profileUrlPicture: string | null;
     createdAt: string;
-    updatedAt: string | null;
+    updateAt: string | null;
 }
 
 export interface UserEntertainmentItem {
+    id: number;
+    profileId: number;
     externalId: string;
     apiSource: string;
     purpose: EntertainmentListType;
@@ -41,20 +44,22 @@ export interface UserEntertainmentList {
 }
 
 export interface UserHistoryItem {
-  externalId: number;
-  apiSource: string;
-  type: EntertainmentType
-  hasRead: boolean;
-  hasWatch: boolean;
-  createdAt: string
+    id: number;
+    externalId: string;
+    apiSource: string;
+    type: EntertainmentType;
+    hasRead: boolean;
+    hasWatch: boolean;
+    createdAt: string;
 }
 
 
 export interface UserSearch {
-  title?: string;
-  genre?: string;
-  type: EntertainmentType;
-  isGlobal: boolean;
-  createdAt: string;
+    id: number;
+    title: string | null;
+    genre: string | null;
+    type: EntertainmentType;
+    isGlobal: boolean;
+    createdAt: string;
 }
 

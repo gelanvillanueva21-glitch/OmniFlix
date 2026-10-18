@@ -50,6 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await logoutRequest();
 
         queryClient.setQueryData(["currentUser"], null);
+        queryClient.removeQueries({
+            predicate: (query) => query.queryKey[0] === "profile",
+        });
     }
 
     return (
