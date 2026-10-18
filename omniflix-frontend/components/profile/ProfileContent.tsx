@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { MediaCarousel } from "@/components/explore/MediaCarousel";
-import { SectionHeader, EmptyState } from "@/components/explore/SectionHeader";
+import {
+    SectionHeader,
+    EmptyState,
+    ErrorState,
+} from "@/components/explore/SectionHeader";
 import type { MediaItem } from "@/lib/media";
 import type { EntertainmentListType } from "@/service/types/profile.payload";
 
@@ -25,7 +29,6 @@ const MEDIA_CATEGORY_LABELS: Record<MediaItem["type"], string> = {
     novels: "Novels",
 };
 
-/** TODO: wire these to the collections API when it exists — no mock data. */
 const CATEGORY_KEYS: readonly MediaItem["type"][] = [
     "comics",
     "movies",
@@ -46,6 +49,9 @@ interface ProfileContentProps {
     readonly selectedCollection?: EntertainmentListType;
     readonly onCollectionChange?: (collection: EntertainmentListType) => void;
     readonly mobileLibrary?: boolean;
+    readonly isCollectionLoading?: boolean;
+    readonly collectionError?: string;
+    readonly onRetryCollection?: () => void;
 }
 
 function MediaCategoryRow({
@@ -61,7 +67,7 @@ function MediaCategoryRow({
         return (
             <EmptyState
                 title={`No ${label.toLowerCase()} in ${collectionLabel}`}
-                description={`Titles you add to ${collectionLabel} will appear here once the collections API is connected.`}
+                description={`Titles you add to ${collectionLabel} will appear here.`}
             />
         );
     }
@@ -79,6 +85,9 @@ export function ProfileContent({
     selectedCollection: selectedCollectionProp,
     onCollectionChange,
     mobileLibrary = false,
+    isCollectionLoading = false,
+    collectionError,
+    onRetryCollection,
 }: ProfileContentProps) {
     const [internalSelectedCollection, setInternalSelectedCollection] =
         useState<EntertainmentListType>("FAVORITE");
@@ -127,6 +136,17 @@ export function ProfileContent({
             {/* ── Authenticated: four media-category rows ── */}
             {!isGuest && (
                 <div className="space-y-8">
+                    {isCollectionLoading && (
+                        <p className="text-sm text-[#A1A1AA]" role="status">
+                            Loading your collection...
+                        </p>
+                    )}
+                    {collectionError && (
+                        <ErrorState
+                            message={collectionError}
+                            onRetry={onRetryCollection}
+                        />
+                    )}
                     {CATEGORY_KEYS.map((category) => (
                         <section
                             key={category}

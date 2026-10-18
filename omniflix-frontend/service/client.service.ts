@@ -6,6 +6,12 @@ const FAST_API_URL =
         ? process.env.FAST_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_FAST_API_URL
         : process.env.NEXT_PUBLIC_FAST_API_URL;
 
+const NEXT_API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+export interface ApiResponse<T> {
+    message: string;
+    data: T;
+}
 
 export class ApiError extends Error {
     status: number;
@@ -41,6 +47,46 @@ export async function FastApiRequest<T>(path: string, options: RequestInit = {})
         throw new ApiError(response.status, body.detail ?? 'Request Failed');
     }
 
+
+    return response.json() as Promise<T>;
+}
+
+
+export async function NextApiRequest<T>(
+    path: string,
+    options: RequestInit = {}
+): Promise<T> {
+    const isFormData = options.body instanceof FormData;
+
+    if (!NEXT_API_URL) {
+        throw new Error("Next API URL is not configured");
+    }
+
+    const response = await fetch(`${NEXT_API_URL}/${path}`, {
+        ...options,
+        credentials: "include",
+        headers: {
+            ...(!isFormData && {
+                "Content-Type": "application/json",
+            }),
+            ...options.headers,
+        },
+    });
+
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({
+            message: "Unknown Error",
+        }));
+
+        throw new ApiError(
+            response.status,
+            body.message ?? body.detail ?? "Request Failed",
+        );
+    }
+
+    if (response.status === 204) {
+        return undefined as T;
+    }
 
     return response.json() as Promise<T>;
 }

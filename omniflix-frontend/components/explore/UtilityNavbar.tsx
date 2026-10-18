@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { BellIcon, CloseIcon, LibraryIcon, SearchIcon } from "@/components/icons/icons";
+import { SidebarLogo } from "@/components/explore/SidebarNavigation";
 
 interface UtilityNavbarProps {
     /** Rendered in the collapsible search row (reuses the existing SearchBar). */
@@ -31,59 +32,63 @@ export function UtilityNavbar({
 
     return (
         <div className="sticky top-0 z-40 hidden border-b border-[#29292E] bg-[#111111]/90 px-4 py-2 backdrop-blur-md lg:block xl:hidden">
-            <div className="flex items-center gap-1">
-                {/* Search */}
-                <div className="relative">
-                    <button
-                        type="button"
-                        aria-label="Search"
-                        aria-expanded={isSearchOpen}
-                        onClick={() => {
-                            setIsSearchOpen((open) => !open);
-                            setIsNotificationsOpen(false);
-                        }}
-                        className={`${buttonClasses} text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] ${isSearchOpen ? "bg-[#8B5CF6]/15 text-[#A78BFA]" : ""}`}
-                    >
-                        <SearchIcon className="h-5 w-5" />
-                    </button>
-                </div>
+            <div className="flex items-center justify-between gap-4">
+                <SidebarLogo />
 
-                {/* Notifications */}
-                <div className="relative">
-                    <button
-                        type="button"
-                        aria-label="Notifications"
-                        aria-expanded={isNotificationsOpen}
-                        onClick={() => {
-                            setIsNotificationsOpen((open) => !open);
-                            setIsSearchOpen(false);
-                        }}
-                        className={`${buttonClasses} text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] ${isNotificationsOpen ? "bg-[#8B5CF6]/15 text-[#A78BFA]" : ""}`}
-                    >
-                        <BellIcon className="h-5 w-5" />
-                    </button>
-
-                    {isNotificationsOpen && (
-                        <div
-                            role="dialog"
-                            aria-label="Notifications"
-                            className="absolute left-0 top-13 z-50 w-80 rounded-xl border border-[#29292E] bg-[#171719] p-4 shadow-xl"
+                <div className="flex items-center gap-1">
+                    {/* Search */}
+                    <div className="relative">
+                        <button
+                            type="button"
+                            aria-label="Search"
+                            aria-expanded={isSearchOpen}
+                            onClick={() => {
+                                setIsSearchOpen((open) => !open);
+                                setIsNotificationsOpen(false);
+                            }}
+                            className={`${buttonClasses} text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] ${isSearchOpen ? "bg-[#8B5CF6]/15 text-[#A78BFA]" : ""}`}
                         >
-                            {notificationsContent}
-                        </div>
-                    )}
-                </div>
+                            <SearchIcon className="h-5 w-5" />
+                        </button>
+                    </div>
 
-                {/* Library — right-aligned so it reads as the missing right sidebar */}
-                <button
-                    type="button"
-                    aria-label="Open library"
-                    aria-haspopup="dialog"
-                    onClick={onOpenLibrary}
-                    className={`${buttonClasses} ml-auto text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5]`}
-                >
-                    <LibraryIcon className="h-5 w-5" />
-                </button>
+                    {/* Notifications */}
+                    <div className="relative">
+                        <button
+                            type="button"
+                            aria-label="Notifications"
+                            aria-expanded={isNotificationsOpen}
+                            onClick={() => {
+                                setIsNotificationsOpen((open) => !open);
+                                setIsSearchOpen(false);
+                            }}
+                            className={`${buttonClasses} text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] ${isNotificationsOpen ? "bg-[#8B5CF6]/15 text-[#A78BFA]" : ""}`}
+                        >
+                            <BellIcon className="h-5 w-5" />
+                        </button>
+
+                        {isNotificationsOpen && (
+                            <div
+                                role="dialog"
+                                aria-label="Notifications"
+                                className="absolute right-0 top-13 z-50 w-80 rounded-xl border border-[#29292E] bg-[#171719] p-4 shadow-xl"
+                            >
+                                {notificationsContent}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Library */}
+                    <button
+                        type="button"
+                        aria-label="Open library"
+                        aria-haspopup="dialog"
+                        onClick={onOpenLibrary}
+                        className={`${buttonClasses} text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5]`}
+                    >
+                        <LibraryIcon className="h-5 w-5" />
+                    </button>
+                </div>
             </div>
 
             {isSearchOpen && (
