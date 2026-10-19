@@ -3,18 +3,24 @@
 import { useRef } from "react";
 import { MediaCard } from "./MediaCard";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons/icons";
+import { isRestrictedMedia } from "@/lib/content-visibility";
 import type { MediaItem } from "@/lib/media";
 
 interface MediaCarouselProps {
     readonly items: MediaItem[];
     readonly label: string;
+    readonly blurRestrictedContent?: boolean;
 }
 
 /**
  * Horizontal scroll row with keyboard focusability and scroll-snap. Plain
  * overflow scrolling (no slider library) keeps it accessible and simple.
  */
-export function MediaCarousel({ items, label }: MediaCarouselProps) {
+export function MediaCarousel({
+    items,
+    label,
+    blurRestrictedContent = false,
+}: MediaCarouselProps) {
     const trackRef = useRef<HTMLUListElement>(null);
 
     function scrollByCard(direction: 1 | -1) {
@@ -40,7 +46,12 @@ export function MediaCarousel({ items, label }: MediaCarouselProps) {
                         key={item.id}
                         className="w-36 shrink-0 snap-start sm:w-44"
                     >
-                        <MediaCard media={item} />
+                        <MediaCard
+                            media={item}
+                            blurCover={
+                                blurRestrictedContent && isRestrictedMedia(item)
+                            }
+                        />
                     </li>
                 ))}
             </ul>

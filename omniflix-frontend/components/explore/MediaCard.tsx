@@ -9,6 +9,8 @@ interface MediaCardProps {
     readonly media: MediaItem;
     /** "poster" for grid/carousel cards, "wide" for the featured banner. */
     readonly variant?: "poster" | "wide";
+    /** Blurs only the cover image for guest-visible restricted content. */
+    readonly blurCover?: boolean;
 }
 
 /**
@@ -16,7 +18,11 @@ interface MediaCardProps {
  * Image failures degrade to a neutral placeholder — the UI never depends on
  * a specific image host.
  */
-export function MediaCard({ media, variant = "poster" }: MediaCardProps) {
+export function MediaCard({
+    media,
+    variant = "poster",
+    blurCover = false,
+}: MediaCardProps) {
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = media.coverImage !== undefined && !imageFailed;
 
@@ -35,7 +41,7 @@ export function MediaCard({ media, variant = "poster" }: MediaCardProps) {
                             alt=""
                             fill
                             sizes="(max-width: 1280px) 100vw, 900px"
-                            className="object-cover"
+                            className={`object-cover ${blurCover ? "scale-105 blur-md" : ""}`}
                             onError={() => setImageFailed(true)}
                         />
                     ) : (
@@ -81,7 +87,7 @@ export function MediaCard({ media, variant = "poster" }: MediaCardProps) {
                         alt={`Cover of ${media.title}`}
                         fill
                         sizes="(max-width: 640px) 45vw, (max-width: 1280px) 30vw, 200px"
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        className={`object-cover transition-transform duration-300 group-hover:scale-105 ${blurCover ? "scale-105 blur-md" : ""}`}
                         onError={() => setImageFailed(true)}
                     />
                 ) : (

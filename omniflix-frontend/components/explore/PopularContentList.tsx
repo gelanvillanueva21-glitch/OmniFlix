@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ImageIcon } from "@/components/icons/icons";
+import { isRestrictedMedia } from "@/lib/content-visibility";
 import { mediaTypeLabel, type MediaItem } from "@/lib/media";
 import { ErrorState } from "./SectionHeader";
 
@@ -10,6 +11,7 @@ interface PopularContentListProps {
     readonly title: string;
     readonly items: MediaItem[];
     readonly error?: string;
+    readonly blurRestrictedContent?: boolean;
 }
 
 /**
@@ -17,7 +19,12 @@ interface PopularContentListProps {
  * data source supplies it — popular mock data intentionally omits it so we
  * don't present fabricated popularity as real.
  */
-export function PopularContentList({ title, items, error }: PopularContentListProps) {
+export function PopularContentList({
+    title,
+    items,
+    error,
+    blurRestrictedContent = false,
+}: PopularContentListProps) {
     return (
         <section aria-label={title} className="space-y-3">
             <h2 className="font-[family-name:var(--font-space-grotesk)] text-sm font-semibold tracking-wide text-[#F5F5F5]">
@@ -34,6 +41,9 @@ export function PopularContentList({ title, items, error }: PopularContentListPr
                             key={item.id}
                             item={item}
                             rank={index + 1}
+                            blurCover={
+                                blurRestrictedContent && isRestrictedMedia(item)
+                            }
                         />
                     ))}
                 </ol>
@@ -42,7 +52,15 @@ export function PopularContentList({ title, items, error }: PopularContentListPr
     );
 }
 
-function PopularListItem({ item, rank }: { item: MediaItem; rank: number }) {
+function PopularListItem({
+    item,
+    rank,
+    blurCover,
+}: {
+    item: MediaItem;
+    rank: number;
+    blurCover: boolean;
+}) {
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = item.coverImage !== undefined && !imageFailed;
 
@@ -61,7 +79,7 @@ function PopularListItem({ item, rank }: { item: MediaItem; rank: number }) {
                         alt=""
                         fill
                         sizes="32px"
-                        className="object-cover"
+                        className={`object-cover ${blurCover ? "scale-110 blur-md" : ""}`}
                         onError={() => setImageFailed(true)}
                     />
                 ) : (

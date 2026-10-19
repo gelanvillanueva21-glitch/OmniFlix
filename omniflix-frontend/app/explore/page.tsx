@@ -8,7 +8,13 @@ import { GenreSelector } from "@/components/explore/GenreSelector";
 import { PopularContentList } from "@/components/explore/PopularContentList";
 import { SearchBar } from "@/components/explore/SearchBar";
 import { SectionHeader, EmptyState, ErrorState } from "@/components/explore/SectionHeader";
-import type { ExploreData } from "@/lib/explore";
+import { ExploreContentSkeleton } from "@/components/explore/ExploreLoadingSkeleton";
+import { useAuth } from "@/components/auth/AuthProvider";
+import {
+    getRestrictedContentVisibility,
+    isRestrictedMedia,
+} from "@/lib/content-visibility";
+import { applyContentVisibility, type ExploreData } from "@/lib/explore";
 
 const DISCOVER_PAGE_SIZE = 8;
 
@@ -20,6 +26,7 @@ const POPULAR_SECTIONS = [
 ] as const;
 
 export default function ExplorePage() {
+    const { user, isLoading: isAuthLoading } = useAuth();
     const [visibleDiscoverCount, setVisibleDiscoverCount] =
         useState(DISCOVER_PAGE_SIZE);
     const [exploreData, setExploreData] = useState<ExploreData | null>(null);
@@ -35,6 +42,10 @@ export default function ExplorePage() {
                 );
             });
     }, []);
+    const contentVisibility = getRestrictedContentVisibility(
+        user,
+        isAuthLoading,
+    );
     if (requestError) {
         return (
             <ExploreLayout>
@@ -46,12 +57,20 @@ export default function ExplorePage() {
     if (!exploreData) {
         return (
             <ExploreLayout>
-                <p className="text-sm text-[#A1A1AA]">Loading real content…</p>
+                <ExploreContentSkeleton />
             </ExploreLayout>
         );
     }
-    const discoverItems = exploreData.discover.slice(0, visibleDiscoverCount);
-    const hasMoreDiscover = visibleDiscoverCount < exploreData.discover.length;
+    const visibleExploreData = applyContentVisibility(
+        exploreData,
+        contentVisibility,
+    );
+    const discoverItems = visibleExploreData.discover.slice(
+        0,
+        visibleDiscoverCount,
+    );
+    const hasMoreDiscover =
+        visibleDiscoverCount < visibleExploreData.discover.length;
 
     return (
         <ExploreLayout
@@ -67,8 +86,9 @@ export default function ExplorePage() {
                 <PopularContentList
                     key={section.key}
                     title={section.title}
-                    items={exploreData.popular[section.key]}
-                    error={getSectionError(exploreData, section.key)}
+                    items={visibleExploreData.popular[section.key]}
+                    error={getSectionError(visibleExploreData, section.key)}
+                    blurRestrictedContent={contentVisibility === "blur"}
                 />
             ))}
         >
@@ -87,8 +107,15 @@ export default function ExplorePage() {
                 <h2 id="featured-heading" className="sr-only">
                     Featured content
                 </h2>
-                {exploreData.featured ? (
-                    <MediaCard media={exploreData.featured} variant="wide" />
+                {visibleExploreData.featured ? (
+                    <MediaCard
+                        media={visibleExploreData.featured}
+                        variant="wide"
+                        blurCover={
+                            contentVisibility === "blur" &&
+                            isRestrictedMedia(visibleExploreData.featured)
+                        }
+                    />
                 ) : (
                     <EmptyState
                         title="No featured content"
@@ -100,21 +127,26 @@ export default function ExplorePage() {
             {/* 3. Trending Now */}
             <section aria-labelledby="trending-heading" className="mb-8 space-y-4">
                 <SectionHeader title="Trending Now" />
-                <MediaCarousel items={exploreData.trending} label="Trending Now" />
+                <MediaCarousel
+                    items={visibleExploreData.trending}
+                    label="Trending Now"
+                    blurRestrictedContent={contentVisibility === "blur"}
+                />
             </section>
 
             {/* 4. Recommended (general selection — not personalized yet) */}
             <section aria-labelledby="recommended-heading" className="mb-8 space-y-4">
                 <SectionHeader title="Recommended for You" />
-                {exploreData.recommended.length === 0 ? (
+                {visibleExploreData.recommended.length === 0 ? (
                     <EmptyState
                         title="No recommendations yet"
                         description="Pick a few genres to get recommendations tailored to you."
                     />
                 ) : (
                     <MediaCarousel
-                        items={exploreData.recommended}
+                        items={visibleExploreData.recommended}
                         label="Recommended for You"
+                        blurRestrictedContent={contentVisibility === "blur"}
                     />
                 )}
             </section>
@@ -122,8 +154,8 @@ export default function ExplorePage() {
             {/* 5. Browse by Genre */}
             <section className="mb-8">
                 <GenreSelector
-                    genres={exploreData.genres}
-                    items={exploreData.discover}
+                    genres={visibleExploreData.genres}
+                    items={visibleExploreData.discover}
                 />
             </section>
 
@@ -143,7 +175,13 @@ export default function ExplorePage() {
                         >
                             {discoverItems.map((item) => (
                                 <li key={item.id}>
-                                    <MediaCard media={item} />
+                                    <MediaCard
+                                        media={item}
+                                        blurCover={
+                                            contentVisibility === "blur" &&
+                                            isRestrictedMedia(item)
+                                        }
+                                    />
                                 </li>
                             ))}
                         </ul>

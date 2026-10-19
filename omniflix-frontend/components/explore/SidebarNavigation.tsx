@@ -26,11 +26,10 @@ interface NavItem {
 
 const MAIN_NAVIGATION: readonly NavItem[] = [
     { label: "Explore", href: "/explore", Icon: CompassIcon },
-    // Catalog routes are future work — rendered as non-links for now.
-    { label: "Comics", Icon: BookOpenIcon },
-    { label: "Novels", Icon: BookOpenIcon },
-    { label: "Movies", Icon: FilmIcon },
-    { label: "Series", Icon: MonitorPlayIcon },
+    { label: "Comics", href: "/explore/comics", Icon: BookOpenIcon },
+    { label: "Novels", href: "/explore/novels", Icon: BookOpenIcon },
+    { label: "Movies", href: "/explore/movies", Icon: FilmIcon },
+    { label: "Series", href: "/explore/series", Icon: MonitorPlayIcon },
 ];
 
 const PROFILE_SOURCE_ROUTES = [
@@ -128,8 +127,10 @@ export function SidebarNavigation({ onNavigate }: SidebarNavigationProps) {
                     item={item}
                     isActive={
                         item.href !== undefined &&
-                        (pathname === item.href ||
-                            pathname?.startsWith(`${item.href}/`) === true)
+                        item.href === "/explore"
+                            ? pathname === item.href
+                            : pathname === item.href ||
+                                pathname?.startsWith(`${item.href}/`) === true
                     }
                     onClick={onNavigate}
                 />
