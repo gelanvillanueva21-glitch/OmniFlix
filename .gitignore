@@ -2,3 +2,8 @@
 *__pycache__
 *.venv
 *.note
+
+
+/suwayomi-data/
+/kavita-config/
+/novels-data/
