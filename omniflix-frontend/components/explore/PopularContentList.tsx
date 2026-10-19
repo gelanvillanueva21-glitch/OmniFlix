@@ -4,10 +4,12 @@ import { useState } from "react";
 import Image from "next/image";
 import { ImageIcon } from "@/components/icons/icons";
 import { mediaTypeLabel, type MediaItem } from "@/lib/media";
+import { ErrorState } from "./SectionHeader";
 
 interface PopularContentListProps {
     readonly title: string;
     readonly items: MediaItem[];
+    readonly error?: string;
 }
 
 /**
@@ -15,13 +17,15 @@ interface PopularContentListProps {
  * data source supplies it — popular mock data intentionally omits it so we
  * don't present fabricated popularity as real.
  */
-export function PopularContentList({ title, items }: PopularContentListProps) {
+export function PopularContentList({ title, items, error }: PopularContentListProps) {
     return (
         <section aria-label={title} className="space-y-3">
             <h2 className="font-[family-name:var(--font-space-grotesk)] text-sm font-semibold tracking-wide text-[#F5F5F5]">
                 {title}
             </h2>
-            {items.length === 0 ? (
+            {items.length === 0 && error !== undefined ? (
+                <ErrorState message={error} />
+            ) : items.length === 0 ? (
                 <p className="text-xs text-[#A1A1AA]">Nothing to show yet.</p>
             ) : (
                 <ol role="list" className="space-y-2.5">
