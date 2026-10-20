@@ -34,12 +34,12 @@ async function fetchSources(): Promise<ComicsSourcesResponse> {
 }
 
 async function fetchCatalog(
-    source: string,
+    sourceType: string,
     page: number,
     type: ComicsCatalogType,
     query?: string,
 ): Promise<ComicsCatalogResponse> {
-    const search = new URLSearchParams({ source, page: String(page), type });
+    const search = new URLSearchParams({ sourceType, page: String(page), type });
     if (query) search.set("query", query);
     const response = await fetch(`${COMICS_API}?${search.toString()}`);
     const payload = (await response.json()) as
@@ -73,7 +73,7 @@ export function useComicsSources() {
 }
 
 export function useComicsCatalog(
-    activeSourceId: string | null,
+    activeSourceType: string | null,
     browsePage: number,
     type: ComicsCatalogType,
     query: string,
@@ -83,21 +83,21 @@ export function useComicsCatalog(
         queryKey: [
             "comics",
             "catalog",
-            activeSourceId,
+            activeSourceType,
             type,
             browsePage,
             isSearchMode ? query : null,
         ],
         queryFn: () => {
-            if (!activeSourceId) throw new Error("No comic source selected.");
+            if (!activeSourceType) throw new Error("No comic source selected.");
             return fetchCatalog(
-                activeSourceId,
+                activeSourceType,
                 browsePage,
                 type,
                 isSearchMode ? query : undefined,
             );
         },
-        enabled: activeSourceId !== null,
+        enabled: activeSourceType !== null,
         staleTime: 5 * 60 * 1000,
         placeholderData: (previousData) => previousData,
         // Same-title comics from different sources/ids are distinct; exact ids are not.
@@ -112,21 +112,9 @@ export function useComicsCatalog(
  * Shared browsing state for the comics page: the selected source, the
  * submitted search query, and the current pagination page.
  */
-export function useComicsBrowseState(defaultSourceId: string | null) {
-    const [lastSelectedSourceId, setLastSelectedSourceId] = useState<
-        string | null
-    >(null);
+export function useComicsBrowseState(sourceType: string | null) {
     const [lastSubmittedQuery, setLastSubmittedQuery] = useState("");
     const [browsePage, setBrowsePage] = useState(1);
-
-    // Reset page and search whenever the effective source actually changes,
-    // comparing during render instead of via an effect.
-    const effectiveSourceId = lastSelectedSourceId ?? defaultSourceId;
-    if (lastSelectedSourceId !== effectiveSourceId) {
-        setLastSelectedSourceId(effectiveSourceId);
-        setLastSubmittedQuery("");
-        setBrowsePage(1);
-    }
 
     const submittedQuery = lastSubmittedQuery;
     const isSearchMode = submittedQuery !== "";
@@ -142,11 +130,10 @@ export function useComicsBrowseState(defaultSourceId: string | null) {
     }
 
     return {
-        activeSourceId: effectiveSourceId,
+        activeSourceType: sourceType,
         submittedQuery,
         isSearchMode,
         browsePage,
-        setSelectedSourceId: setLastSelectedSourceId,
         setBrowsePage,
         handleSearchSubmit,
         handleClearSearch,

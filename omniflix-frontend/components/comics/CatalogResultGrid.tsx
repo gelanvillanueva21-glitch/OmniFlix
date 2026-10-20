@@ -64,7 +64,9 @@ export function CatalogResultGrid({
             >
                 {items.map((item) => (
                     <li key={item.id}>
-                        <MediaCard media={item} />
+                        <MediaCard
+                            media={item}
+                        />
                     </li>
                 ))}
             </ul>

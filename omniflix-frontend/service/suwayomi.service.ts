@@ -17,6 +17,21 @@ interface SuwayomiSource {
     displayName: string;
 }
 
+const ALLOWED_NON_ENGLISH_SOURCES = new Set(["Comick (Unoriginal) (ALL)"]);
+export const COMICK_SOURCE_TYPE = "comick-unoriginal";
+
+function sourceTypeFromDisplayName(displayName: string): string {
+    if (displayName === "Comick (Unoriginal) (ALL)") {
+        return COMICK_SOURCE_TYPE;
+    }
+
+    return displayName
+        .toLowerCase()
+        .replace(/\([^)]*\)/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+}
+
 interface SuwayomiManga {
     id: number;
     title: string;
@@ -51,6 +66,7 @@ export interface SuwayomiCatalogPage {
 }
 
 export interface SuwayomiSourceInfo {
+    type: string;
     id: string;
     lang: string;
     displayName: string;
@@ -63,6 +79,27 @@ export interface SuwayomiSourceInfo {
  * requires the `query` input. All fields verified against the live server.
  */
 export async function fetchSuwayomiCatalog(
+    sourceType: string,
+    page: number,
+    type: "POPULAR" | "LATEST" | "SEARCH",
+    query?: string,
+): Promise<SuwayomiCatalogPage> {
+    const source = (await getSuwayomiSources()).find(
+        (candidate) => candidate.type === sourceType,
+    );
+    if (!source) {
+        throw new Error(`Unsupported comic source: ${sourceType}`);
+    }
+
+    return fetchSuwayomiCatalogById(
+        source.id,
+        page,
+        type,
+        query,
+    );
+}
+
+async function fetchSuwayomiCatalogById(
     sourceId: string,
     page: number,
     type: "POPULAR" | "LATEST" | "SEARCH",
@@ -103,21 +140,25 @@ export async function getSuwayomiSources(): Promise<SuwayomiSourceInfo[]> {
     );
     const sources = extensions.extensions.nodes
         .flatMap((extension) => extension.source.nodes)
+        .filter(
+            (source) =>
+                source.lang === "en" ||
+                ALLOWED_NON_ENGLISH_SOURCES.has(source.displayName),
+        )
         .filter((source, index, allSources) =>
             allSources.findIndex((candidate) => candidate.id === source.id) === index,
         );
 
     return sources
         .map((source) => ({
+            type: sourceTypeFromDisplayName(source.displayName),
             id: source.id,
             lang: source.lang,
             displayName: source.displayName,
             supportsLatest: source.supportsLatest,
         }))
         .sort((first, second) => {
-            // English sources first, then by display name for stable ordering.
-            if (first.lang === "en" && second.lang !== "en") return -1;
-            if (first.lang !== "en" && second.lang === "en") return 1;
+            // English sources plus explicitly allowed global sources are sorted by name.
             return first.displayName.localeCompare(second.displayName);
         });
 }
@@ -125,7 +166,10 @@ export async function getSuwayomiSources(): Promise<SuwayomiSourceInfo[]> {
 /** Explore route hook: popular/latest from the first responding English sources. */
 export async function getSuwayomiComics(limit = 12): Promise<MediaItem[]> {
     const sources = await getSuwayomiSources();
-    const englishSources = sources.filter((source) => source.lang === "en");
+    const englishSources = sources.filter(
+        (source) =>
+            source.lang === "en" && source.type !== COMICK_SOURCE_TYPE,
+    );
 
     const results: MediaItem[] = [];
     let failedSourceRequests = 0;
@@ -133,7 +177,7 @@ export async function getSuwayomiComics(limit = 12): Promise<MediaItem[]> {
     for (const source of englishSources.slice(0, 4)) {
         try {
             const response = await fetchSuwayomiCatalog(
-                source.id,
+                source.type,
                 1,
                 source.supportsLatest ? "LATEST" : "POPULAR",
             );

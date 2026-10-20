@@ -9,12 +9,7 @@ import { PopularContentList } from "@/components/explore/PopularContentList";
 import { SearchBar } from "@/components/explore/SearchBar";
 import { SectionHeader, EmptyState, ErrorState } from "@/components/explore/SectionHeader";
 import { ExploreContentSkeleton } from "@/components/explore/ExploreLoadingSkeleton";
-import { useAuth } from "@/components/auth/AuthProvider";
-import {
-    getRestrictedContentVisibility,
-    isRestrictedMedia,
-} from "@/lib/content-visibility";
-import { applyContentVisibility, type ExploreData } from "@/lib/explore";
+import type { ExploreData } from "@/lib/explore";
 
 const DISCOVER_PAGE_SIZE = 8;
 
@@ -26,7 +21,6 @@ const POPULAR_SECTIONS = [
 ] as const;
 
 export default function ExplorePage() {
-    const { user, isLoading: isAuthLoading } = useAuth();
     const [visibleDiscoverCount, setVisibleDiscoverCount] =
         useState(DISCOVER_PAGE_SIZE);
     const [exploreData, setExploreData] = useState<ExploreData | null>(null);
@@ -42,10 +36,6 @@ export default function ExplorePage() {
                 );
             });
     }, []);
-    const contentVisibility = getRestrictedContentVisibility(
-        user,
-        isAuthLoading,
-    );
     if (requestError) {
         return (
             <ExploreLayout>
@@ -61,10 +51,7 @@ export default function ExplorePage() {
             </ExploreLayout>
         );
     }
-    const visibleExploreData = applyContentVisibility(
-        exploreData,
-        contentVisibility,
-    );
+    const visibleExploreData = exploreData;
     const discoverItems = visibleExploreData.discover.slice(
         0,
         visibleDiscoverCount,
@@ -88,7 +75,6 @@ export default function ExplorePage() {
                     title={section.title}
                     items={visibleExploreData.popular[section.key]}
                     error={getSectionError(visibleExploreData, section.key)}
-                    blurRestrictedContent={contentVisibility === "blur"}
                 />
             ))}
         >
@@ -111,10 +97,6 @@ export default function ExplorePage() {
                     <MediaCard
                         media={visibleExploreData.featured}
                         variant="wide"
-                        blurCover={
-                            contentVisibility === "blur" &&
-                            isRestrictedMedia(visibleExploreData.featured)
-                        }
                     />
                 ) : (
                     <EmptyState
@@ -130,7 +112,6 @@ export default function ExplorePage() {
                 <MediaCarousel
                     items={visibleExploreData.trending}
                     label="Trending Now"
-                    blurRestrictedContent={contentVisibility === "blur"}
                 />
             </section>
 
@@ -146,7 +127,6 @@ export default function ExplorePage() {
                     <MediaCarousel
                         items={visibleExploreData.recommended}
                         label="Recommended for You"
-                        blurRestrictedContent={contentVisibility === "blur"}
                     />
                 )}
             </section>
@@ -177,10 +157,6 @@ export default function ExplorePage() {
                                 <li key={item.id}>
                                     <MediaCard
                                         media={item}
-                                        blurCover={
-                                            contentVisibility === "blur" &&
-                                            isRestrictedMedia(item)
-                                        }
                                     />
                                 </li>
                             ))}

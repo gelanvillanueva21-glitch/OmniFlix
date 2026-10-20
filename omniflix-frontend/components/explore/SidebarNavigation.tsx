@@ -26,7 +26,7 @@ interface NavItem {
 
 const MAIN_NAVIGATION: readonly NavItem[] = [
     { label: "Explore", href: "/explore", Icon: CompassIcon },
-    { label: "Comics", href: "/explore/comics", Icon: BookOpenIcon },
+    { label: "Comics", href: "/explore/comics/asura-scans", Icon: BookOpenIcon },
     { label: "Novels", href: "/explore/novels", Icon: BookOpenIcon },
     { label: "Movies", href: "/explore/movies", Icon: FilmIcon },
     { label: "Series", href: "/explore/series", Icon: MonitorPlayIcon },

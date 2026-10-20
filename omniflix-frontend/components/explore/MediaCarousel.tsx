@@ -3,13 +3,11 @@
 import { useRef } from "react";
 import { MediaCard } from "./MediaCard";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons/icons";
-import { isRestrictedMedia } from "@/lib/content-visibility";
 import type { MediaItem } from "@/lib/media";
 
 interface MediaCarouselProps {
     readonly items: MediaItem[];
     readonly label: string;
-    readonly blurRestrictedContent?: boolean;
 }
 
 /**
@@ -19,7 +17,6 @@ interface MediaCarouselProps {
 export function MediaCarousel({
     items,
     label,
-    blurRestrictedContent = false,
 }: MediaCarouselProps) {
     const trackRef = useRef<HTMLUListElement>(null);
 
@@ -48,9 +45,6 @@ export function MediaCarousel({
                     >
                         <MediaCard
                             media={item}
-                            blurCover={
-                                blurRestrictedContent && isRestrictedMedia(item)
-                            }
                         />
                     </li>
                 ))}

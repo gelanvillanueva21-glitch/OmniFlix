@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ImageIcon } from "@/components/icons/icons";
-import { isRestrictedMedia } from "@/lib/content-visibility";
 import { mediaTypeLabel, type MediaItem } from "@/lib/media";
 import { ErrorState } from "./SectionHeader";
 
@@ -11,7 +10,6 @@ interface PopularContentListProps {
     readonly title: string;
     readonly items: MediaItem[];
     readonly error?: string;
-    readonly blurRestrictedContent?: boolean;
 }
 
 /**
@@ -23,7 +21,6 @@ export function PopularContentList({
     title,
     items,
     error,
-    blurRestrictedContent = false,
 }: PopularContentListProps) {
     return (
         <section aria-label={title} className="space-y-3">
@@ -41,9 +38,6 @@ export function PopularContentList({
                             key={item.id}
                             item={item}
                             rank={index + 1}
-                            blurCover={
-                                blurRestrictedContent && isRestrictedMedia(item)
-                            }
                         />
                     ))}
                 </ol>
@@ -55,11 +49,9 @@ export function PopularContentList({
 function PopularListItem({
     item,
     rank,
-    blurCover,
 }: {
     item: MediaItem;
     rank: number;
-    blurCover: boolean;
 }) {
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = item.coverImage !== undefined && !imageFailed;
@@ -79,7 +71,7 @@ function PopularListItem({
                         alt=""
                         fill
                         sizes="32px"
-                        className={`object-cover ${blurCover ? "scale-110 blur-md" : ""}`}
+                        className="object-cover"
                         onError={() => setImageFailed(true)}
                     />
                 ) : (
