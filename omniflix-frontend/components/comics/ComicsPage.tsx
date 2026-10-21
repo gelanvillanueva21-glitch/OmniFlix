@@ -97,9 +97,8 @@ function ComicsPageContent({
     );
 
     const catalogItems = catalogQuery.data?.items ?? [];
-    const visibleCatalogItems = catalogItems;
-    const featuredItem = visibleCatalogItems[0];
-    const carouselItems = visibleCatalogItems.slice(0, 12);
+    const featuredItem = catalogItems[0];
+    const carouselItems = catalogItems.slice(0, 12);
 
     if (isAuthLoading && sourceType === COMICK_SOURCE_TYPE) {
         return (
@@ -189,7 +188,7 @@ function ComicsPageContent({
                 <SearchResultsSection
                     submittedQuery={submittedQuery}
                     sourceHeading={sourceHeading}
-                    catalogItems={visibleCatalogItems}
+                    catalogItems={catalogItems}
                     catalogQuery={catalogQuery}
                     browsePage={browsePage}
                     onClearSearch={handleClearSearch}
@@ -198,7 +197,7 @@ function ComicsPageContent({
             ) : (
                 <BrowseSections
                     sourceHeading={sourceHeading}
-                    catalogItems={visibleCatalogItems}
+                    catalogItems={catalogItems}
                     carouselItems={carouselItems}
                     featuredItem={featuredItem}
                     catalogQuery={catalogQuery}

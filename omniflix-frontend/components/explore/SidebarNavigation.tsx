@@ -130,35 +130,36 @@ interface SidebarNavigationProps {
 export function SidebarNavigation({ onNavigate }: SidebarNavigationProps) {
     const pathname = usePathname();
 
+    function isActive(item: NavItem): boolean {
+        if (item.href === undefined) return false;
+        // Comics highlights for the whole /explore/comics/* subtree because
+        // the sidebar links to a default source route, not the index.
+        if (item.href.startsWith("/explore/comics")) {
+            return pathname === "/explore/comics" ||
+                pathname?.startsWith("/explore/comics/") === true;
+        }
+        // "/explore" is the parent of every other section, so it must only
+        // match exactly — otherwise it would be active on /explore/comics/*,
+        // /explore/novels, etc. and steal the highlight (and get disabled).
+        if (item.href === "/explore") {
+            return pathname === "/explore";
+        }
+        return pathname === item.href || pathname?.startsWith(`${item.href}/`) === true;
+    }
+
     return (
         <nav aria-label="Main navigation" className="space-y-1">
             <p className="px-4 pb-2 text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase">
                 Browse
             </p>
             {MAIN_NAVIGATION.map((item) => (
-                (() => {
-                    const isComicsRoute =
-                        pathname === "/explore/comics" ||
-                        pathname?.startsWith("/explore/comics/") === true;
-                    const isActive =
-                        item.href !== undefined &&
-                        (item.href === "/explore"
-                            ? pathname === item.href
-                            : item.label === "Comics"
-                              ? isComicsRoute
-                              : pathname === item.href ||
-                                pathname?.startsWith(`${item.href}/`) === true);
-
-                    return (
-                        <NavButton
-                            key={item.label}
-                            item={item}
-                            isActive={isActive}
-                            isDisabled={isActive}
-                            onClick={onNavigate}
-                        />
-                    );
-                })()
+                <NavButton
+                    key={item.label}
+                    item={item}
+                    isActive={isActive(item)}
+                    isDisabled={isActive(item)}
+                    onClick={onNavigate}
+                />
             ))}
         </nav>
     );

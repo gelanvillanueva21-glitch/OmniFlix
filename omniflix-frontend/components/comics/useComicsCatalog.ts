@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { MediaItem } from "@/lib/media";
 import type { SuwayomiSourceInfo } from "@/service/suwayomi.service";
@@ -56,12 +56,7 @@ async function fetchCatalog(
 
 /** Same-title comics from different sources/ids are distinct; exact ids are not. */
 function dedupeById(items: MediaItem[]): MediaItem[] {
-    const seen = new Set<string>();
-    return items.filter((item) => {
-        if (seen.has(item.id)) return false;
-        seen.add(item.id);
-        return true;
-    });
+    return [...new Map(items.map((item) => [item.id, item])).values()];
 }
 
 export function useComicsSources() {
@@ -113,20 +108,20 @@ export function useComicsCatalog(
  * submitted search query, and the current pagination page.
  */
 export function useComicsBrowseState(sourceType: string | null) {
-    const [lastSubmittedQuery, setLastSubmittedQuery] = useState("");
+    const [submittedQuery, setSubmittedQuery] = useState("");
     const [browsePage, setBrowsePage] = useState(1);
 
-    const submittedQuery = lastSubmittedQuery;
+    
     const isSearchMode = submittedQuery !== "";
 
     function handleSearchSubmit(query: string) {
         setBrowsePage(1);
-        setLastSubmittedQuery(query);
+        setSubmittedQuery(query);
     }
 
     function handleClearSearch() {
         setBrowsePage(1);
-        setLastSubmittedQuery("");
+        setSubmittedQuery("");
     }
 
     return {
@@ -138,13 +133,4 @@ export function useComicsBrowseState(sourceType: string | null) {
         handleSearchSubmit,
         handleClearSearch,
     };
-}
-
-export function useDedupedCatalogItems(
-    catalogQuery: ReturnType<typeof useComicsCatalog>,
-) {
-    return useMemo(
-        () => dedupeById(catalogQuery.data?.items ?? []),
-        [catalogQuery.data],
-    );
 }

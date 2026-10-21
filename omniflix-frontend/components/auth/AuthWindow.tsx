@@ -108,7 +108,7 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
             if (error instanceof ApiError) {
                 setSignUpErrorMessage(error.message);
             } else {
-                console.log(error);
+                console.error(error);
                 setSignUpErrorMessage("Something went wrong. Please try again.");
             }
         } finally {

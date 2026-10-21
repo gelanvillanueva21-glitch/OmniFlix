@@ -72,30 +72,37 @@ async function settleList<T>(
     } catch (error) {
         return {
             items: [],
-            error: error instanceof Error ? 
-                error.message : "Provider failed.",
+            // Provider error messages can embed internal hostnames/URLs; log
+            // server-side and send a generic message to the browser.
+            error: logAndSummarize(error),
         };
     }
 }
 
 async function settleMedia(
-    promise: Promise<{ 
-        movies: MediaItem[]; 
-        series: MediaItem[] 
+    promise: Promise<{
+        movies: MediaItem[];
+        series: MediaItem[]
     }>,
-): Promise<ProviderResult<{ 
-    movies: MediaItem[]; 
-    series: MediaItem[] 
+): Promise<ProviderResult<{
+    movies: MediaItem[];
+    series: MediaItem[]
 }>> {
     try {
         return { items: await promise };
     } catch (error) {
         return {
             items: { movies: [], series: [] },
-            error: error instanceof Error ? 
-                error.message : "Provider failed.",
+            error: logAndSummarize(error),
         };
     }
+}
+
+function logAndSummarize(error: unknown): string {
+    if (error instanceof Error) {
+        console.error("[api/explore] provider failed:", error.message);
+    }
+    return "A content provider is unavailable right now.";
 }
 
 function createGenres(mediaItems: MediaItem[]): Genre[] {

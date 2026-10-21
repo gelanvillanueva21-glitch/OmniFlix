@@ -10,18 +10,15 @@ export async function GET(request: NextRequest) {
         const path = request.nextUrl.searchParams.get("path");
         const baseUrl = serverProviderUrl("NEXT_PUBLIC_SUWAYOMI_API_URL", "suwayomi", 4567);
 
-        if (
-            !baseUrl || 
-            !path || 
-            (!path.startsWith("/") 
-            && !path.startsWith("http"))
-        ) 
+        // Only same-origin absolute paths are proxied. Previously an absolute
+        // `http(s)://…` path was fetched verbatim, which let anyone turn this
+        // route into an open SSRF relay against internal services.
+        if (!baseUrl || !path || !path.startsWith("/"))
             return new NextResponse(
-                null, 
+                null,
                 { status: 400 }
             );
-
-        imageUrl = path.startsWith("http") ? path : `${baseUrl}${path}`;
+        imageUrl = `${baseUrl}${path}`;
     } else if (provider === "kavita") {
         const identifier = request.nextUrl.searchParams.get("id");
         const baseUrl = serverProviderUrl(

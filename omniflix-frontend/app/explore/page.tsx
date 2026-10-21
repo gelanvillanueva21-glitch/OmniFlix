@@ -51,13 +51,12 @@ export default function ExplorePage() {
             </ExploreLayout>
         );
     }
-    const visibleExploreData = exploreData;
-    const discoverItems = visibleExploreData.discover.slice(
+    const discoverItems = exploreData.discover.slice(
         0,
         visibleDiscoverCount,
     );
     const hasMoreDiscover =
-        visibleDiscoverCount < visibleExploreData.discover.length;
+        visibleDiscoverCount < exploreData.discover.length;
 
     return (
         <ExploreLayout
@@ -73,8 +72,8 @@ export default function ExplorePage() {
                 <PopularContentList
                     key={section.key}
                     title={section.title}
-                    items={visibleExploreData.popular[section.key]}
-                    error={getSectionError(visibleExploreData, section.key)}
+                    items={exploreData.popular[section.key]}
+                    error={getSectionError(exploreData, section.key)}
                 />
             ))}
         >
@@ -93,9 +92,9 @@ export default function ExplorePage() {
                 <h2 id="featured-heading" className="sr-only">
                     Featured content
                 </h2>
-                {visibleExploreData.featured ? (
+                {exploreData.featured ? (
                     <MediaCard
-                        media={visibleExploreData.featured}
+                        media={exploreData.featured}
                         variant="wide"
                     />
                 ) : (
@@ -110,7 +109,7 @@ export default function ExplorePage() {
             <section aria-labelledby="trending-heading" className="mb-8 space-y-4">
                 <SectionHeader title="Trending Now" />
                 <MediaCarousel
-                    items={visibleExploreData.trending}
+                    items={exploreData.trending}
                     label="Trending Now"
                 />
             </section>
@@ -118,14 +117,14 @@ export default function ExplorePage() {
             {/* 4. Recommended (general selection — not personalized yet) */}
             <section aria-labelledby="recommended-heading" className="mb-8 space-y-4">
                 <SectionHeader title="Recommended for You" />
-                {visibleExploreData.recommended.length === 0 ? (
+                {exploreData.recommended.length === 0 ? (
                     <EmptyState
                         title="No recommendations yet"
                         description="Pick a few genres to get recommendations tailored to you."
                     />
                 ) : (
                     <MediaCarousel
-                        items={visibleExploreData.recommended}
+                        items={exploreData.recommended}
                         label="Recommended for You"
                     />
                 )}
@@ -134,8 +133,8 @@ export default function ExplorePage() {
             {/* 5. Browse by Genre */}
             <section className="mb-8">
                 <GenreSelector
-                    genres={visibleExploreData.genres}
-                    items={visibleExploreData.discover}
+                    genres={exploreData.genres}
+                    items={exploreData.discover}
                 />
             </section>
 
