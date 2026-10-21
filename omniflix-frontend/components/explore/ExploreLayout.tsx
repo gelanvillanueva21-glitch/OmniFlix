@@ -68,7 +68,7 @@ export function ExploreLayout({ children, utilities, popular }: ExploreLayoutPro
                 </main>
 
                 {hasRightContent && (
-                    <aside className="hidden w-80 shrink-0 border-l border-[#29292E] bg-[#171719]/50 px-5 py-8 xl:block">
+                    <aside className="sticky top-0 hidden h-screen w-80 shrink-0 overflow-y-auto border-l border-[#29292E] bg-[#171719] px-5 py-8 xl:block">
                         {utilities}
                         {popular !== undefined && (
                             <div className="mt-8 space-y-8 border-t border-[#29292E] pt-6">

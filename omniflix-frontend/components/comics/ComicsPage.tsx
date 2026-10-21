@@ -167,11 +167,13 @@ function ComicsPageContent({
                         selectedType={activeSource.type}
                         onSelect={onSelectSource}
                     />
-                    <PopularContentList
-                        title={`Popular on ${sourceHeading}`}
-                        items={carouselItems}
-                    />
                 </div>
+            }
+            popular={
+                <PopularContentList
+                    title={`Popular on ${sourceHeading}`}
+                    items={carouselItems}
+                />
             }
         >
             <header className="mb-6">

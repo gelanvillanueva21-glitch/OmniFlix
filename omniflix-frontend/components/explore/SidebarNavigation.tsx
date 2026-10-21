@@ -66,10 +66,12 @@ export function SidebarLogo() {
 function NavButton({
     item,
     isActive,
+    isDisabled,
     onClick,
 }: {
     item: NavItem;
     isActive?: boolean;
+    isDisabled?: boolean;
     onClick?: () => void;
 }) {
     const { Icon } = item;
@@ -90,6 +92,18 @@ function NavButton({
                 className={`flex min-h-11 cursor-not-allowed items-center gap-3.5 rounded-lg px-4 text-sm opacity-60 ${classes}`}
                 aria-disabled="true"
                 title="Coming soon"
+            >
+                {inner}
+            </span>
+        );
+    }
+
+    if (isDisabled) {
+        return (
+            <span
+                className={`flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm transition-colors ${classes}`}
+                aria-current={isActive ? "page" : undefined}
+                aria-disabled="true"
             >
                 {inner}
             </span>
@@ -122,18 +136,29 @@ export function SidebarNavigation({ onNavigate }: SidebarNavigationProps) {
                 Browse
             </p>
             {MAIN_NAVIGATION.map((item) => (
-                <NavButton
-                    key={item.label}
-                    item={item}
-                    isActive={
+                (() => {
+                    const isComicsRoute =
+                        pathname === "/explore/comics" ||
+                        pathname?.startsWith("/explore/comics/") === true;
+                    const isActive =
                         item.href !== undefined &&
-                        item.href === "/explore"
+                        (item.href === "/explore"
                             ? pathname === item.href
-                            : pathname === item.href ||
-                                pathname?.startsWith(`${item.href}/`) === true
-                    }
-                    onClick={onNavigate}
-                />
+                            : item.label === "Comics"
+                              ? isComicsRoute
+                              : pathname === item.href ||
+                                pathname?.startsWith(`${item.href}/`) === true);
+
+                    return (
+                        <NavButton
+                            key={item.label}
+                            item={item}
+                            isActive={isActive}
+                            isDisabled={isActive}
+                            onClick={onNavigate}
+                        />
+                    );
+                })()
             ))}
         </nav>
     );
