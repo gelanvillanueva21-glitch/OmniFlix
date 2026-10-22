@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getJikanAnime } from "@/service/jikan.service";
-import { getKavitaSeries } from "@/service/kavita.service";
 import { getLncrawlNovels } from "@/service/lncrawl.service";
 import { getSuwayomiComics } from "@/service/suwayomi.service";
 import { getTmdbMedia } from "@/service/tmdb.service";
@@ -11,32 +10,28 @@ import type { Genre, MediaItem } from "@/lib/media";
 interface ProviderResult<T> { items: T; error?: string; }
 
 export async function GET() {
-    const [comics, lncrawlNovels, kavitaNovels, tmdb, anime] = await Promise.all([
+    // Novels come exclusively from the LNcrawl server (Kavita is retired
+    // as a novel source; the service file stays for potential other uses).
+    const [comics, lncrawlNovels, tmdb, anime] = await Promise.all([
         settleList(getSuwayomiComics()),
-        settleList(getLncrawlNovels()),
-        settleList(getKavitaSeries()),
+        settleList(getLncrawlNovels().then((page) => page.items)),
         settleMedia(getTmdbMedia()),
         settleList(getJikanAnime()),
     ]);
 
-    const novels = uniqueMediaItems(
-        [
-            ...lncrawlNovels.items, 
-            ...kavitaNovels.items
-        ]
-    );
+    const novels = uniqueMediaItems(lncrawlNovels.items);
     const movies = tmdb.items.movies;
     const series = uniqueMediaItems(
         [
-            ...tmdb.items.series, 
+            ...tmdb.items.series,
             ...anime.items
         ]
     );
     const allItems = uniqueMediaItems(
         [
-            ...comics.items, 
-            ...novels, 
-            ...movies, 
+            ...comics.items,
+            ...novels,
+            ...movies,
             ...series
         ]);
 
@@ -46,16 +41,15 @@ export async function GET() {
         recommended: allItems.slice(12, 24),
         genres: createGenres(allItems),
         discover: allItems,
-        popular: { 
-            comics: comics.items, 
-            novels, 
-            movies, 
-            series 
+        popular: {
+            comics: comics.items,
+            novels,
+            movies,
+            series
         },
         errors: {
             comics: comics.error,
             lncrawl: lncrawlNovels.error,
-            kavita: kavitaNovels.error,
             tmdb: tmdb.error,
             jikan: anime.error,
         },

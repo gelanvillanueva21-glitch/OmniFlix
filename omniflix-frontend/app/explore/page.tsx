@@ -205,7 +205,8 @@ function getSectionError(
     }
 
     if (sectionKey === "novels") {
-        return exploreData.errors.kavita ?? exploreData.errors.lncrawl;
+        // Novels are served exclusively by LNcrawl now.
+        return exploreData.errors.lncrawl;
     }
 
     if (sectionKey === "movies") {

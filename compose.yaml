@@ -141,20 +141,6 @@ services:
     environment:
       - TZ=Asia/Manila
 
-  kavita:
-    image: lscr.io/linuxserver/kavita:latest
-    container_name: kavita-omniflix-server
-    restart: unless-stopped
-    ports:
-      - "5001:5000"
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Asia/Manila
-    volumes:
-      - ./kavita-config:/config
-      - ./novels-data:/novels
-
 
   lncrawl:
     image: ghcr.io/lncrawl/lightnovel-crawler:latest

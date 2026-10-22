@@ -100,6 +100,19 @@ function ComicsPageContent({
     const featuredItem = catalogItems[0];
     const carouselItems = catalogItems.slice(0, 12);
 
+    // Sidebar popular content has its OWN catalog query, pinned to the
+    // browse (POPULAR) flow. It shares the react-query cache entry with the
+    // initial popular fetch, so no extra request is made — but its data can
+    // never be replaced by search results, which live under different keys.
+    const popularCatalogQuery = useComicsCatalog(
+        activeSource?.type ?? null,
+        1,
+        "POPULAR",
+        "",
+        false,
+    );
+    const popularItems = popularCatalogQuery.data?.items.slice(0, 12) ?? [];
+
     if (isAuthLoading && sourceType === COMICK_SOURCE_TYPE) {
         return (
             <ExploreLayout>
@@ -171,7 +184,7 @@ function ComicsPageContent({
             popular={
                 <PopularContentList
                     title={`Popular on ${sourceHeading}`}
-                    items={carouselItems}
+                    items={popularItems}
                 />
             }
         >

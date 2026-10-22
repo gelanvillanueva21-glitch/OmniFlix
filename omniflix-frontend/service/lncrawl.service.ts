@@ -1,4 +1,5 @@
 import type { MediaItem } from "@/lib/media";
+import { htmlToText } from "@/lib/html";
 import {
     configuredEnvironmentValue,
     providerRequest,
@@ -27,7 +28,15 @@ interface LncrawlListResponse {
     total?: number;
 }
 
-export async function getLncrawlNovels(limit = 12): Promise<MediaItem[]> {
+export interface LncrawlNovelsPage {
+    items: MediaItem[];
+    total: number;
+}
+
+export async function getLncrawlNovels(
+    limit = 12,
+    offset = 0,
+): Promise<LncrawlNovelsPage> {
     const baseUrl = serverProviderUrl("NEXT_PUBLIC_LNCRAWL_API_URL", "lncrawl", 8181);
     const username = configuredEnvironmentValue("LNCRAWL_USERNAME");
     const password = configuredEnvironmentValue("LNCRAWL_PASSWORD");
@@ -65,7 +74,7 @@ export async function getLncrawlNovels(limit = 12): Promise<MediaItem[]> {
     }
 
     const response = await providerRequest<LncrawlListResponse | LncrawlNovel[]>(
-        `${baseUrl}/api/novels?limit=${limit}&offset=0&sort=updated`,
+        `${baseUrl}/api/novels?limit=${limit}&offset=${Math.max(offset, 0)}&sort=updated`,
         { headers:
             { Authorization: `Bearer ${accessToken}` }
         },
@@ -74,18 +83,23 @@ export async function getLncrawlNovels(limit = 12): Promise<MediaItem[]> {
         ? response
         : response.items ?? response.novels ?? [];
 
-    return novels.flatMap((novel) => {
-        const title = novel.title ?? novel.name;
-        const identifier = novel.id;
-        if (!title || identifier === undefined)
-            return [];
+    return {
+        items: novels.flatMap((novel) => {
+            const title = novel.title ?? novel.name;
+            const identifier = novel.id;
+            if (!title || identifier === undefined)
+                return [];
 
-        return [mapNovelToMediaItem(
-            novel,
-            title,
-            identifier
-        )];
-    });
+            return [mapNovelToMediaItem(
+                novel,
+                title,
+                identifier
+            )];
+        }),
+        total: Array.isArray(response)
+            ? novels.length
+            : (response.total ?? novels.length),
+    };
 }
 
 /**
@@ -168,7 +182,9 @@ function mapNovelToMediaItem(
         title,
         type: "novels",
         coverImage: novel.thumbnail ?? novel.cover ?? novel.cover_url,
-        description: novel.description ?? novel.synopsis,
+        // LNcrawl synopses arrive as HTML (often wrapped per-paragraph in
+        // <p><html><body>…); normalize to plain text before caching/serving.
+        description: htmlToText(novel.description ?? novel.synopsis) || undefined,
         genres: novel.tags,
         releaseYear: releaseYear,
         rating: novel.popularity,
