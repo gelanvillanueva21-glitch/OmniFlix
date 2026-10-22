@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { MediaItem } from "@/lib/media";
 import type { SuwayomiSourceInfo } from "@/service/suwayomi.service";
 
@@ -55,7 +55,7 @@ async function fetchCatalog(
 }
 
 /** Same-title comics from different sources/ids are distinct; exact ids are not. */
-function dedupeById(items: MediaItem[]): MediaItem[] {
+export function dedupeById(items: MediaItem[]): MediaItem[] {
     return [...new Map(items.map((item) => [item.id, item])).values()];
 }
 
@@ -63,6 +63,38 @@ export function useComicsSources() {
     return useQuery({
         queryKey: ["comics", "sources"],
         queryFn: fetchSources,
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+export function useComicsInfiniteCatalog(
+    activeSourceType: string | null,
+    type: ComicsCatalogType,
+    query: string,
+    isSearchMode: boolean,
+) {
+    return useInfiniteQuery({
+        queryKey: [
+            "comics",
+            "catalog",
+            "infinite",
+            activeSourceType,
+            type,
+            isSearchMode ? query : null,
+        ],
+        queryFn: ({ pageParam }) => {
+            if (!activeSourceType) throw new Error("No comic source selected.");
+            return fetchCatalog(
+                activeSourceType,
+                pageParam,
+                type,
+                isSearchMode ? query : undefined,
+            );
+        },
+        initialPageParam: 1,
+        getNextPageParam: (lastPage, allPages) =>
+            lastPage.hasNextPage ? allPages.length + 1 : undefined,
+        enabled: activeSourceType !== null,
         staleTime: 5 * 60 * 1000,
     });
 }

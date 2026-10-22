@@ -47,8 +47,8 @@ export async function GET(request: NextRequest) {
             // is known; a short page signals the end when it is not.
             hasNextPage:
                 total > 0
-                    ? offset + uniqueNovels.length < total
-                    : uniqueNovels.length === limitParam,
+                    ? offset + items.length < total
+                    : items.length === limitParam,
         };
         return NextResponse.json(response);
     } catch (error) {

@@ -65,6 +65,10 @@ export default function NovelsPage() {
     const novels = dedupeById(
         novelsQuery.data?.pages.flatMap((page) => page.items) ?? [],
     );
+
+
+    const popularNovels = novelsQuery.data?.pages.flatMap((page) => page.items) ?? [];
+
     const featuredItem = novels[0];
     const carouselItems = novels.slice(0, NOVELS_PAGE_SIZE);
 
@@ -79,7 +83,7 @@ export default function NovelsPage() {
             popular={
                 <PopularContentList
                     title="Popular Novels"
-                    items={novels}
+                    items={popularNovels}
                     error={
                         novelsQuery.isError
                             ? "Novel providers could not be loaded."

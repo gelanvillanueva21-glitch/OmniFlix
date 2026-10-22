@@ -22,8 +22,10 @@ import { CatalogResultGrid } from "@/components/comics/CatalogResultGrid";
 import { LoadMoreControl } from "@/components/comics/LoadMoreControl";
 import { SourceSelector } from "@/components/comics/SourceSelector";
 import {
+    dedupeById,
     useComicsBrowseState,
     useComicsCatalog,
+    useComicsInfiniteCatalog,
     useComicsSources,
 } from "@/components/comics/useComicsCatalog";
 import type { MediaItem } from "@/lib/media";
@@ -79,8 +81,6 @@ function ComicsPageContent({
         activeSourceType,
         submittedQuery,
         isSearchMode,
-        browsePage,
-        setBrowsePage,
         handleSearchSubmit,
         handleClearSearch,
     } = useComicsBrowseState(sourceType);
@@ -88,17 +88,19 @@ function ComicsPageContent({
     const activeSource = visibleSources.find(
         (source) => source.type === activeSourceType,
     );
-    const catalogQuery = useComicsCatalog(
+    const catalogQuery = useComicsInfiniteCatalog(
         activeSource?.type ?? null,
-        browsePage,
         isSearchMode ? "SEARCH" : "POPULAR",
         submittedQuery,
         isSearchMode,
     );
 
-    const catalogItems = catalogQuery.data?.items ?? [];
-    const featuredItem = catalogItems[0];
-    const carouselItems = catalogItems.slice(0, 12);
+    const catalogItems = dedupeById(
+        catalogQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    );
+    const firstPageItems = catalogQuery.data?.pages[0]?.items ?? [];
+    const featuredItem = firstPageItems[0];
+    const carouselItems = firstPageItems.slice(0, 12);
 
     // Sidebar popular content has its OWN catalog query, pinned to the
     // browse (POPULAR) flow. It shares the react-query cache entry with the
@@ -203,9 +205,8 @@ function ComicsPageContent({
                     sourceHeading={sourceHeading}
                     catalogItems={catalogItems}
                     catalogQuery={catalogQuery}
-                    browsePage={browsePage}
                     onClearSearch={handleClearSearch}
-                    onLoadMore={() => setBrowsePage((page) => page + 1)}
+                    onLoadMore={() => catalogQuery.fetchNextPage()}
                 />
             ) : (
                 <BrowseSections
@@ -214,8 +215,7 @@ function ComicsPageContent({
                     carouselItems={carouselItems}
                     featuredItem={featuredItem}
                     catalogQuery={catalogQuery}
-                    browsePage={browsePage}
-                    onLoadMore={() => setBrowsePage((page) => page + 1)}
+                    onLoadMore={() => catalogQuery.fetchNextPage()}
                 />
             )}
         </ExploreLayout>
@@ -225,8 +225,7 @@ function ComicsPageContent({
 interface CatalogSectionProps {
     sourceHeading: string;
     catalogItems: MediaItem[];
-    catalogQuery: ReturnType<typeof useComicsCatalog>;
-    browsePage: number;
+    catalogQuery: ReturnType<typeof useComicsInfiniteCatalog>;
     onLoadMore: () => void;
 }
 
@@ -235,7 +234,6 @@ function SearchResultsSection({
     sourceHeading,
     catalogItems,
     catalogQuery,
-    browsePage,
     onClearSearch,
     onLoadMore,
 }: CatalogSectionProps & {
@@ -263,8 +261,8 @@ function SearchResultsSection({
                 emptyDescription={`No results found on ${sourceHeading} for “${submittedQuery}”.`}
             />
             <LoadMoreControl
-                hasNextPage={catalogQuery.data?.hasNextPage ?? false}
-                isFetchingNextPage={catalogQuery.isFetching && browsePage > 1}
+                hasNextPage={catalogQuery.hasNextPage ?? false}
+                isFetchingNextPage={catalogQuery.isFetchingNextPage}
                 onLoadMore={onLoadMore}
             />
         </section>
@@ -277,7 +275,6 @@ function BrowseSections({
     carouselItems,
     featuredItem,
     catalogQuery,
-    browsePage,
     onLoadMore,
 }: CatalogSectionProps & {
     carouselItems: MediaItem[];
@@ -335,8 +332,8 @@ function BrowseSections({
                     }
                 />
                 <LoadMoreControl
-                    hasNextPage={catalogQuery.data?.hasNextPage ?? false}
-                    isFetchingNextPage={catalogQuery.isFetching && browsePage > 1}
+                    hasNextPage={catalogQuery.hasNextPage ?? false}
+                    isFetchingNextPage={catalogQuery.isFetchingNextPage}
                     onLoadMore={onLoadMore}
                 />
             </section>

@@ -16,6 +16,49 @@ interface TmdbResponse {
     results?: TmdbResult[];
 }
 
+export interface TmdbMoviesPage {
+    items: MediaItem[];
+    totalPages: number;
+}
+
+/**
+ * Popular movies for the Movies Explore section.
+ *
+ * Returns only the `/movie/popular` results mapped to MediaItem — no
+ * trending, TV, or search data is mixed in. `page` follows TMDB's native
+ * pagination so Browse content can append subsequent pages.
+ */
+export async function getPopularTmdbMovies(
+    limit = 12,
+    page = 1,
+): Promise<TmdbMoviesPage> {
+    const baseUrl = configuredEnvironmentValue("NEXT_PUBLIC_TMDB_API_URL");
+    const token = configuredEnvironmentValue("TMDB_READ_ACCESS_TOKEN", "NEXT_PUBLIC_TOKEN_TMBD");
+    const apiKey = configuredEnvironmentValue("TMDB_API_KEY", "NEXT_PUBLIC_API_KEY");
+    if (!baseUrl || (!token && !apiKey)) {
+        throw new Error("TMDB URL or credential is not configured.");
+    }
+
+    const headers = token?.split(".").length === 3
+        ? { Authorization: `Bearer ${token}` }
+        : undefined;
+    const query = apiKey && !headers
+        ? `&api_key=${encodeURIComponent(apiKey)}`
+        : "";
+
+    const safePage = Math.max(page, 1);
+    const response = await providerRequest<
+        TmdbResponse & { total_pages?: number }
+    >(
+        `${baseUrl}/movie/popular?language=en-US&page=${safePage}${query}`,
+        { headers },
+    );
+    return {
+        items: mapResults(response.results, "movies", limit),
+        totalPages: response.total_pages ?? 1,
+    };
+}
+
 interface TmdbMedia {
     movies: MediaItem[];
     series: MediaItem[];
