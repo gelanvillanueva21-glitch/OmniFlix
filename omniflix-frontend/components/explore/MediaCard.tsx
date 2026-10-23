@@ -16,7 +16,10 @@ interface MediaCardProps {
  * Image failures degrade to a neutral placeholder — the UI never depends on
  * a specific image host.
  */
-export function MediaCard({ media, variant = "poster" }: MediaCardProps) {
+export function MediaCard({
+    media,
+    variant = "poster",
+}: MediaCardProps) {
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = media.coverImage !== undefined && !imageFailed;
 

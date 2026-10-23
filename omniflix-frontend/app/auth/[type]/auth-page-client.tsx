@@ -23,9 +23,8 @@ export default function AuthPageClient({ mode }: AuthPageClientProps) {
 
     useEffect(() => {
         if (isLoading) return;
-
         if (user) router.replace("/explore");
-    });
+    }, [user, isLoading, router]);
 
     const currentMode: AuthType = mode;
     const isSignIn = currentMode === "signin";

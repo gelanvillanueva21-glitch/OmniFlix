@@ -12,10 +12,10 @@ interface NavigationItem {
 
 const NAVIGATION_ITEMS: readonly NavigationItem[] = [
     { label: "Explore", href: "/explore" },
-    { label: "Comics", href: "/comics" },
-    { label: "Movies", href: "/movies" },
-    { label: "Series", href: "/series" },
-    { label: "Novels", href: "/novels" },
+    { label: "Comics", href: "/explore/comics" },
+    { label: "Movies", href: "/explore/movies" },
+    { label: "Series", href: "/explore/series" },
+    { label: "Novels", href: "/explore/novels" },
 ];
 
 export function Navbar() {

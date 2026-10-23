@@ -26,11 +26,10 @@ interface NavItem {
 
 const MAIN_NAVIGATION: readonly NavItem[] = [
     { label: "Explore", href: "/explore", Icon: CompassIcon },
-    // Catalog routes are future work — rendered as non-links for now.
-    { label: "Comics", Icon: BookOpenIcon },
-    { label: "Novels", Icon: BookOpenIcon },
-    { label: "Movies", Icon: FilmIcon },
-    { label: "Series", Icon: MonitorPlayIcon },
+    { label: "Comics", href: "/explore/comics/asura-scans", Icon: BookOpenIcon },
+    { label: "Novels", href: "/explore/novels", Icon: BookOpenIcon },
+    { label: "Movies", href: "/explore/movies", Icon: FilmIcon },
+    { label: "Series", href: "/explore/series", Icon: MonitorPlayIcon },
 ];
 
 const PROFILE_SOURCE_ROUTES = [
@@ -67,10 +66,12 @@ export function SidebarLogo() {
 function NavButton({
     item,
     isActive,
+    isDisabled,
     onClick,
 }: {
     item: NavItem;
     isActive?: boolean;
+    isDisabled?: boolean;
     onClick?: () => void;
 }) {
     const { Icon } = item;
@@ -97,6 +98,18 @@ function NavButton({
         );
     }
 
+    if (isDisabled) {
+        return (
+            <span
+                className={`flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm transition-colors ${classes}`}
+                aria-current={isActive ? "page" : undefined}
+                aria-disabled="true"
+            >
+                {inner}
+            </span>
+        );
+    }
+
     return (
         <Link
             href={item.href}
@@ -117,6 +130,23 @@ interface SidebarNavigationProps {
 export function SidebarNavigation({ onNavigate }: SidebarNavigationProps) {
     const pathname = usePathname();
 
+    function isActive(item: NavItem): boolean {
+        if (item.href === undefined) return false;
+        // Comics highlights for the whole /explore/comics/* subtree because
+        // the sidebar links to a default source route, not the index.
+        if (item.href.startsWith("/explore/comics")) {
+            return pathname === "/explore/comics" ||
+                pathname?.startsWith("/explore/comics/") === true;
+        }
+        // "/explore" is the parent of every other section, so it must only
+        // match exactly — otherwise it would be active on /explore/comics/*,
+        // /explore/novels, etc. and steal the highlight (and get disabled).
+        if (item.href === "/explore") {
+            return pathname === "/explore";
+        }
+        return pathname === item.href || pathname?.startsWith(`${item.href}/`) === true;
+    }
+
     return (
         <nav aria-label="Main navigation" className="space-y-1">
             <p className="px-4 pb-2 text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase">
@@ -126,11 +156,8 @@ export function SidebarNavigation({ onNavigate }: SidebarNavigationProps) {
                 <NavButton
                     key={item.label}
                     item={item}
-                    isActive={
-                        item.href !== undefined &&
-                        (pathname === item.href ||
-                            pathname?.startsWith(`${item.href}/`) === true)
-                    }
+                    isActive={isActive(item)}
+                    isDisabled={isActive(item)}
                     onClick={onNavigate}
                 />
             ))}

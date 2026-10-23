@@ -1,21 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ExploreLayout } from "@/components/explore/ExploreLayout";
 import { MediaCard } from "@/components/explore/MediaCard";
 import { MediaCarousel } from "@/components/explore/MediaCarousel";
 import { GenreSelector } from "@/components/explore/GenreSelector";
 import { PopularContentList } from "@/components/explore/PopularContentList";
 import { SearchBar } from "@/components/explore/SearchBar";
-import { SectionHeader, EmptyState } from "@/components/explore/SectionHeader";
-import {
-    MOCK_FEATURED,
-    MOCK_TRENDING,
-    MOCK_RECOMMENDED,
-    MOCK_GENRES,
-    MOCK_POPULAR,
-    MOCK_DISCOVER,
-} from "@/lib/mock-media";
+import { SectionHeader, EmptyState, ErrorState } from "@/components/explore/SectionHeader";
+import { ExploreContentSkeleton } from "@/components/explore/ExploreLoadingSkeleton";
+import type { ExploreData } from "@/lib/explore";
 
 const DISCOVER_PAGE_SIZE = 8;
 
@@ -26,26 +20,43 @@ const POPULAR_SECTIONS = [
     { key: "series", title: "Popular Series" },
 ] as const;
 
-/**
- * Explore page — currently fed by mock data. To move to a real API, replace
- * the MOCK_* imports with React Query hooks that call service functions which
- * map provider responses into MediaItem (see lib/media.ts). No UI change
- * should be required.
- */
 export default function ExplorePage() {
     const [visibleDiscoverCount, setVisibleDiscoverCount] =
         useState(DISCOVER_PAGE_SIZE);
+    const [exploreData, setExploreData] = useState<ExploreData | null>(null);
+    const [requestError, setRequestError] = useState<string | null>(null);
+    useEffect(() => {
+        fetchExploreData()
+            .then(setExploreData)
+            .catch((error: unknown) => {
+                setRequestError(
+                    error instanceof Error
+                        ? error.message
+                        : "Explore providers could not be loaded.",
+                );
+            });
+    }, []);
+    if (requestError) {
+        return (
+            <ExploreLayout>
+                <ErrorState message={requestError} />
+            </ExploreLayout>
+        );
+    }
 
-    const discoverItems = MOCK_DISCOVER.slice(0, visibleDiscoverCount);
-    const hasMoreDiscover = visibleDiscoverCount < MOCK_DISCOVER.length;
-
-    /**
-     * Genre personalization isn't implemented yet, so this is a deterministic
-     * general selection rather than a personalized one (no fabricated claims).
-     * When user genre preferences exist, replace with a real recommendation
-     * query filtered by the user's saved genres.
-     */
-    const recommendedItems = useMemo(() => MOCK_RECOMMENDED, []);
+    if (!exploreData) {
+        return (
+            <ExploreLayout>
+                <ExploreContentSkeleton />
+            </ExploreLayout>
+        );
+    }
+    const discoverItems = exploreData.discover.slice(
+        0,
+        visibleDiscoverCount,
+    );
+    const hasMoreDiscover =
+        visibleDiscoverCount < exploreData.discover.length;
 
     return (
         <ExploreLayout
@@ -61,7 +72,8 @@ export default function ExplorePage() {
                 <PopularContentList
                     key={section.key}
                     title={section.title}
-                    items={MOCK_POPULAR[section.key]}
+                    items={exploreData.popular[section.key]}
+                    error={getSectionError(exploreData, section.key)}
                 />
             ))}
         >
@@ -80,26 +92,39 @@ export default function ExplorePage() {
                 <h2 id="featured-heading" className="sr-only">
                     Featured content
                 </h2>
-                <MediaCard media={MOCK_FEATURED} variant="wide" />
+                {exploreData.featured ? (
+                    <MediaCard
+                        media={exploreData.featured}
+                        variant="wide"
+                    />
+                ) : (
+                    <EmptyState
+                        title="No featured content"
+                        description="Configured providers returned no content."
+                    />
+                )}
             </section>
 
             {/* 3. Trending Now */}
             <section aria-labelledby="trending-heading" className="mb-8 space-y-4">
                 <SectionHeader title="Trending Now" />
-                <MediaCarousel items={MOCK_TRENDING} label="Trending Now" />
+                <MediaCarousel
+                    items={exploreData.trending}
+                    label="Trending Now"
+                />
             </section>
 
             {/* 4. Recommended (general selection — not personalized yet) */}
             <section aria-labelledby="recommended-heading" className="mb-8 space-y-4">
                 <SectionHeader title="Recommended for You" />
-                {recommendedItems.length === 0 ? (
+                {exploreData.recommended.length === 0 ? (
                     <EmptyState
                         title="No recommendations yet"
                         description="Pick a few genres to get recommendations tailored to you."
                     />
                 ) : (
                     <MediaCarousel
-                        items={recommendedItems}
+                        items={exploreData.recommended}
                         label="Recommended for You"
                     />
                 )}
@@ -107,7 +132,10 @@ export default function ExplorePage() {
 
             {/* 5. Browse by Genre */}
             <section className="mb-8">
-                <GenreSelector genres={MOCK_GENRES} items={MOCK_DISCOVER} />
+                <GenreSelector
+                    genres={exploreData.genres}
+                    items={exploreData.discover}
+                />
             </section>
 
             {/* 6. Discover More (incrementally loaded grid) */}
@@ -126,7 +154,9 @@ export default function ExplorePage() {
                         >
                             {discoverItems.map((item) => (
                                 <li key={item.id}>
-                                    <MediaCard media={item} />
+                                    <MediaCard
+                                        media={item}
+                                    />
                                 </li>
                             ))}
                         </ul>
@@ -150,5 +180,39 @@ export default function ExplorePage() {
             </section>
         </ExploreLayout>
     );
+}
+
+async function fetchExploreData(): Promise<ExploreData> {
+    const response = await fetch("/api/explore");
+
+    if (!response.ok) {
+        throw new Error("Explore providers could not be loaded.");
+    }
+
+    return response.json() as Promise<ExploreData>;
+}
+
+function getSectionError(
+    exploreData: ExploreData,
+    sectionKey: keyof ExploreData["popular"],
+): string | undefined {
+    if (exploreData.popular[sectionKey].length > 0) {
+        return undefined;
+    }
+
+    if (sectionKey === "comics") {
+        return exploreData.errors.comics;
+    }
+
+    if (sectionKey === "novels") {
+        // Novels are served exclusively by LNcrawl now.
+        return exploreData.errors.lncrawl;
+    }
+
+    if (sectionKey === "movies") {
+        return exploreData.errors.tmdb;
+    }
+
+    return exploreData.errors.jikan ?? exploreData.errors.tmdb;
 }
 
