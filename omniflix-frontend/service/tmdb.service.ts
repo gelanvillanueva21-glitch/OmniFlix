@@ -32,6 +32,26 @@ export async function getPopularTmdbMovies(
     limit = 12,
     page = 1,
 ): Promise<TmdbMoviesPage> {
+    return getPopularTmdbPage("movie", "movies", limit, page);
+}
+
+/**
+ * Popular TV series for the Series Explore section. Same `/popular`
+ * pagination contract as movies, against TMDB's `/tv/popular` endpoint.
+ */
+export async function getPopularTmdbTv(
+    limit = 12,
+    page = 1,
+): Promise<TmdbMoviesPage> {
+    return getPopularTmdbPage("tv", "series", limit, page);
+}
+
+async function getPopularTmdbPage(
+    kind: "movie" | "tv",
+    mediaType: "movies" | "series",
+    limit: number,
+    page: number,
+): Promise<TmdbMoviesPage> {
     const baseUrl = configuredEnvironmentValue("NEXT_PUBLIC_TMDB_API_URL");
     const token = configuredEnvironmentValue("TMDB_READ_ACCESS_TOKEN", "NEXT_PUBLIC_TOKEN_TMBD");
     const apiKey = configuredEnvironmentValue("TMDB_API_KEY", "NEXT_PUBLIC_API_KEY");
@@ -50,11 +70,11 @@ export async function getPopularTmdbMovies(
     const response = await providerRequest<
         TmdbResponse & { total_pages?: number }
     >(
-        `${baseUrl}/movie/popular?language=en-US&page=${safePage}${query}`,
+        `${baseUrl}/${kind}/popular?language=en-US&page=${safePage}${query}`,
         { headers },
     );
     return {
-        items: mapResults(response.results, "movies", limit),
+        items: mapResults(response.results, mediaType, limit),
         totalPages: response.total_pages ?? 1,
     };
 }
