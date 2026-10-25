@@ -23,8 +23,16 @@ export function MediaCard({
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = media.coverImage !== undefined && !imageFailed;
 
+    const sourceLabel = media.source
+        ? (media.source.toLowerCase() === "tmdb"
+            ? "TMDB"
+            : media.source.toLowerCase() === "jikan" || media.source.toLowerCase() === "anime"
+            ? "Anime"
+            : media.source)
+        : mediaTypeLabel(media.type);
+
     const metadataParts = [
-        mediaTypeLabel(media.type),
+        sourceLabel,
         media.releaseYear !== undefined ? String(media.releaseYear) : null,
     ].filter((part): part is string => part !== null);
 
@@ -107,7 +115,7 @@ export function MediaCard({
                     {media.title}
                 </h3>
                 <p className="truncate text-xs text-[#A1A1AA]">
-                    {mediaTypeLabel(media.type)}
+                    {sourceLabel}
                 </p>
             </div>
         </article>

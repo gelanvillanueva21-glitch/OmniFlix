@@ -1,10 +1,14 @@
 "use client";
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import type { MediaItem } from "@/lib/media";
+import type { MediaItem, SeriesSearchResult } from "@/lib/media";
+
+export type { SeriesSearchResult };
 
 const TMDB_SERIES_API = "/api/tmdb/popular-tv";
 const JIKAN_ANIME_API = "/api/jikan/popular-anime";
+const TMDB_SEARCH_API = "/api/tmdb/search-tv";
+const JIKAN_SEARCH_API = "/api/jikan/search-anime";
 export const PAGE_LIMIT = 12;
 
 interface PopularContentResponse {
@@ -99,13 +103,89 @@ async function fetchCombinedBrowsePage(
 }
 
 /** Fisher–Yates shuffle so anime and series interleave on every page. */
-function shuffleItems(items: MediaItem[]): MediaItem[] {
+export function shuffleItems<T>(items: T[]): T[] {
   const shuffled = [...items];
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+
+export async function searchTMDB(query: string): Promise<SeriesSearchResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const search = new URLSearchParams({ query: trimmed });
+  const response = await fetch(`${TMDB_SEARCH_API}?${search.toString()}`);
+  const payload = (await response.json()) as
+    | { items: SeriesSearchResult[] }
+    | { error: string };
+  if (!response.ok || !("items" in payload)) {
+    throw new Error(
+      ("error" in payload && payload.error) || "TMDB search is unavailable.",
+    );
+  }
+  return payload.items;
+}
+
+export async function searchJikan(query: string): Promise<SeriesSearchResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const search = new URLSearchParams({ query: trimmed });
+  const response = await fetch(`${JIKAN_SEARCH_API}?${search.toString()}`);
+  const payload = (await response.json()) as
+    | { items: SeriesSearchResult[] }
+    | { error: string };
+  if (!response.ok || !("items" in payload)) {
+    throw new Error(
+      ("error" in payload && payload.error) || "Jikan search is unavailable.",
+    );
+  }
+  return payload.items;
+}
+
+export async function searchDualSeries(
+  query: string,
+): Promise<{ results: SeriesSearchResult[]; error?: string }> {
+  const trimmed = query.trim();
+  if (!trimmed) return { results: [] };
+
+  const [seriesRes, animeRes] = await Promise.allSettled([
+    searchTMDB(trimmed),
+    searchJikan(trimmed),
+  ]);
+
+  const results: SeriesSearchResult[] = [];
+  const errors: string[] = [];
+
+  if (seriesRes.status === "fulfilled") {
+    results.push(...seriesRes.value);
+  } else {
+    errors.push(
+      seriesRes.reason instanceof Error
+        ? seriesRes.reason.message
+        : "TMDB search failed.",
+    );
+  }
+
+  if (animeRes.status === "fulfilled") {
+    results.push(...animeRes.value);
+  } else {
+    errors.push(
+      animeRes.reason instanceof Error
+        ? animeRes.reason.message
+        : "Jikan search failed.",
+    );
+  }
+
+  if (errors.length === 2 && results.length === 0) {
+    throw new Error("Both TMDB and Jikan search failed. Please try again.");
+  }
+
+  return {
+    results: shuffleItems(results),
+    error: errors.length === 1 ? errors[0] : undefined,
+  };
 }
 
 /**

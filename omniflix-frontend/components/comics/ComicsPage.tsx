@@ -20,6 +20,7 @@ import {
 } from "@/components/explore/LoadingSkeleton";
 import { CatalogResultGrid } from "@/components/comics/CatalogResultGrid";
 import { LoadMoreControl } from "@/components/comics/LoadMoreControl";
+import { SearchResultsSection } from "@/components/comics/SearchResultsSection";
 import { SourceSelector } from "@/components/comics/SourceSelector";
 import {
     dedupeById,
@@ -227,46 +228,6 @@ interface CatalogSectionProps {
     catalogItems: MediaItem[];
     catalogQuery: ReturnType<typeof useComicsInfiniteCatalog>;
     onLoadMore: () => void;
-}
-
-function SearchResultsSection({
-    submittedQuery,
-    sourceHeading,
-    catalogItems,
-    catalogQuery,
-    onClearSearch,
-    onLoadMore,
-}: CatalogSectionProps & {
-    submittedQuery: string;
-    onClearSearch: () => void;
-}) {
-    return (
-        <section aria-label="Search results" className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-                <SectionHeader title={`Results for “${submittedQuery}”`} />
-                <button
-                    type="button"
-                    onClick={onClearSearch}
-                    className="rounded text-sm font-medium text-[#A1A1AA] transition-colors hover:text-[#A78BFA] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
-                >
-                    Clear search
-                </button>
-            </div>
-            <CatalogResultGrid
-                items={catalogItems}
-                isPending={catalogQuery.isPending}
-                isFetching={catalogQuery.isFetching}
-                error={errorMessage(catalogQuery.error)}
-                onRetry={() => catalogQuery.refetch()}
-                emptyDescription={`No results found on ${sourceHeading} for “${submittedQuery}”.`}
-            />
-            <LoadMoreControl
-                hasNextPage={catalogQuery.hasNextPage ?? false}
-                isFetchingNextPage={catalogQuery.isFetchingNextPage}
-                onLoadMore={onLoadMore}
-            />
-        </section>
-    );
 }
 
 function BrowseSections({

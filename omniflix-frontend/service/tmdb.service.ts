@@ -1,4 +1,4 @@
-import type { MediaItem } from "@/lib/media";
+import type { MediaItem, SeriesSearchResult } from "@/lib/media";
 import { configuredEnvironmentValue, providerRequest } from "./provider-client.service";
 
 interface TmdbResult {
@@ -10,7 +10,29 @@ interface TmdbResult {
     vote_average?: number;
     release_date?: string;
     first_air_date?: string;
+    genre_ids?: number[];
 }
+
+export const TMDB_TV_GENRES: Record<number, string> = {
+    10759: "Action & Adventure",
+    16: "Animation",
+    35: "Comedy",
+    80: "Crime",
+    99: "Documentary",
+    18: "Drama",
+    10751: "Family",
+    10762: "Kids",
+    9648: "Mystery",
+    10763: "News",
+    10764: "Reality",
+    10765: "Sci-Fi & Fantasy",
+    10766: "Soap",
+    10767: "Talk",
+    10768: "War & Politics",
+    37: "Western",
+};
+
+export type TmdbTvSearchResult = SeriesSearchResult;
 
 interface TmdbResponse {
     results?: TmdbResult[];
@@ -44,6 +66,89 @@ export async function getPopularTmdbTv(
     page = 1,
 ): Promise<TmdbMoviesPage> {
     return getPopularTmdbPage("tv", "series", limit, page);
+}
+
+/**
+ * TV Search for the Series Explore section. Queries TMDB's `/search/tv` endpoint,
+ * normalizes responses to the unified SeriesSearchResult format with source "tmdb",
+ * maps genre IDs, and formats poster images.
+ */
+export async function searchTmdbTv(
+    query: string,
+    page = 1,
+    limit = 20,
+): Promise<{ items: TmdbTvSearchResult[]; totalPages: number }> {
+    const trimmed = query.trim();
+    if (!trimmed) {
+        return { items: [], totalPages: 0 };
+    }
+
+    const baseUrl =
+        configuredEnvironmentValue("NEXT_PUBLIC_TMDB_API_URL") ||
+        process.env.NEXT_PUBLIC_TMDB_API_URL ||
+        "https://api.themoviedb.org/3";
+    const token =
+        configuredEnvironmentValue("TMDB_READ_ACCESS_TOKEN", "NEXT_PUBLIC_TOKEN_TMBD") ||
+        process.env.NEXT_PUBLIC_TOKEN_TMBD;
+    const apiKey =
+        configuredEnvironmentValue("TMDB_API_KEY", "NEXT_PUBLIC_API_KEY", "NEXT_PUBLIC_TMDB_API_KEY") ||
+        process.env.NEXT_PUBLIC_TMDB_API_KEY ||
+        process.env.NEXT_PUBLIC_API_KEY;
+
+    if (!baseUrl || (!token && !apiKey)) {
+        throw new Error("TMDB URL or credential is not configured.");
+    }
+
+    const headers = token?.split(".").length === 3
+        ? { Authorization: `Bearer ${token}` }
+        : undefined;
+    const apiKeyQuery = apiKey && !headers
+        ? `&api_key=${encodeURIComponent(apiKey)}`
+        : "";
+
+    const safePage = Math.max(page, 1);
+    const searchUrl = `${baseUrl}/search/tv?query=${encodeURIComponent(trimmed)}&language=en-US&page=${safePage}${apiKeyQuery}`;
+
+    const response = await providerRequest<
+        TmdbResponse & { total_pages?: number }
+    >(searchUrl, { headers });
+
+    const items: TmdbTvSearchResult[] = (response.results ?? [])
+        .slice(0, limit)
+        .filter((item): item is TmdbResult & { id: number } => typeof item.id === "number")
+        .map((item) => {
+            const title = item.name ?? item.title ?? "Untitled";
+            const year = getYear(item.first_air_date ?? item.release_date);
+            const rating = typeof item.vote_average === "number" && item.vote_average > 0
+                ? Number(item.vote_average.toFixed(1))
+                : undefined;
+            const genres = item.genre_ids
+                ? item.genre_ids
+                    .map((id) => TMDB_TV_GENRES[id])
+                    .filter((g): g is string => Boolean(g))
+                : undefined;
+
+            return {
+                id: `tmdb-${item.id}`,
+                title,
+                type: "series" as const,
+                description: item.overview?.trim() || "No description available.",
+                coverImage: item.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                    : undefined,
+                source: "TMDB",
+                rating,
+                year,
+                releaseYear: year,
+                genres,
+                status: "Series",
+            };
+        });
+
+    return {
+        items,
+        totalPages: response.total_pages ?? 1,
+    };
 }
 
 async function getPopularTmdbPage(

@@ -9,6 +9,7 @@ import {
     dedupeById,
     NOVELS_PAGE_SIZE,
     useNovels,
+    usePopularNovels,
 } from "@/components/novels/novelsQueries";
 
 export default function NovelsPage() {
@@ -20,8 +21,13 @@ export default function NovelsPage() {
 
     const popularNovels = novelsQuery.data?.pages.flatMap((page) => page.items) ?? [];
 
+    const popularQuery = usePopularNovels();
+    // Popularity-ranked feed, falling back to the catalog head if the
+    // popular endpoint cannot be reached.
+    const carouselItems = popularQuery.data ??
+        (popularQuery.isError ? novels.slice(0, NOVELS_PAGE_SIZE) : []);
+
     const featuredItem = novels[0];
-    const carouselItems = novels.slice(0, NOVELS_PAGE_SIZE);
 
     const sidebar = NovelsSidebar({
         popularNovels,
@@ -63,7 +69,7 @@ export default function NovelsPage() {
 
             <PopularNovelsCarousel
                 items={carouselItems}
-                isPending={novelsQuery.isPending}
+                isPending={popularQuery.isPending && !carouselItems.length}
             />
 
             <BrowseNovelsSection

@@ -1,7 +1,7 @@
 // Jikan provider service: popular/top anime, mapped to the shared MediaItem
 // format. Uses the configured Jikan proxy URL, which serves /top/anime with
 // camelCase fields and pagination under `meta.pagination` (page is 1-1000).
-import type { MediaItem } from "@/lib/media";
+import type { MediaItem, SeriesSearchResult } from "@/lib/media";
 import { configuredEnvironmentValue, providerRequest } from "./provider-client.service";
 
 interface JikanAnime {
@@ -10,6 +10,38 @@ interface JikanAnime {
     imageUrl?: string;
     score?: number | null;
     startDate?: string | null;
+}
+
+export type JikanAnimeSearchResult = SeriesSearchResult;
+
+interface JikanSearchItem {
+    malId?: number;
+    mal_id?: number;
+    title?: string;
+    title_english?: string;
+    synopsis?: string;
+    imageUrl?: string;
+    images?: {
+        webp?: {
+            large_image_url?: string;
+            image_url?: string;
+        };
+        jpg?: {
+            large_image_url?: string;
+            image_url?: string;
+        };
+    };
+    score?: number | null;
+    year?: number;
+    startDate?: string | null;
+    aired?: {
+        from?: string | null;
+    };
+    genres?: Array<{ name?: string } | string>;
+    themes?: Array<{ name?: string } | string>;
+    status?: string;
+    type?: string;
+    episodes?: number | null;
 }
 
 interface JikanResponse {
@@ -60,6 +92,104 @@ export async function getJikanAnimePage(
 export async function getJikanAnime(limit = 12): Promise<MediaItem[]> {
     const { items } = await getJikanAnimePage(limit, 1);
     return items;
+}
+
+/**
+ * Anime Search for the Series Explore section. Queries Jikan's `/anime` search endpoint,
+ * normalizes responses to the unified SeriesSearchResult format with source "jikan",
+ * extracts genres, scores, dates, and episodes.
+ */
+export async function searchJikanAnime(
+    query: string,
+    page = 1,
+    limit = 20,
+): Promise<{ items: JikanAnimeSearchResult[]; hasNextPage: boolean }> {
+    const trimmed = query.trim();
+    if (!trimmed) {
+        return { items: [], hasNextPage: false };
+    }
+
+    const safePage = Math.max(page, 1);
+    const configuredUrl =
+        configuredEnvironmentValue("NEXT_PUBLIC_JIKAN_API_URL") ||
+        process.env.NEXT_PUBLIC_JIKAN_API_URL ||
+        "https://jikan.lucashdo.com/v1/top/anime";
+
+    if (!configuredUrl) {
+        throw new Error("Jikan URL is not configured.");
+    }
+
+    const url = new URL(configuredUrl);
+    const path = url.pathname
+        .replace(/\/top\/anime\/?$/, "")
+        .replace(/\/$/, "") || "/v1";
+
+    url.pathname = `${path}/anime`;
+    url.search = `q=${encodeURIComponent(trimmed)}&page=${safePage}`;
+
+    const response = await providerRequest<{
+        data?: JikanSearchItem[];
+        meta?: { pagination?: { hasNextPage?: boolean } };
+        pagination?: { has_next_page?: boolean };
+    }>(url.toString());
+
+    const items: JikanAnimeSearchResult[] = (response.data ?? [])
+        .slice(0, limit)
+        .flatMap((anime) => {
+            const malId = anime.mal_id ?? anime.malId;
+            const title = anime.title_english || anime.title;
+            if (!malId || !title) return [];
+
+            const coverImage =
+                anime.images?.webp?.large_image_url ||
+                anime.images?.jpg?.large_image_url ||
+                anime.imageUrl ||
+                undefined;
+
+            const rating =
+                typeof anime.score === "number" && anime.score > 0
+                    ? Number(anime.score.toFixed(1))
+                    : undefined;
+
+            const year =
+                anime.year ??
+                getYear(anime.startDate ?? anime.aired?.from);
+
+            const genresList = [
+                ...(anime.genres ?? []),
+                ...(anime.themes ?? []),
+            ]
+                .map((g) => (typeof g === "string" ? g : g?.name))
+                .filter((g): g is string => Boolean(g));
+
+            const genres = genresList.length > 0 ? genresList : undefined;
+            const status = anime.status || (anime.type ? anime.type : "Anime");
+            const episodes =
+                typeof anime.episodes === "number" && anime.episodes > 0
+                    ? anime.episodes
+                    : undefined;
+
+            return [{
+                id: `jikan-${malId}`,
+                title,
+                type: "series" as const,
+                description: anime.synopsis?.trim() || "No description available.",
+                coverImage,
+                source: "Anime",
+                rating,
+                year,
+                releaseYear: year,
+                genres,
+                status,
+                episodes,
+            }];
+        });
+
+    const hasNextPage =
+        response.meta?.pagination?.hasNextPage === true ||
+        response.pagination?.has_next_page === true;
+
+    return { items, hasNextPage };
 }
 
 function mapAnimeToMediaItems(anime: JikanAnime): MediaItem[] {

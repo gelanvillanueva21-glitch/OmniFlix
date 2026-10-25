@@ -1,16 +1,36 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ExploreLayout } from "@/components/explore/ExploreLayout";
 import { FeaturedSeriesSection } from "@/components/series/FeaturedSeriesSection";
 import { PopularCarouselSection } from "@/components/series/PopularCarouselSection";
 import { BrowseSeriesSection } from "@/components/series/BrowseSeriesSection";
+import { SearchResultSection } from "@/components/comics/SearchResultSection";
 import { SeriesSidebar } from "@/components/series/SeriesSidebar";
 import {
     dedupeById,
+    searchDualSeries,
     usePopularAnime,
     usePopularSeries,
     useSeriesBrowse,
 } from "@/components/series/seriesQueries";
+
+function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
+}
 
 export default function SeriesPage() {
     const browseQuery = useSeriesBrowse();
@@ -35,6 +55,44 @@ export default function SeriesPage() {
         (item) => item.type === "series",
     );
 
+    // Search state
+    const [searchQuery, setSearchQuery] = useState("");
+    const trimmedQuery = searchQuery.trim();
+    const debouncedQuery = useDebounce(trimmedQuery, 400);
+
+    const isSearchMode = trimmedQuery.length > 0;
+
+    const seriesSearchQuery = useQuery({
+        queryKey: ["series", "search", debouncedQuery],
+        queryFn: () => searchDualSeries(debouncedQuery),
+        enabled: isSearchMode && debouncedQuery.length > 0,
+        staleTime: 60 * 1000,
+    });
+
+    const handleSearchSubmit = useCallback((query: string) => {
+        setSearchQuery(query.trim());
+    }, []);
+
+    const handleBackToBrowse = useCallback(() => {
+        setSearchQuery("");
+    }, []);
+
+    const isSearchLoading =
+        isSearchMode &&
+        (debouncedQuery !== trimmedQuery ||
+            seriesSearchQuery.isFetching ||
+            seriesSearchQuery.isPending);
+
+    const displayedResults =
+        debouncedQuery === trimmedQuery
+            ? (seriesSearchQuery.data?.results ?? [])
+            : [];
+
+    const searchErrorMessage =
+        seriesSearchQuery.error instanceof Error
+            ? seriesSearchQuery.error.message
+            : seriesSearchQuery.data?.error;
+
     const sidebar = SeriesSidebar({
         popularSeries,
         popularAnime,
@@ -44,6 +102,9 @@ export default function SeriesPage() {
         animeError: animeSidebarQuery.isError
             ? "Jikan could not be loaded."
             : undefined,
+        searchQuery,
+        onSearchChange: setSearchQuery,
+        onSearchSubmit: handleSearchSubmit,
     });
 
     return (
@@ -60,62 +121,88 @@ export default function SeriesPage() {
                 </p>
             </header>
 
-            {/* Featured content: same wide-card pattern as the Movies page. */}
-            <FeaturedSeriesSection
-                isPending={isPending}
-                isError={isError}
-                errorMessage={
-                    queryError instanceof Error ? queryError.message : undefined
-                }
-                onRetry={refetch}
-                featuredSeries={featuredSeries}
-            />
+            {isSearchMode ? (
+                <SearchResultSection
+                    submittedQuery={trimmedQuery}
+                    sourceHeading="Series"
+                    catalogItems={displayedResults}
+                    catalogQuery={{
+                        isPending: isSearchLoading,
+                        isFetching: isSearchLoading,
+                        hasNextPage: false,
+                        isFetchingNextPage: false,
+                        error: searchErrorMessage,
+                        refetch: () => seriesSearchQuery.refetch(),
+                    }}
+                    onClearSearch={handleBackToBrowse}
+                />
+            ) : (
+                <>
+                    {/* Featured content: same wide-card pattern as the Movies page. */}
+                    <FeaturedSeriesSection
+                        isPending={isPending}
+                        isError={isError}
+                        errorMessage={
+                            queryError instanceof Error
+                                ? queryError.message
+                                : undefined
+                        }
+                        onRetry={refetch}
+                        featuredSeries={featuredSeries}
+                    />
 
-            {/* Popular carousels — one per provider, matching the Movies page. */}
-            <PopularCarouselSection
-                label="Popular shows"
-                title="Popular Shows"
-                isPending={seriesSidebarQuery.isPending}
-                isError={seriesSidebarQuery.isError}
-                errorMessage={
-                    seriesSidebarQuery.error instanceof Error
-                        ? seriesSidebarQuery.error.message
-                        : undefined
-                }
-                onRetry={() => seriesSidebarQuery.refetch()}
-                items={popularSeries}
-            />
-            <PopularCarouselSection
-                label="Popular anime"
-                title="Popular Anime"
-                isPending={animeSidebarQuery.isPending}
-                isError={animeSidebarQuery.isError}
-                errorMessage={
-                    animeSidebarQuery.error instanceof Error
-                        ? animeSidebarQuery.error.message
-                        : undefined
-                }
-                onRetry={() => animeSidebarQuery.refetch()}
-                items={popularAnime}
-            />
+                    {/* Popular carousels — one per provider, matching the Movies page. */}
+                    <PopularCarouselSection
+                        label="Popular shows"
+                        title="Popular Shows"
+                        isPending={seriesSidebarQuery.isPending}
+                        isError={seriesSidebarQuery.isError}
+                        errorMessage={
+                            seriesSidebarQuery.error instanceof Error
+                                ? seriesSidebarQuery.error.message
+                                : undefined
+                        }
+                        onRetry={() => seriesSidebarQuery.refetch()}
+                        items={popularSeries}
+                    />
+                    <PopularCarouselSection
+                        label="Popular anime"
+                        title="Popular Anime"
+                        isPending={animeSidebarQuery.isPending}
+                        isError={animeSidebarQuery.isError}
+                        errorMessage={
+                            animeSidebarQuery.error instanceof Error
+                                ? animeSidebarQuery.error.message
+                                : undefined
+                        }
+                        onRetry={() => animeSidebarQuery.refetch()}
+                        items={popularAnime}
+                    />
 
-            {/* Single combined browse grid: TMDB series + Jikan anime mixed. */}
-            <BrowseSeriesSection
-                isPending={isPending}
-                isError={isError}
-                errorMessage={
-                    queryError instanceof Error ? queryError.message : undefined
-                }
-                onRetry={refetch}
-                browseItems={browseItems}
-                hasProviderError={
-                    browseQuery.data?.pages.some((page) => page.providerError) ??
-                    false
-                }
-                hasNextPage={browseQuery.data ? browseQuery.hasNextPage : false}
-                isFetchingNextPage={browseQuery.isFetchingNextPage}
-                onLoadMore={() => browseQuery.fetchNextPage()}
-            />
+                    {/* Single combined browse grid: TMDB series + Jikan anime mixed. */}
+                    <BrowseSeriesSection
+                        isPending={isPending}
+                        isError={isError}
+                        errorMessage={
+                            queryError instanceof Error
+                                ? queryError.message
+                                : undefined
+                        }
+                        onRetry={refetch}
+                        browseItems={browseItems}
+                        hasProviderError={
+                            browseQuery.data?.pages.some(
+                                (page) => page.providerError,
+                            ) ?? false
+                        }
+                        hasNextPage={
+                            browseQuery.data ? browseQuery.hasNextPage : false
+                        }
+                        isFetchingNextPage={browseQuery.isFetchingNextPage}
+                        onLoadMore={() => browseQuery.fetchNextPage()}
+                    />
+                </>
+            )}
         </ExploreLayout>
     );
 }
