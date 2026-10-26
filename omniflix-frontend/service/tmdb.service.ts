@@ -190,6 +190,23 @@ interface TmdbMedia {
 }
 
 export async function getTmdbMedia(limit = 12): Promise<TmdbMedia> {
+    const { movies, series } = await fetchTmdbMediaPage(limit, 1);
+    return { movies, series };
+}
+
+export interface TmdbMediaPage extends TmdbMedia {
+    /** True while TMDB still reports pages past the current one. */
+    hasNextPage: boolean;
+}
+
+/**
+ * Paged variant for the paginated Discover More route: one trending page per
+ * kind (movie + TV). TMDB caps `page` at 500 for trending endpoints.
+ */
+export async function fetchTmdbMediaPage(
+    limit = 12,
+    page = 1,
+): Promise<TmdbMediaPage> {
     const baseUrl = configuredEnvironmentValue("NEXT_PUBLIC_TMDB_API_URL");
     const token = configuredEnvironmentValue("TMDB_READ_ACCESS_TOKEN", "NEXT_PUBLIC_TOKEN_TMBD");
     const apiKey = configuredEnvironmentValue("TMDB_API_KEY", "NEXT_PUBLIC_API_KEY");
@@ -204,20 +221,25 @@ export async function getTmdbMedia(limit = 12): Promise<TmdbMedia> {
         ? `&api_key=${encodeURIComponent(apiKey)}`
         : "";
 
+    const safePage = Math.max(page, 1);
     const [movieResponse, seriesResponse] = await Promise.all([
-        providerRequest<TmdbResponse>(
-            `${baseUrl}/trending/movie/week?language=en-US${query}`,
+        providerRequest<TmdbResponse & { total_pages?: number }>(
+            `${baseUrl}/trending/movie/week?language=en-US&page=${safePage}${query}`,
             { headers },
         ),
-        providerRequest<TmdbResponse>(
-            `${baseUrl}/trending/tv/week?language=en-US${query}`,
+        providerRequest<TmdbResponse & { total_pages?: number }>(
+            `${baseUrl}/trending/tv/week?language=en-US&page=${safePage}${query}`,
             { headers },
         ),
     ]);
 
+    const movieTotalPages = movieResponse.total_pages ?? 1;
+    const seriesTotalPages = seriesResponse.total_pages ?? 1;
     return {
         movies: mapResults(movieResponse.results, "movies", limit),
         series: mapResults(seriesResponse.results, "series", limit),
+        hasNextPage:
+            safePage < movieTotalPages && safePage < seriesTotalPages,
     };
 }
 

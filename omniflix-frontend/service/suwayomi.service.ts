@@ -165,6 +165,24 @@ export async function getSuwayomiSources(): Promise<SuwayomiSourceInfo[]> {
 
 /** Explore route hook: popular/latest from the first responding English sources. */
 export async function getSuwayomiComics(limit = 12): Promise<MediaItem[]> {
+    const { items } = await getSuwayomiComicsPage(limit, 1);
+    return items;
+}
+
+export interface SuwayomiComicsPage {
+    items: MediaItem[];
+    hasNextPage: boolean;
+}
+
+/**
+ * Paged variant for the paginated Discover More route: fetches one page per
+ * source (same sources and order as getSuwayomiComics) and reports whether
+ * any of them still has more pages.
+ */
+export async function getSuwayomiComicsPage(
+    limit = 12,
+    page = 1,
+): Promise<SuwayomiComicsPage> {
     const sources = await getSuwayomiSources();
     const englishSources = sources.filter(
         (source) =>
@@ -173,15 +191,17 @@ export async function getSuwayomiComics(limit = 12): Promise<MediaItem[]> {
 
     const results: MediaItem[] = [];
     let failedSourceRequests = 0;
+    let anySourceHasNextPage = false;
 
     for (const source of englishSources.slice(0, 4)) {
         try {
             const response = await fetchSuwayomiCatalog(
                 source.type,
-                1,
+                page,
                 source.supportsLatest ? "LATEST" : "POPULAR",
             );
             results.push(...response.items);
+            anySourceHasNextPage = anySourceHasNextPage || response.hasNextPage;
         } catch {
             // A single unavailable extension must not prevent other installed sources from loading.
             failedSourceRequests += 1;
@@ -197,7 +217,10 @@ export async function getSuwayomiComics(limit = 12): Promise<MediaItem[]> {
             "Suwayomi could not retrieve listings from the installed sources.",
         );
     }
-    return results.slice(0, limit);
+    return {
+        items: results.slice(0, limit),
+        hasNextPage: anySourceHasNextPage,
+    };
 }
 
 function mapMangaToMediaItems(

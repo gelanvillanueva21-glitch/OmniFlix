@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { ExploreLayout } from "@/components/explore/ExploreLayout";
@@ -24,13 +24,13 @@ import { SearchResultsSection } from "@/components/comics/SearchResultsSection";
 import { SourceSelector } from "@/components/comics/SourceSelector";
 import {
     dedupeById,
-    useComicsBrowseState,
     useComicsCatalog,
     useComicsInfiniteCatalog,
     useComicsSources,
 } from "@/components/comics/useComicsCatalog";
 import type { MediaItem } from "@/lib/media";
 import { COMICK_SOURCE_TYPE } from "@/service/suwayomi.service";
+import useDebounce from '../../lib/debounce';
 
 interface ComicsPageProps {
     sourceType: string;
@@ -78,22 +78,30 @@ function ComicsPageContent({
         }
     }, [isAdmin, isAuthLoading, onSelectSource, sourceType]);
 
-    const {
-        activeSourceType,
-        submittedQuery,
-        isSearchMode,
-        handleSearchSubmit,
-        handleClearSearch,
-    } = useComicsBrowseState(sourceType);
+    // Search state mirrors the series page: live input value, debounced for
+    // fetching, so results update as the user types.
+    const [searchQuery, setSearchQuery] = useState("");
+    const trimmedQuery = searchQuery.trim();
+    const debouncedQuery = useDebounce(trimmedQuery, 400);
+
+    const isSearchMode = trimmedQuery.length > 0;
+
+    const handleSearch = (query: string) => {
+        setSearchQuery(query.trim());
+    };
+
+    const handleClearSearch = () => {
+        setSearchQuery("");
+    };
 
     const activeSource = visibleSources.find(
-        (source) => source.type === activeSourceType,
+        (source) => source.type === sourceType,
     );
     const catalogQuery = useComicsInfiniteCatalog(
         activeSource?.type ?? null,
         isSearchMode ? "SEARCH" : "POPULAR",
-        submittedQuery,
-        isSearchMode,
+        debouncedQuery,
+        isSearchMode && debouncedQuery.length > 0,
     );
 
     const catalogItems = dedupeById(
@@ -168,6 +176,16 @@ function ComicsPageContent({
 
     const sourceHeading = activeSource.displayName;
 
+    // While the debounce is still catching up, hide stale results and show a
+    // loading state — same as the series page.
+    const isSearchLoading =
+        isSearchMode &&
+        (debouncedQuery !== trimmedQuery ||
+            catalogQuery.isFetching ||
+            catalogQuery.isPending);
+    const displayedSearchItems =
+        debouncedQuery === trimmedQuery ? catalogItems : [];
+
     return (
         <ExploreLayout
             utilities={
@@ -175,7 +193,9 @@ function ComicsPageContent({
                     <SearchBar
                         id="comics-search"
                         placeholder={`Search ${sourceHeading}…`}
-                        onSubmit={handleSearchSubmit}
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        onSubmit={handleSearch}
                     />
                     <SourceSelector
                         sources={visibleSources}
@@ -202,10 +222,14 @@ function ComicsPageContent({
 
             {isSearchMode ? (
                 <SearchResultsSection
-                    submittedQuery={submittedQuery}
+                    submittedQuery={trimmedQuery}
                     sourceHeading={sourceHeading}
-                    catalogItems={catalogItems}
-                    catalogQuery={catalogQuery}
+                    catalogItems={displayedSearchItems}
+                    catalogQuery={{
+                        ...catalogQuery,
+                        isPending: isSearchLoading,
+                        isFetching: isSearchLoading,
+                    }}
                     onClearSearch={handleClearSearch}
                     onLoadMore={() => catalogQuery.fetchNextPage()}
                 />

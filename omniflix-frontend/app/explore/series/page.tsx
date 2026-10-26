@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ExploreLayout } from "@/components/explore/ExploreLayout";
 import { FeaturedSeriesSection } from "@/components/series/FeaturedSeriesSection";
@@ -8,6 +8,7 @@ import { PopularCarouselSection } from "@/components/series/PopularCarouselSecti
 import { BrowseSeriesSection } from "@/components/series/BrowseSeriesSection";
 import { SearchResultSection } from "@/components/comics/SearchResultSection";
 import { SeriesSidebar } from "@/components/series/SeriesSidebar";
+import useDebounce from '../../../lib/debounce';
 import {
     dedupeById,
     searchDualSeries,
@@ -16,21 +17,6 @@ import {
     useSeriesBrowse,
 } from "@/components/series/seriesQueries";
 
-function useDebounce<T>(value: T, delay: number): T {
-    const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-
-        return () => {
-            clearTimeout(timer);
-        };
-    }, [value, delay]);
-
-    return debouncedValue;
-}
 
 export default function SeriesPage() {
     const browseQuery = useSeriesBrowse();

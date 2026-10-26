@@ -31,6 +31,8 @@ interface LncrawlListResponse {
 export interface LncrawlNovelsPage {
     items: MediaItem[];
     total: number;
+    /** True while the server reports more novels past the current offset. */
+    hasNextPage: boolean;
 }
 
 export async function getLncrawlNovels(
@@ -83,8 +85,7 @@ export async function getLncrawlNovels(
         ? response
         : response.items ?? response.novels ?? [];
 
-    return {
-        items: novels.flatMap((novel) => {
+    const novelItems = novels.flatMap((novel) => {
             const title = novel.title ?? novel.name;
             const identifier = novel.id;
             if (!title || identifier === undefined)
@@ -95,11 +96,32 @@ export async function getLncrawlNovels(
                 title,
                 identifier
             )];
-        }),
-        total: Array.isArray(response)
-            ? novels.length
-            : (response.total ?? novels.length),
+        });
+    const total = Array.isArray(response)
+        ? novels.length
+        : (response.total ?? novels.length);
+
+    return {
+        items: novelItems,
+        total,
+        // With a `total` count the offset walk knows when to stop; when the
+        // server omits `total`, a full page means more content likely follows.
+        hasNextPage:
+            !Array.isArray(response) && response.total !== undefined
+                ? offset + novelItems.length < response.total
+                : novelItems.length >= limit,
     };
+}
+
+/**
+ * Paged variant for the paginated Discover More route: the same `sort=updated`
+ * listing walked by `offset` instead of a page number.
+ */
+export function getLncrawlNovelsPage(
+    limit = 12,
+    page = 1,
+): Promise<LncrawlNovelsPage> {
+    return getLncrawlNovels(limit, (Math.max(page, 1) - 1) * limit);
 }
 
 /**
