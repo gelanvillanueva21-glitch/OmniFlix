@@ -190,6 +190,81 @@ export async function getPopularLncrawlNovels(limit = 10): Promise<MediaItem[]> 
     });
 }
 
+/**
+ * Novel search for the global Explore search. The installed LNcrawl build
+ * accepts a `search` parameter on `/api/novels` (verified against the running
+ * server: `search=Leveling` filters titles while `sort` still applies).
+ * Returns the same normalized MediaItem mapping as the browse listings.
+ */
+export async function searchLncrawlNovels(
+    query: string,
+    limit = 8,
+): Promise<MediaItem[]> {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+
+    const baseUrl = serverProviderUrl("NEXT_PUBLIC_LNCRAWL_API_URL", "lncrawl", 8181);
+    if (!baseUrl) {
+        throw new Error("NEXT_PUBLIC_LNCRAWL_API_URL is not configured.");
+    }
+
+    const accessToken = await getLncrawlAccessToken(baseUrl);
+    const response = await providerRequest<LncrawlListResponse | LncrawlNovel[]>(
+        `${baseUrl}/api/novels?limit=${limit}&offset=0&search=${encodeURIComponent(trimmed)}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    const novels = Array.isArray(response)
+        ? response
+        : response.items ?? response.novels ?? [];
+
+    return novels.flatMap((novel) => {
+        const title = novel.title ?? novel.name;
+        const identifier = novel.id;
+        if (!title || identifier === undefined) return [];
+
+        return [mapNovelToMediaItem(novel, title, identifier)];
+    });
+}
+
+/** Logs in once and caches the bearer token for the process lifetime. */
+let cachedLncrawlToken: Promise<string> | undefined;
+
+function getLncrawlAccessToken(baseUrl: string): Promise<string> {
+    cachedLncrawlToken ??= (async () => {
+        const username = configuredEnvironmentValue("LNCRAWL_USERNAME");
+        const password = configuredEnvironmentValue("LNCRAWL_PASSWORD");
+        if (!username || !password) {
+            throw new Error(
+                "LNCrawl requires LNCRAWL_USERNAME and LNCRAWL_PASSWORD."
+            );
+        }
+
+        const login = await providerRequest<{
+            access_token?: string;
+            token?: string;
+        }>(
+            `${baseUrl}/api/auth/login`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: username,
+                    username,
+                    password,
+                }),
+            },
+        );
+
+        const accessToken = login.access_token ?? login.token;
+        if (!accessToken) {
+            throw new Error("LNCrawl authentication did not return an access token.");
+        }
+        return accessToken;
+    })();
+
+    return cachedLncrawlToken;
+}
+
 function mapNovelToMediaItem(
     novel: LncrawlNovel,
     title: string,

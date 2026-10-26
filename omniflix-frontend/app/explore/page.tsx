@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ExploreLayout } from "@/components/explore/ExploreLayout";
 import { MediaCard } from "@/components/explore/MediaCard";
 import { MediaCarousel } from "@/components/explore/MediaCarousel";
@@ -11,6 +12,9 @@ import { SectionHeader, EmptyState, ErrorState } from "@/components/explore/Sect
 import { LoadingSkeleton } from "@/components/explore/LoadingSkeleton";
 import { ExploreContentSkeleton } from "@/components/explore/ExploreLoadingSkeleton";
 import { dedupeById, useDiscoverBrowse, useExploreOverview } from "@/components/explore/discoverQueries";
+import { SearchResultsSection } from "@/components/comics/SearchResultsSection";
+import { useGlobalSearch } from "@/components/explore/useGlobalSearch";
+import useDebounce from "@/lib/debounce";
 import type { ExploreData } from "@/lib/explore";
 import { selectRandomFeaturedMedia } from "@/lib/selectRandomFeaturedMedia";
 
@@ -22,6 +26,15 @@ const POPULAR_SECTIONS = [
 ] as const;
 
 export default function ExplorePage() {
+    // Live global search state: the input value updates instantly, the
+    // debounced value drives fetching, and results show once two characters
+    // are typed.
+    const [searchQuery, setSearchQuery] = useState("");
+    const trimmedQuery = searchQuery.trim();
+    const debouncedQuery = useDebounce(trimmedQuery, 400);
+    const isSearchMode = trimmedQuery.length >= 2;
+    const search = useGlobalSearch(debouncedQuery, trimmedQuery, isSearchMode);
+
     // Page-1 overview feeds the featured card, trending/recommended carousels,
     // and the genre chips; untouched by discover pagination.
     const overviewQuery = useExploreOverview();
@@ -71,9 +84,14 @@ export default function ExplorePage() {
         <ExploreLayout
             utilities={
                 <div className="space-y-4">
-                    <SearchBar />
+                    <SearchBar
+                        id="explore-search"
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        onSubmit={setSearchQuery}
+                    />
                     <p className="text-xs text-[#A1A1AA]">
-                        Search results arrive with the catalog API.
+                        Search anime, series, movies, comics, and novels as you type.
                     </p>
                 </div>
             }
@@ -86,6 +104,17 @@ export default function ExplorePage() {
                 />
             ))}
         >
+            {/* Search mode replaces the browse sections but keeps the sidebar's popular lists untouched. */}
+            {isSearchMode ? (
+                <SearchResultsSection
+                    submittedQuery={trimmedQuery}
+                    sourceHeading="all categories"
+                    catalogItems={search.items}
+                    catalogQuery={search.catalogQuery}
+                    onClearSearch={() => setSearchQuery("")}
+                />
+            ) : (
+            <>
             {/* 1. Page heading */}
             <header className="mb-6">
                 <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl">
@@ -204,6 +233,8 @@ export default function ExplorePage() {
                     </>
                 )}
             </section>
+            </>
+            )}
         </ExploreLayout>
     );
 }

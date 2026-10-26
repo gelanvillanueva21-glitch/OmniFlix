@@ -223,6 +223,62 @@ export async function getSuwayomiComicsPage(
     };
 }
 
+export interface SuwayomiSearchPage {
+    items: MediaItem[];
+    /** True when every queried source still reports more pages. */
+    hasNextPage: boolean;
+}
+
+/**
+ * Global comic search for the Explore page: one SEARCH page per eligible
+ * English source, merged. Sources are identified by `displayName`, which is
+ * the canonical identity the codebase already uses (see
+ * `sourceTypeFromDisplayName` / `ALLOWED_NON_ENGLISH_SOURCES`); the admin-only
+ * "Comick (Unoriginal) (ALL)" source is excluded server-side so its results
+ * are never requested nor aggregated. A failing source is skipped so one
+ * unavailable extension cannot blank the whole search.
+ */
+export async function searchSuwayomiComics(
+    query: string,
+    limit = 8,
+    maxSources = 4,
+): Promise<SuwayomiSearchPage> {
+    const trimmed = query.trim();
+    if (!trimmed) return { items: [], hasNextPage: false };
+
+    const sources = (await getSuwayomiSources())
+        .filter(
+            (source) =>
+                source.lang === "en" &&
+                // Exclusion uses the canonical type identity (same check as
+                // getSuwayomiComicsPage) so the admin-only source is never
+                // queried nor aggregated in global search.
+                source.type !== COMICK_SOURCE_TYPE,
+        )
+        .slice(0, maxSources);
+    if (sources.length === 0) return { items: [], hasNextPage: false };
+
+    const results = await Promise.allSettled(
+        sources.map((source) =>
+            fetchSuwayomiCatalog(source.type, 1, "SEARCH", trimmed),
+        ),
+    );
+
+    const items: MediaItem[] = [];
+    let hasNextPage = true;
+    for (const result of results) {
+        if (result.status === "fulfilled") {
+            items.push(...result.value.items);
+            hasNextPage = hasNextPage && result.value.hasNextPage;
+        }
+    }
+
+    return {
+        items: items.slice(0, limit),
+        hasNextPage,
+    };
+}
+
 function mapMangaToMediaItems(
     sourceIdentifier: string,
     mangas: SuwayomiManga[],

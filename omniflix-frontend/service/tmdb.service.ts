@@ -151,6 +151,57 @@ export async function searchTmdbTv(
     };
 }
 
+/**
+ * Movie Search for the global Explore search. Mirrors `searchTmdbTv` but
+ * against TMDB's `/search/movie` endpoint, normalized to MediaItem with
+ * `type: "movies"` so Explore cards render identically.
+ */
+export async function searchTmdbMovies(
+    query: string,
+    page = 1,
+    limit = 8,
+): Promise<{ items: MediaItem[]; totalPages: number }> {
+    const trimmed = query.trim();
+    if (!trimmed) {
+        return { items: [], totalPages: 0 };
+    }
+
+    const baseUrl =
+        configuredEnvironmentValue("NEXT_PUBLIC_TMDB_API_URL") ||
+        process.env.NEXT_PUBLIC_TMDB_API_URL ||
+        "https://api.themoviedb.org/3";
+    const token =
+        configuredEnvironmentValue("TMDB_READ_ACCESS_TOKEN", "NEXT_PUBLIC_TOKEN_TMBD") ||
+        process.env.NEXT_PUBLIC_TOKEN_TMBD;
+    const apiKey =
+        configuredEnvironmentValue("TMDB_API_KEY", "NEXT_PUBLIC_API_KEY", "NEXT_PUBLIC_TMDB_API_KEY") ||
+        process.env.NEXT_PUBLIC_TMDB_API_KEY ||
+        process.env.NEXT_PUBLIC_API_KEY;
+
+    if (!baseUrl || (!token && !apiKey)) {
+        throw new Error("TMDB URL or credential is not configured.");
+    }
+
+    const headers = token?.split(".").length === 3
+        ? { Authorization: `Bearer ${token}` }
+        : undefined;
+    const apiKeyQuery = apiKey && !headers
+        ? `&api_key=${encodeURIComponent(apiKey)}`
+        : "";
+
+    const safePage = Math.max(page, 1);
+    const searchUrl = `${baseUrl}/search/movie?query=${encodeURIComponent(trimmed)}&language=en-US&page=${safePage}${apiKeyQuery}`;
+
+    const response = await providerRequest<
+        TmdbResponse & { total_pages?: number }
+    >(searchUrl, { headers });
+
+    return {
+        items: mapResults(response.results, "movies", limit),
+        totalPages: response.total_pages ?? 1,
+    };
+}
+
 async function getPopularTmdbPage(
     kind: "movie" | "tv",
     mediaType: "movies" | "series",
