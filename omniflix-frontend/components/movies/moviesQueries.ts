@@ -4,6 +4,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { MediaItem } from "@/lib/media";
 
 const POPULAR_MOVIES_API = "/api/tmdb/popular-movies";
+const TMDB_MOVIE_SEARCH_API = "/api/tmdb/search-movies";
 export const POPULAR_MOVIES_LIMIT = 12;
 
 interface PopularMoviesResponse {
@@ -33,6 +34,35 @@ async function fetchPopularMoviesPage(
 /** Same movie id on consecutive pages is a duplicate; exact ids are not. */
 export function dedupeById(items: MediaItem[]): MediaItem[] {
   return [...new Map(items.map((item) => [item.id, item])).values()];
+}
+
+async function searchTMDBMovies(query: string): Promise<MediaItem[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const search = new URLSearchParams({ query: trimmed });
+  const response = await fetch(`${TMDB_MOVIE_SEARCH_API}?${search.toString()}`);
+  const payload = (await response.json()) as
+    | { items: MediaItem[] }
+    | { error: string };
+  if (!response.ok || !("items" in payload)) {
+    throw new Error(
+      ("error" in payload && payload.error) || "TMDB search is unavailable.",
+    );
+  }
+  return payload.items;
+}
+
+/**
+ * Debounced-query movie search for the Movies Explore section — the exact
+ * Series search pattern (per-query cache entry, no stale-result flashes).
+ */
+export function useMovieSearch(query: string) {
+  return useQuery({
+    queryKey: ["movies", "search", query],
+    queryFn: () => searchTMDBMovies(query),
+    enabled: query.trim().length > 0,
+    staleTime: 60 * 1000,
+  });
 }
 
 /**

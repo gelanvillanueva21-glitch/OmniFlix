@@ -43,22 +43,31 @@ export function useGlobalSearch(
     isSearchMode: boolean,
 ): GlobalSearchResult {
     const searchQuery = useQuery({
-        queryKey: ["explore", "search", debouncedQuery],
+        queryKey: [
+            "explore", 
+            "search", 
+            debouncedQuery
+        ],
         queryFn: async ({ signal }): Promise<GlobalSearchResponse> => {
-        const params = new URLSearchParams({ query: debouncedQuery });
-        const response = await fetch(`${SEARCH_API}?${params.toString()}`, {
-            signal,
-        });
-        const payload = (await response.json()) as
-            | GlobalSearchResponse
-            | { error: string };
-        if (!response.ok || !("items" in payload)) {
-            throw new Error(
-            ("error" in payload && payload.error) ||
-                "Search is unavailable right now.",
+            const params = new URLSearchParams(
+                { query: debouncedQuery }
             );
-        }
-        return payload;
+            const response = await fetch(
+                `${SEARCH_API}?${params.toString()}`, 
+                {
+                    signal,
+                }
+            );
+            const payload = (await response.json()) as
+                | GlobalSearchResponse
+                | { error: string };
+            if (!response.ok || !("items" in payload)) {
+                throw new Error(
+                ("error" in payload && payload.error) ||
+                    "Search is unavailable right now.",
+                );
+            }
+            return payload;
         },
         enabled: isSearchMode && debouncedQuery.length > 0,
         staleTime: NO_STALE_TIME,
