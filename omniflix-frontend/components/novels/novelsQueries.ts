@@ -5,6 +5,7 @@ import type { MediaItem } from "@/lib/media";
 
 const NOVELS_API = "/api/novel";
 const POPULAR_NOVELS_API = "/api/novel/popular";
+const NOVEL_SEARCH_API = "/api/novel/search";
 export const NOVELS_PAGE_SIZE = 12;
 
 interface NovelsPageResponse {
@@ -43,6 +44,38 @@ export function useNovels() {
     getNextPageParam: (lastPage, allPages) =>
       lastPage.hasNextPage ? allPages.length + 1 : undefined,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+async function searchNovels(query: string): Promise<MediaItem[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const search = new URLSearchParams({ query: trimmed });
+  const response = await fetch(`${NOVEL_SEARCH_API}?${search.toString()}`);
+  const payload = (await response.json()) as
+    | { items: MediaItem[] }
+    | { error: string };
+  if (!response.ok || !("items" in payload)) {
+    throw new Error(
+      ("error" in payload && payload.error) ||
+        "The novel provider is unavailable right now.",
+    );
+  }
+  return payload.items;
+}
+
+/**
+ * Debounced-query novel search for the Novels Explore section — the exact
+ * Movies/Series search pattern (per-query cache entry, no stale-result
+ * flashes). LNcrawl searches every source indexed on the server, so newly
+ * added sources are searchable without frontend changes.
+ */
+export function useNovelSearch(query: string) {
+  return useQuery({
+    queryKey: ["novels", "search", query],
+    queryFn: () => searchNovels(query),
+    enabled: query.trim().length > 0,
+    staleTime: 60 * 1000,
   });
 }
 

@@ -1,13 +1,17 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { ExploreLayout } from "@/components/explore/ExploreLayout";
 import { FeaturedNovelSection } from "@/components/novels/FeaturedNovelSection";
 import { PopularNovelsCarousel } from "@/components/novels/PopularNovelsCarousel";
 import { BrowseNovelsSection } from "@/components/novels/BrowseNovelsSection";
 import { NovelsSidebar } from "@/components/novels/NovelsSidebar";
+import { SearchResultSection } from "@/components/comics/SearchResultSection";
+import useDebounce from "../../../lib/debounce";
 import {
     dedupeById,
     NOVELS_PAGE_SIZE,
+    useNovelSearch,
     useNovels,
     usePopularNovels,
 } from "@/components/novels/novelsQueries";
@@ -29,11 +33,46 @@ export default function NovelsPage() {
 
     const featuredItem = novels[0];
 
+    // Search state — the exact Movies/Series page pattern: controlled input,
+    // debounced query, per-query cached search request.
+    const [searchQuery, setSearchQuery] = useState("");
+    const trimmedQuery = searchQuery.trim();
+    const debouncedQuery = useDebounce(trimmedQuery, 400);
+
+    const isSearchMode = trimmedQuery.length > 0;
+
+    const novelSearchQuery = useNovelSearch(debouncedQuery);
+
+    const handleSearchSubmit = useCallback((query: string) => {
+        setSearchQuery(query.trim());
+    }, []);
+
+    const handleBackToBrowse = useCallback(() => {
+        setSearchQuery("");
+    }, []);
+
+    const isSearchLoading =
+        isSearchMode &&
+        (debouncedQuery !== trimmedQuery ||
+            novelSearchQuery.isFetching ||
+            novelSearchQuery.isPending);
+
+    const displayedResults =
+        debouncedQuery === trimmedQuery ? (novelSearchQuery.data ?? []) : [];
+
+    const searchErrorMessage =
+        novelSearchQuery.error instanceof Error
+            ? novelSearchQuery.error.message
+            : undefined;
+
     const sidebar = NovelsSidebar({
         popularNovels,
         error: novelsQuery.isError
             ? "Novel providers could not be loaded."
             : undefined,
+        searchQuery,
+        onSearchChange: setSearchQuery,
+        onSearchSubmit: handleSearchSubmit,
     });
 
     const errorMessage =
@@ -59,6 +98,23 @@ export default function NovelsPage() {
                 </p>
             </header>
 
+            {isSearchMode ? (
+                <SearchResultSection
+                    submittedQuery={trimmedQuery}
+                    sourceHeading="Novels"
+                    catalogItems={displayedResults}
+                    catalogQuery={{
+                        isPending: isSearchLoading,
+                        isFetching: isSearchLoading,
+                        hasNextPage: false,
+                        isFetchingNextPage: false,
+                        error: searchErrorMessage,
+                        refetch: () => novelSearchQuery.refetch(),
+                    }}
+                    onClearSearch={handleBackToBrowse}
+                />
+            ) : (
+            <>
             <FeaturedNovelSection
                 isPending={novelsQuery.isPending}
                 isError={novelsQuery.isError}
@@ -82,6 +138,8 @@ export default function NovelsPage() {
                 isFetchingNextPage={novelsQuery.isFetchingNextPage}
                 onLoadMore={() => novelsQuery.fetchNextPage()}
             />
+            </>
+            )}
         </ExploreLayout>
     );
 }
