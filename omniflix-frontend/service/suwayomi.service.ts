@@ -165,6 +165,24 @@ export async function getSuwayomiSources(): Promise<SuwayomiSourceInfo[]> {
 
 /** Explore route hook: popular/latest from the first responding English sources. */
 export async function getSuwayomiComics(limit = 12): Promise<MediaItem[]> {
+    const { items } = await getSuwayomiComicsPage(limit, 1);
+    return items;
+}
+
+export interface SuwayomiComicsPage {
+    items: MediaItem[];
+    hasNextPage: boolean;
+}
+
+/**
+ * Paged variant for the paginated Discover More route: fetches one page per
+ * source (same sources and order as getSuwayomiComics) and reports whether
+ * any of them still has more pages.
+ */
+export async function getSuwayomiComicsPage(
+    limit = 12,
+    page = 1,
+): Promise<SuwayomiComicsPage> {
     const sources = await getSuwayomiSources();
     const englishSources = sources.filter(
         (source) =>
@@ -173,15 +191,17 @@ export async function getSuwayomiComics(limit = 12): Promise<MediaItem[]> {
 
     const results: MediaItem[] = [];
     let failedSourceRequests = 0;
+    let anySourceHasNextPage = false;
 
     for (const source of englishSources.slice(0, 4)) {
         try {
             const response = await fetchSuwayomiCatalog(
                 source.type,
-                1,
+                page,
                 source.supportsLatest ? "LATEST" : "POPULAR",
             );
             results.push(...response.items);
+            anySourceHasNextPage = anySourceHasNextPage || response.hasNextPage;
         } catch {
             // A single unavailable extension must not prevent other installed sources from loading.
             failedSourceRequests += 1;
@@ -197,7 +217,66 @@ export async function getSuwayomiComics(limit = 12): Promise<MediaItem[]> {
             "Suwayomi could not retrieve listings from the installed sources.",
         );
     }
-    return results.slice(0, limit);
+    return {
+        items: results.slice(0, limit),
+        hasNextPage: anySourceHasNextPage,
+    };
+}
+
+export interface SuwayomiSearchPage {
+    items: MediaItem[];
+    /** True when every queried source still reports more pages. */
+    hasNextPage: boolean;
+}
+
+/**
+ * Global comic search for the Explore page: one SEARCH page per eligible
+ * English source, merged. Sources are identified by `displayName`, which is
+ * the canonical identity the codebase already uses (see
+ * `sourceTypeFromDisplayName` / `ALLOWED_NON_ENGLISH_SOURCES`); the admin-only
+ * "Comick (Unoriginal) (ALL)" source is excluded server-side so its results
+ * are never requested nor aggregated. A failing source is skipped so one
+ * unavailable extension cannot blank the whole search.
+ */
+export async function searchSuwayomiComics(
+    query: string,
+    limit = 8,
+    maxSources = 4,
+): Promise<SuwayomiSearchPage> {
+    const trimmed = query.trim();
+    if (!trimmed) return { items: [], hasNextPage: false };
+
+    const sources = (await getSuwayomiSources())
+        .filter(
+            (source) =>
+                source.lang === "en" &&
+                // Exclusion uses the canonical type identity (same check as
+                // getSuwayomiComicsPage) so the admin-only source is never
+                // queried nor aggregated in global search.
+                source.type !== COMICK_SOURCE_TYPE,
+        )
+        .slice(0, maxSources);
+    if (sources.length === 0) return { items: [], hasNextPage: false };
+
+    const results = await Promise.allSettled(
+        sources.map((source) =>
+            fetchSuwayomiCatalog(source.type, 1, "SEARCH", trimmed),
+        ),
+    );
+
+    const items: MediaItem[] = [];
+    let hasNextPage = true;
+    for (const result of results) {
+        if (result.status === "fulfilled") {
+            items.push(...result.value.items);
+            hasNextPage = hasNextPage && result.value.hasNextPage;
+        }
+    }
+
+    return {
+        items: items.slice(0, limit),
+        hasNextPage,
+    };
 }
 
 function mapMangaToMediaItems(

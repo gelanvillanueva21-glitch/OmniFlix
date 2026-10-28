@@ -1,5 +1,22 @@
 export type MediaType = "comics" | "novels" | "movies" | "series";
 
+export type SeriesSearchSource = "tmdb" | "jikan" | "TMDB" | "Anime";
+
+export interface SeriesSearchResult extends MediaItem {
+  id: string;
+  title: string;
+  type: MediaType;
+  description?: string;
+  coverImage?: string;
+  source?: string;
+  rating?: number;
+  year?: number;
+  releaseYear?: number;
+  genres?: string[];
+  status?: string;
+  episodes?: number;
+}
+
 export interface MediaItem {
   id: string;
   title: string;
@@ -11,6 +28,8 @@ export interface MediaItem {
   /** Only render when the data source is trusted. */
   rating?: number;
   releaseYear?: number;
+  /** Provider or origin label, e.g. "TMDB" or "Anime". */
+  source?: string;
 }
 
 export interface Genre {

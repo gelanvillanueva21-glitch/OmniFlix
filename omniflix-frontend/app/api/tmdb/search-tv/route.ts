@@ -1,0 +1,30 @@
+import { NextRequest, NextResponse } from "next/server";
+import { searchTmdbTv } from "@/service/tmdb.service";
+
+export async function GET(request: NextRequest) {
+  const params = request.nextUrl.searchParams;
+  const query = params.get("query") ?? "";
+  const pageParam = Number(params.get("page") ?? "1");
+  const limitParam = Number(params.get("limit") ?? "20");
+
+  if (!query.trim()) {
+    return NextResponse.json({ items: [], totalPages: 0 });
+  }
+
+  try {
+    const { items, totalPages } = await searchTmdbTv(
+      query,
+      pageParam,
+      limitParam,
+    );
+    return NextResponse.json({ items, totalPages });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[api/tmdb/search-tv] request failed:", message);
+    return NextResponse.json(
+      { error: "TMDB is unavailable right now." },
+      { status: 502 },
+    );
+  }
+}
+

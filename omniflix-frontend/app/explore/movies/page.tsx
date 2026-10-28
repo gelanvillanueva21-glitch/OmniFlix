@@ -1,13 +1,17 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { ExploreLayout } from "@/components/explore/ExploreLayout";
 import { FeaturedMovieSection } from "@/components/movies/FeaturedMovieSection";
 import { PopularMoviesCarousel } from "@/components/movies/PopularMoviesCarousel";
 import { BrowseMoviesSection } from "@/components/movies/BrowseMoviesSection";
 import { MoviesSidebar } from "@/components/movies/MoviesSidebar";
+import { SearchResultSection } from "@/components/comics/SearchResultSection";
+import useDebounce from "../../../lib/debounce";
 import {
     dedupeById,
     POPULAR_MOVIES_LIMIT,
+    useMovieSearch,
     usePopularMovies,
     usePopularMoviesBrowse,
 } from "@/components/movies/moviesQueries";
@@ -31,11 +35,46 @@ export default function MoviesPage() {
     const queryError = browseQuery.error;
     const refetch = () => browseQuery.refetch();
 
+    // Search state — the exact Series page pattern: controlled input, debounced
+    // query, per-query cached search request.
+    const [searchQuery, setSearchQuery] = useState("");
+    const trimmedQuery = searchQuery.trim();
+    const debouncedQuery = useDebounce(trimmedQuery, 400);
+
+    const isSearchMode = trimmedQuery.length > 0;
+
+    const movieSearchQuery = useMovieSearch(debouncedQuery);
+
+    const handleSearchSubmit = useCallback((query: string) => {
+        setSearchQuery(query.trim());
+    }, []);
+
+    const handleBackToBrowse = useCallback(() => {
+        setSearchQuery("");
+    }, []);
+
+    const isSearchLoading =
+        isSearchMode &&
+        (debouncedQuery !== trimmedQuery ||
+            movieSearchQuery.isFetching ||
+            movieSearchQuery.isPending);
+
+    const displayedResults =
+        debouncedQuery === trimmedQuery ? (movieSearchQuery.data ?? []) : [];
+
+    const searchErrorMessage =
+        movieSearchQuery.error instanceof Error
+            ? movieSearchQuery.error.message
+            : undefined;
+
     const sidebar = MoviesSidebar({
         popularMovies: popularMovie,
         error: sidebarQuery.isError
             ? "Movie providers could not be loaded."
             : undefined,
+        searchQuery,
+        onSearchChange: setSearchQuery,
+        onSearchSubmit: handleSearchSubmit,
     });
 
     return (
@@ -54,6 +93,23 @@ export default function MoviesPage() {
                 </p>
             </header>
 
+            {isSearchMode ? (
+                <SearchResultSection
+                    submittedQuery={trimmedQuery}
+                    sourceHeading="Movies"
+                    catalogItems={displayedResults}
+                    catalogQuery={{
+                        isPending: isSearchLoading,
+                        isFetching: isSearchLoading,
+                        hasNextPage: false,
+                        isFetchingNextPage: false,
+                        error: searchErrorMessage,
+                        refetch: () => movieSearchQuery.refetch(),
+                    }}
+                    onClearSearch={handleBackToBrowse}
+                />
+            ) : (
+            <>
             <FeaturedMovieSection
                 isPending={isPending}
                 isError={isError}
@@ -78,6 +134,8 @@ export default function MoviesPage() {
                 isFetchingNextPage={browseQuery.isFetchingNextPage}
                 onLoadMore={() => browseQuery.fetchNextPage()}
             />
+            </>
+            )}
         </ExploreLayout>
     );
 }

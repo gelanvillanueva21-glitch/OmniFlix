@@ -1,17 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ExploreLayout } from "@/components/explore/ExploreLayout";
 import { MediaCard } from "@/components/explore/MediaCard";
 import { MediaCarousel } from "@/components/explore/MediaCarousel";
 import { GenreSelector } from "@/components/explore/GenreSelector";
 import { PopularContentList } from "@/components/explore/PopularContentList";
 import { SearchBar } from "@/components/explore/SearchBar";
+import { LoadMoreControl } from "@/components/comics/LoadMoreControl";
 import { SectionHeader, EmptyState, ErrorState } from "@/components/explore/SectionHeader";
+import { LoadingSkeleton } from "@/components/explore/LoadingSkeleton";
 import { ExploreContentSkeleton } from "@/components/explore/ExploreLoadingSkeleton";
+import { dedupeById, useDiscoverBrowse, useExploreOverview } from "@/components/explore/discoverQueries";
+import { SearchResultsSection } from "@/components/comics/SearchResultsSection";
+import { useGlobalSearch } from "@/components/explore/useGlobalSearch";
+import useDebounce from "@/lib/debounce";
 import type { ExploreData } from "@/lib/explore";
-
-const DISCOVER_PAGE_SIZE = 8;
+import { selectRandomFeaturedMedia } from "@/lib/selectRandomFeaturedMedia";
 
 const POPULAR_SECTIONS = [
     { key: "comics", title: "Popular Comics" },
@@ -21,28 +26,49 @@ const POPULAR_SECTIONS = [
 ] as const;
 
 export default function ExplorePage() {
-    const [visibleDiscoverCount, setVisibleDiscoverCount] =
-        useState(DISCOVER_PAGE_SIZE);
-    const [exploreData, setExploreData] = useState<ExploreData | null>(null);
-    const [requestError, setRequestError] = useState<string | null>(null);
-    useEffect(() => {
-        fetchExploreData()
-            .then(setExploreData)
-            .catch((error: unknown) => {
-                setRequestError(
-                    error instanceof Error
-                        ? error.message
-                        : "Explore providers could not be loaded.",
-                );
-            });
-    }, []);
-    if (requestError) {
+    // Live global search state: the input value updates instantly, the
+    // debounced value drives fetching, and results show once two characters
+    // are typed.
+    const [searchQuery, setSearchQuery] = useState("");
+    const trimmedQuery = searchQuery.trim();
+    const debouncedQuery = useDebounce(trimmedQuery, 400);
+    const isSearchMode = trimmedQuery.length >= 2;
+    const search = useGlobalSearch(debouncedQuery, trimmedQuery, isSearchMode);
+
+    // Page-1 overview feeds the featured card, trending/recommended carousels,
+    // and the genre chips; untouched by discover pagination.
+    const overviewQuery = useExploreOverview();
+
+    // Discover More pagination: appends merged provider pages on demand.
+    const discoverQuery = useDiscoverBrowse();
+    const discoverItems = dedupeById(
+        discoverQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    );
+
+    if (overviewQuery.isPending) {
         return (
             <ExploreLayout>
-                <ErrorState message={requestError} />
+                <ExploreContentSkeleton />
             </ExploreLayout>
         );
     }
+
+    if (overviewQuery.isError) {
+        return (
+            <ExploreLayout>
+                <ErrorState
+                    message={
+                        overviewQuery.error instanceof Error
+                            ? overviewQuery.error.message
+                            : "Explore providers could not be loaded."
+                    }
+                    onRetry={() => overviewQuery.refetch()}
+                />
+            </ExploreLayout>
+        );
+    }
+
+    const exploreData = overviewQuery.data;
 
     if (!exploreData) {
         return (
@@ -51,20 +77,21 @@ export default function ExplorePage() {
             </ExploreLayout>
         );
     }
-    const discoverItems = exploreData.discover.slice(
-        0,
-        visibleDiscoverCount,
-    );
-    const hasMoreDiscover =
-        visibleDiscoverCount < exploreData.discover.length;
+
+    const wideCard = selectRandomFeaturedMedia(exploreData.popular);
 
     return (
         <ExploreLayout
             utilities={
                 <div className="space-y-4">
-                    <SearchBar />
+                    <SearchBar
+                        id="explore-search"
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        onSubmit={setSearchQuery}
+                    />
                     <p className="text-xs text-[#A1A1AA]">
-                        Search results arrive with the catalog API.
+                        Search anime, series, movies, comics, and novels as you type.
                     </p>
                 </div>
             }
@@ -77,6 +104,17 @@ export default function ExplorePage() {
                 />
             ))}
         >
+            {/* Search mode replaces the browse sections but keeps the sidebar's popular lists untouched. */}
+            {isSearchMode ? (
+                <SearchResultsSection
+                    submittedQuery={trimmedQuery}
+                    sourceHeading="all categories"
+                    catalogItems={search.items}
+                    catalogQuery={search.catalogQuery}
+                    onClearSearch={() => setSearchQuery("")}
+                />
+            ) : (
+            <>
             {/* 1. Page heading */}
             <header className="mb-6">
                 <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl">
@@ -92,9 +130,9 @@ export default function ExplorePage() {
                 <h2 id="featured-heading" className="sr-only">
                     Featured content
                 </h2>
-                {exploreData.featured ? (
+                {wideCard ? (
                     <MediaCard
-                        media={exploreData.featured}
+                        media={wideCard}
                         variant="wide"
                     />
                 ) : (
@@ -138,10 +176,33 @@ export default function ExplorePage() {
                 />
             </section>
 
-            {/* 6. Discover More (incrementally loaded grid) */}
+            {/* 6. Discover More (server-paginated grid) */}
             <section aria-labelledby="discover-heading" className="space-y-4">
                 <SectionHeader title="Discover More" />
-                {discoverItems.length === 0 ? (
+                {discoverQuery.isPending ? (
+                    <div
+                        role="status"
+                        aria-label="Loading discover content"
+                        className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5"
+                    >
+                        {Array.from({ length: 10 }, (_, index) => (
+                            <div key={index} className="space-y-2">
+                                <LoadingSkeleton className="aspect-2/3 w-full" />
+                                <LoadingSkeleton className="h-3.5 w-3/4" />
+                                <LoadingSkeleton className="h-3 w-1/2" />
+                            </div>
+                        ))}
+                    </div>
+                ) : discoverQuery.isError ? (
+                    <ErrorState
+                        message={
+                            discoverQuery.error instanceof Error
+                                ? discoverQuery.error.message
+                                : "Discover content could not be loaded."
+                        }
+                        onRetry={() => discoverQuery.refetch()}
+                    />
+                ) : discoverItems.length === 0 ? (
                     <EmptyState
                         title="Nothing to discover yet"
                         description="Content will appear here once the catalog is connected."
@@ -160,36 +221,22 @@ export default function ExplorePage() {
                                 </li>
                             ))}
                         </ul>
-                        {hasMoreDiscover && (
-                            <div className="flex justify-center pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setVisibleDiscoverCount(
-                                            (count) => count + DISCOVER_PAGE_SIZE,
-                                        )
-                                    }
-                                    className="rounded-full border border-[#29292E] px-5 py-2 text-sm font-medium text-[#F5F5F5] transition-colors hover:border-[#8B5CF6]/60 hover:bg-[#8B5CF6]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
-                                >
-                                    Load more
-                                </button>
-                            </div>
-                        )}
+                        <LoadMoreControl
+                            hasNextPage={
+                                discoverQuery.data
+                                    ? discoverQuery.hasNextPage
+                                    : false
+                            }
+                            isFetchingNextPage={discoverQuery.isFetchingNextPage}
+                            onLoadMore={() => discoverQuery.fetchNextPage()}
+                        />
                     </>
                 )}
             </section>
+            </>
+            )}
         </ExploreLayout>
     );
-}
-
-async function fetchExploreData(): Promise<ExploreData> {
-    const response = await fetch("/api/explore");
-
-    if (!response.ok) {
-        throw new Error("Explore providers could not be loaded.");
-    }
-
-    return response.json() as Promise<ExploreData>;
 }
 
 function getSectionError(
@@ -215,4 +262,3 @@ function getSectionError(
 
     return exploreData.errors.jikan ?? exploreData.errors.tmdb;
 }
-

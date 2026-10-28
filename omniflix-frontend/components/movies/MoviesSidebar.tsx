@@ -8,12 +8,26 @@ import type { MediaItem } from "@/lib/media";
 export function MoviesSidebar({
     popularMovies,
     error,
+    searchQuery,
+    onSearchChange,
+    onSearchSubmit,
 }: {
     popularMovies: MediaItem[];
     error?: string;
+    searchQuery?: string;
+    onSearchChange?: (query: string) => void;
+    onSearchSubmit?: (query: string) => void;
 }) {
     return {
-        utilities: <SearchBar id="movies-search" placeholder="Search movies…" />,
+        utilities: (
+            <SearchBar
+                id="movies-search"
+                placeholder="Search movies…"
+                value={searchQuery}
+                onChange={onSearchChange}
+                onSubmit={onSearchSubmit}
+            />
+        ),
         popular: (
             <PopularContentList
                 title="Popular Movies"
