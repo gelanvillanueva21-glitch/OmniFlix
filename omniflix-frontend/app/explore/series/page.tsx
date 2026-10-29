@@ -2,12 +2,12 @@
 
 import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ExploreLayout } from "@/components/explore/ExploreLayout";
-import { FeaturedSeriesSection } from "@/components/series/FeaturedSeriesSection";
-import { PopularCarouselSection } from "@/components/series/PopularCarouselSection";
-import { BrowseSeriesSection } from "@/components/series/BrowseSeriesSection";
-import { SearchResultSection } from "@/components/comics/SearchResultSection";
-import { SeriesSidebar } from "@/components/series/SeriesSidebar";
+import { ExploreLayout } from "@/components/layouts/explore/ExploreLayout";
+import { FeaturedSeriesSection } from "@/components/layouts/series/FeaturedSeriesSection";
+import { PopularCarouselSection } from "@/components/layouts/series/PopularCarouselSection";
+import { BrowseSeriesSection } from "@/components/layouts/series/BrowseSeriesSection";
+import { SearchResultSection } from "@/components/SearchResultsSection";
+import { SeriesSidebar } from "@/components/layouts/series/SeriesSidebar";
 import useDebounce from '../../../lib/debounce';
 import {
     dedupeById,
@@ -15,7 +15,7 @@ import {
     usePopularAnime,
     usePopularSeries,
     useSeriesBrowse,
-} from "@/components/series/seriesQueries";
+} from "@/components/layouts/series/seriesQueries";
 
 
 export default function SeriesPage() {

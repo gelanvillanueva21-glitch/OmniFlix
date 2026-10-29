@@ -4,8 +4,8 @@
 "use client";
 
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { dedupeById } from "@/components/explore/discoverQueries";
-import type { CatalogQueryLike } from "@/components/comics/SearchResultsSection";
+import { dedupeById } from "@/components/layouts/explore/discoverQueries";
+import type { CatalogQueryLike } from "@/components/SearchResultsSection";
 import type { MediaItem } from "@/lib/media";
 
 const SEARCH_API = "/api/search";

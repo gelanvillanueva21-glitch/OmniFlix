@@ -1,4 +1,4 @@
-import { SidebarLogo } from "@/components/explore/SidebarNavigation";
+import { SidebarLogo } from "@/components/SidebarLogo";
 
 const collectionTabWidths = ["w-24", "w-24", "w-24", "w-20", "w-32", "w-28", "w-20"];
 

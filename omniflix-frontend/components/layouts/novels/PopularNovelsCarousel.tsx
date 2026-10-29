@@ -1,8 +1,8 @@
 "use client";
 
-import { MediaCarousel } from "@/components/explore/MediaCarousel";
-import { SectionHeader } from "@/components/explore/SectionHeader";
-import { MediaRowSkeleton } from "@/components/explore/LoadingSkeleton";
+import { MediaCarousel } from "@/components/MediaCarousel";
+import { SectionHeader } from "@/components/SectionHeader";
+import { MediaRowSkeleton } from "@/components/LoadingSkeleton";
 import { NOVELS_PAGE_SIZE } from "./novelsQueries";
 import type { MediaItem } from "@/lib/media";
 

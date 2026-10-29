@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { ExploreLayout } from "@/components/explore/ExploreLayout";
-import { FeaturedMovieSection } from "@/components/movies/FeaturedMovieSection";
-import { PopularMoviesCarousel } from "@/components/movies/PopularMoviesCarousel";
-import { BrowseMoviesSection } from "@/components/movies/BrowseMoviesSection";
-import { MoviesSidebar } from "@/components/movies/MoviesSidebar";
-import { SearchResultSection } from "@/components/comics/SearchResultSection";
+import { ExploreLayout } from "@/components/layouts/explore/ExploreLayout";
+import { FeaturedMovieSection } from "@/components/layouts/movies/FeaturedMovieSection";
+import { PopularMoviesCarousel } from "@/components/layouts/movies/PopularMoviesCarousel";
+import { BrowseMoviesSection } from "@/components/layouts/movies/BrowseMoviesSection";
+import { MoviesSidebar } from "@/components/layouts/movies/MoviesSidebar";
+import { SearchResultSection } from "@/components/SearchResultsSection";
 import useDebounce from "../../../lib/debounce";
 import {
     dedupeById,
@@ -14,7 +14,7 @@ import {
     useMovieSearch,
     usePopularMovies,
     usePopularMoviesBrowse,
-} from "@/components/movies/moviesQueries";
+} from "@/components/layouts/movies/moviesQueries";
 
 export default function MoviesPage() {
     const browseQuery = usePopularMoviesBrowse();

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
     CompassIcon,
@@ -47,21 +46,6 @@ function profileHref(pathname: string | null) {
     return source === undefined ? "/profile" : `/profile?from=${encodeURIComponent(pathname ?? source)}`;
 }
 
-
-export function SidebarLogo() {
-    return (
-        <div className="inline-flex items-center">
-            <Image
-                src="/omniflix-orbit.svg"
-                alt="OmniFlix"
-                width={170}
-                height={50}
-                priority
-                className="h-7 w-auto sm:h-9"
-            />
-        </div>
-    );
-}
 
 function NavButton({
     item,

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { MediaCarousel } from "@/components/explore/MediaCarousel";
+import { MediaCarousel } from "@/components/MediaCarousel";
 import {
     SectionHeader,
     EmptyState,
     ErrorState,
-} from "@/components/explore/SectionHeader";
+} from "@/components/SectionHeader";
 import type { MediaItem } from "@/lib/media";
 import type { EntertainmentListType } from "@/service/types/profile.payload";
 

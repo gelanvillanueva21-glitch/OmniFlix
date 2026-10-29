@@ -1,7 +1,7 @@
 "use client";
 
-import { PopularContentList } from "@/components/explore/PopularContentList";
-import { SearchBar } from "@/components/explore/SearchBar";
+import { PopularContentList } from "@/components/PopularContentList";
+import { SearchBar } from "@/components/SearchBar";
 import type { MediaItem } from "@/lib/media";
 
 /** Sidebar content: search bar plus the two Popular lists. */

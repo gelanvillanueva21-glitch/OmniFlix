@@ -2,35 +2,35 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { ExploreLayout } from "@/components/explore/ExploreLayout";
-import { MediaCard } from "@/components/explore/MediaCard";
-import { MediaCarousel } from "@/components/explore/MediaCarousel";
-import { PopularContentList } from "@/components/explore/PopularContentList";
-import { SearchBar } from "@/components/explore/SearchBar";
+import { useAuth } from "@/components/AuthProvider";
+import { ExploreLayout } from "@/components/layouts/explore/ExploreLayout";
+import { MediaCard } from "@/components/MediaCard";
+import { MediaCarousel } from "@/components/MediaCarousel";
+import { PopularContentList } from "@/components/PopularContentList";
+import { SearchBar } from "@/components/SearchBar";
 import {
     EmptyState,
     ErrorState,
     SectionHeader,
-} from "@/components/explore/SectionHeader";
-import { ExploreContentSkeleton } from "@/components/explore/ExploreLoadingSkeleton";
+} from "@/components/SectionHeader";
+import { ExploreContentSkeleton } from "@/components/ExploreContentSkeleton";
 import {
     LoadingSkeleton,
     MediaRowSkeleton,
-} from "@/components/explore/LoadingSkeleton";
-import { CatalogResultGrid } from "@/components/comics/CatalogResultGrid";
-import { LoadMoreControl } from "@/components/comics/LoadMoreControl";
-import { SearchResultsSection } from "@/components/comics/SearchResultsSection";
-import { SourceSelector } from "@/components/comics/SourceSelector";
+} from "@/components/LoadingSkeleton";
+import { CatalogResultGrid } from "@/components/CatalogResultGrid";
+import { LoadMoreControl } from "@/components/LoadMoreControl";
+import { SearchResultsSection } from "@/components/SearchResultsSection";
+import { SourceSelector } from "@/components/layouts/comics/SourceSelector";
 import {
     dedupeById,
     useComicsCatalog,
     useComicsInfiniteCatalog,
     useComicsSources,
-} from "@/components/comics/useComicsCatalog";
+} from "@/components/layouts/comics/useComicsCatalog";
 import type { MediaItem } from "@/lib/media";
 import { COMICK_SOURCE_TYPE } from "@/service/suwayomi.service";
-import useDebounce from '../../lib/debounce';
+import useDebounce from '@/lib/debounce';
 
 interface ComicsPageProps {
     sourceType: string;

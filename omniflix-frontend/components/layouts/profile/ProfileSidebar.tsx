@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { SidebarLogo } from "@/components/explore/SidebarNavigation";
-import { EmptyState, ErrorState } from "@/components/explore/SectionHeader";
+import { useAuth } from "@/components/AuthProvider";
+import { SidebarLogo } from "@/components/SidebarLogo";
+import { EmptyState, ErrorState } from "@/components/SectionHeader";
 import type { MediaItem } from "@/lib/media";
 import type { ProfileResponse } from "@/service/types/profile.payload";
 import {

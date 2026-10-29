@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { EmptyState, SectionHeader } from "./SectionHeader";
+import { EmptyState, SectionHeader } from "@/components/SectionHeader";
 import type { Genre, MediaItem } from "@/lib/media";
 
 interface GenreSelectorProps {

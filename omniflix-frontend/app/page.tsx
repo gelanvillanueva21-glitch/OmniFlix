@@ -1,12 +1,12 @@
 'use client'
 
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/components/AuthProvider";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 
-import { Navbar } from "@/components/landing/Navbar";
-import { HeroSection } from "@/components/landing/HeroSection";
+import { Navbar } from "@/components/layouts/landing/Navbar";
+import { HeroSection } from "@/components/layouts/landing/HeroSection";
 
 
 export default function HomePage() {

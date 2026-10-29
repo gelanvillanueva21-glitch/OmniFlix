@@ -5,10 +5,10 @@ import { useEffect, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { AuthWindow } from "@/components/auth/AuthWindow";
-import { AuthCollage } from "@/components/auth/AuthCollage";
-import { useAuth } from "@/components/auth/AuthProvider";
-import AuthPageSkeleton from "@/components/auth/AuthPageSkeleton";
+import { AuthWindow } from "@/components/layouts/auth/AuthWindow";
+import { AuthCollage } from "@/components/layouts/auth/AuthCollage";
+import { useAuth } from "@/components/AuthProvider";
+import AuthPageSkeleton from "@/components/layouts/auth/AuthPageSkeleton";
 
 type AuthType = "signin" | "signup";
 

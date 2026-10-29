@@ -1,8 +1,8 @@
 "use client";
 
-import { CatalogResultGrid } from "@/components/comics/CatalogResultGrid";
-import { LoadMoreControl } from "@/components/comics/LoadMoreControl";
-import { SectionHeader } from "@/components/explore/SectionHeader";
+import { CatalogResultGrid } from "@/components/CatalogResultGrid";
+import { LoadMoreControl } from "@/components/LoadMoreControl";
+import { SectionHeader } from "@/components/SectionHeader";
 import type { MediaItem } from "@/lib/media";
 
 /** Mirrors catalog query state without coupling to a specific hook. */

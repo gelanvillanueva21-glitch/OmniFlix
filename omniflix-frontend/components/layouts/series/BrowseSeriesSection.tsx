@@ -1,9 +1,9 @@
 "use client";
 
-import { LoadMoreControl } from "@/components/comics/LoadMoreControl";
-import { MediaCard } from "@/components/explore/MediaCard";
-import { EmptyState, ErrorState, SectionHeader } from "@/components/explore/SectionHeader";
-import { LoadingSkeleton } from "@/components/explore/LoadingSkeleton";
+import { LoadMoreControl } from "@/components/LoadMoreControl";
+import { MediaCard } from "@/components/MediaCard";
+import { EmptyState, ErrorState, SectionHeader } from "@/components/SectionHeader";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import type { MediaItem } from "@/lib/media";
 
 interface BrowseSeriesSectionProps {

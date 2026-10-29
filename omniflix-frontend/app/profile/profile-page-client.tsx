@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
-import { ProfileContent } from "@/components/profile/ProfileContent";
-import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
-import { SidebarLogo } from "@/components/explore/SidebarNavigation";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { ProfileSidebar } from "@/components/layouts/profile/ProfileSidebar";
+import { ProfileContent } from "@/components/layouts/profile/ProfileContent";
+import { ProfileSkeleton } from "@/components/layouts/profile/ProfileSkeleton";
+import { SidebarLogo } from "@/components/SidebarLogo";
+import { useAuth } from "@/components/AuthProvider";
 import {
     ChevronLeftIcon,
     CloseIcon,

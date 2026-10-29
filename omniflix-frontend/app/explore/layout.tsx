@@ -2,12 +2,12 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/components/AuthProvider";
 import {
-    SidebarLogo,
     SidebarNavigation,
     AccountNavigation,
-} from "@/components/explore/SidebarNavigation";
+} from "@/components/layouts/explore/SidebarNavigation";
+import { SidebarLogo } from "@/components/SidebarLogo";
 import {
     MenuIcon,
     CloseIcon,

@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { ExploreLayout } from "@/components/explore/ExploreLayout";
-import { FeaturedNovelSection } from "@/components/novels/FeaturedNovelSection";
-import { PopularNovelsCarousel } from "@/components/novels/PopularNovelsCarousel";
-import { BrowseNovelsSection } from "@/components/novels/BrowseNovelsSection";
-import { NovelsSidebar } from "@/components/novels/NovelsSidebar";
-import { SearchResultSection } from "@/components/comics/SearchResultSection";
+import { ExploreLayout } from "@/components/layouts/explore/ExploreLayout";
+import { FeaturedNovelSection } from "@/components/layouts/novels/FeaturedNovelSection";
+import { PopularNovelsCarousel } from "@/components/layouts/novels/PopularNovelsCarousel";
+import { BrowseNovelsSection } from "@/components/layouts/novels/BrowseNovelsSection";
+import { NovelsSidebar } from "@/components/layouts/novels/NovelsSidebar";
+import { SearchResultSection } from "@/components/SearchResultsSection";
 import useDebounce from "../../../lib/debounce";
 import {
     dedupeById,
@@ -14,7 +14,7 @@ import {
     useNovelSearch,
     useNovels,
     usePopularNovels,
-} from "@/components/novels/novelsQueries";
+} from "@/components/layouts/novels/novelsQueries";
 
 export default function NovelsPage() {
     const novelsQuery = useNovels();

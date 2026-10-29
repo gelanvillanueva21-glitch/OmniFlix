@@ -1,8 +1,8 @@
 "use client";
 
-import { MediaCarousel } from "@/components/explore/MediaCarousel";
-import { ErrorState, SectionHeader } from "@/components/explore/SectionHeader";
-import { MediaRowSkeleton } from "@/components/explore/LoadingSkeleton";
+import { MediaCarousel } from "@/components/MediaCarousel";
+import { ErrorState, SectionHeader } from "@/components/SectionHeader";
+import { MediaRowSkeleton } from "@/components/LoadingSkeleton";
 import { PAGE_LIMIT } from "./seriesQueries";
 import type { MediaItem } from "@/lib/media";
 

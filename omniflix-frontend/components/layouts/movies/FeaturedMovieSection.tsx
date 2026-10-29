@@ -1,8 +1,8 @@
 "use client";
 
-import { MediaCard } from "@/components/explore/MediaCard";
-import { EmptyState, ErrorState } from "@/components/explore/SectionHeader";
-import { LoadingSkeleton } from "@/components/explore/LoadingSkeleton";
+import { MediaCard } from "@/components/MediaCard";
+import { EmptyState, ErrorState } from "@/components/SectionHeader";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import type { MediaItem } from "@/lib/media";
 
 interface FeaturedMovieSectionProps {
