@@ -13,6 +13,8 @@ import {
 
 interface ProfileSidebarProps {
     readonly onSignOut: () => void;
+    /** Opens the Change Password window (rendered by the profile page). */
+    readonly onOpenChangePassword?: () => void;
     readonly onGoBack?: () => void;
     readonly onOpenLibrary?: () => void;
     readonly onNavigate?: () => void;
@@ -31,6 +33,7 @@ interface ProfileSidebarProps {
  */
 export function ProfileSidebar({
     onSignOut,
+    onOpenChangePassword,
     onGoBack,
     onOpenLibrary,
     onNavigate,
@@ -109,15 +112,6 @@ export function ProfileSidebar({
                     </div>
 
                     <div className="mt-auto flex flex-col gap-2 pt-8">
-                        {onGoBack && (
-                            <button
-                                type="button"
-                                onClick={onGoBack}
-                                className="flex min-h-11 items-center justify-center rounded-lg border border-[#29292E] px-4 text-sm text-[#A1A1AA] transition-colors hover:border-[#8B5CF6]/60 hover:bg-[#8B5CF6]/10 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
-                            >
-                                Go Back
-                            </button>
-                        )}
                         <Link
                             href="/auth/signin"
                             onClick={onNavigate}
@@ -215,14 +209,12 @@ export function ProfileSidebar({
                             Go Back
                         </button>
                     )}
-                    {/* Change Password: no existing UI flow is wired, so render as
-                        a disabled placeholder rather than a broken control. */}
+                    {/* Change Password opens the modal window rendered by the
+                        profile page (state lives there). */}
                     <button
                         type="button"
-                        disabled
-                        aria-disabled="true"
-                        title="Coming soon"
-                        className="flex min-h-11 cursor-not-allowed items-center gap-3 rounded-lg px-4 text-left text-sm opacity-60 text-[#A1A1AA]"
+                        onClick={onOpenChangePassword}
+                        className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-4 text-left text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
                     >
                         Change Password
                     </button>

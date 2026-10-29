@@ -26,15 +26,15 @@ export function getCurrentUser(options: RequestInit = {}): Promise<UserResponse>
 }
 
 
-export function changePassword(
+export function changePassword(data: {
     currentPassword: string,
     newPassword: string
-): Promise<{ message: string }> {
+}): Promise<{ message?: string } | undefined> {
     return FastApiRequest(`auth/change-password`, {
         method: "PUT",
         body: JSON.stringify({
-            current_password: currentPassword,
-            new_password: newPassword
+            current_password: data.currentPassword,
+            new_password: data.newPassword
         })
     });
 }
