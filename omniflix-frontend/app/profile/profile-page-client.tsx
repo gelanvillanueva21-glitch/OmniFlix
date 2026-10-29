@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ProfileSidebar } from "@/components/layouts/profile/ProfileSidebar";
 import { ProfileContent } from "@/components/layouts/profile/ProfileContent";
 import { ProfileSkeleton } from "@/components/layouts/profile/ProfileSkeleton";
+import { ChangePasswordWindow } from "@/components/layouts/profile/ChangePassword";
 import { SidebarLogo } from "@/components/SidebarLogo";
 import { useAuth } from "@/components/AuthProvider";
 import {
@@ -36,6 +37,7 @@ export default function ProfilePageClient() {
     const tabletDrawerCloseRef = useRef<HTMLButtonElement>(null);
     const [selectedCollection, setSelectedCollection] =
         useState<EntertainmentListType>("FAVORITE");
+    const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
     useEffect(() => {
         if (!isTabletDrawerOpen) {
@@ -113,8 +115,18 @@ export default function ProfilePageClient() {
     const profileSidebar = (
         <ProfileSidebar
             onSignOut={handleSignOut}
+            onOpenChangePassword={
+                !isGuest
+                    ? () => {
+                          setIsTabletDrawerOpen(false);
+                          setMobileView("profile");
+                          setIsChangePasswordOpen(true);
+                      }
+                    : undefined
+            }
             onGoBack={handleGoBack}
             onOpenLibrary={!isGuest ? () => setMobileView("library") : undefined}
+            showLogo={isTabletDrawerOpen ? false : true}
             profile={profileQuery.data}
             recentActivity={recentActivity}
             isActivityLoading={activityQuery.isLoading}
@@ -144,6 +156,9 @@ export default function ProfilePageClient() {
 
     return (
         <main className="fixed inset-0 overflow-hidden bg-[#111111] text-[#F5F5F5]">
+            {isChangePasswordOpen && (
+                <ChangePasswordWindow onClose={() => setIsChangePasswordOpen(false)} />
+            )}
             <section className="flex h-full flex-col min-[650px]:hidden lg:hidden">
                 {mobileView === "profile" ? (
                     <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 py-6 sm:px-8 sm:py-8">
@@ -248,17 +263,7 @@ export default function ProfilePageClient() {
                                 </button>
                             </div>
                             <div className="h-[calc(100%-4rem)]">
-                                <ProfileSidebar
-                                    onSignOut={handleSignOut}
-                                    onGoBack={handleGoBack}
-                                    onNavigate={() => setIsTabletDrawerOpen(false)}
-                                    showLogo={false}
-                                    profile={profileQuery.data}
-                                    recentActivity={recentActivity}
-                                    isActivityLoading={activityQuery.isLoading}
-                                    activityError={activityError}
-                                    onRetryActivity={() => void activityQuery.refetch()}
-                                />
+                                {profileSidebar}
                             </div>
                         </aside>
                     </div>

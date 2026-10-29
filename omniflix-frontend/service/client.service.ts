@@ -48,6 +48,11 @@ export async function FastApiRequest<T>(path: string, options: RequestInit = {})
     }
 
 
+    // 204/205 have no body — response.json() would reject on empty content.
+    if (response.status === 204 || response.status === 205) {
+        return undefined as T;
+    }
+
     return response.json() as Promise<T>;
 }
 
