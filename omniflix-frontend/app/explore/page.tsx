@@ -18,6 +18,7 @@ import useDebounce from "@/lib/debounce";
 import type { ExploreData } from "@/lib/explore";
 import { selectRandomFeaturedMedia } from "@/lib/selectRandomFeaturedMedia";
 
+
 const POPULAR_SECTIONS = [
     { key: "comics", title: "Popular Comics" },
     { key: "novels", title: "Popular Novels" },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, Suspense, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import {
@@ -55,16 +55,20 @@ function ExploreShell({
             </div>
 
             <div className="explore-sidebar-main">
-                <SidebarNavigation onNavigate={onNavigate} />
+                <Suspense fallback={<div className="explore-nav" />}>
+                    <SidebarNavigation onNavigate={onNavigate} />
+                </Suspense>
             </div>
 
             <div className="explore-sidebar-account">
-                <AccountNavigation
-                    isAuthenticated={isAuthenticated}
-                    username={user?.username}
-                    onSignOut={onSignOut}
-                    onNavigate={onNavigate}
-                />
+                <Suspense fallback={<div className="explore-nav-heading-group" />}>
+                    <AccountNavigation
+                        isAuthenticated={isAuthenticated}
+                        username={user?.username}
+                        onSignOut={onSignOut}
+                        onNavigate={onNavigate}
+                    />
+                </Suspense>
             </div>
         </div>
     );

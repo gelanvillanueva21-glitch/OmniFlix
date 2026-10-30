@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { StarIcon, ImageIcon } from "@/components/icons/icons";
-import { mediaTypeLabel, type MediaItem } from "@/lib/media";
+import { mediaHref, mediaTypeLabel, type MediaItem } from "@/lib/media";
 
 interface MediaCardProps {
     readonly media: MediaItem;
@@ -15,6 +16,10 @@ interface MediaCardProps {
  * Presentation-only card. All data arrives via props; nothing is hardcoded.
  * Image failures degrade to a neutral placeholder — the UI never depends on
  * a specific image host.
+ *
+ * Navigation: the whole card surface links to the detail route derived from
+ * `MediaItem.type` + `MediaItem.id` via `mediaHref`. Malformed ids or
+ * unsupported types render the card without a link instead of navigating.
  */
 export function MediaCard({
     media,
@@ -22,6 +27,8 @@ export function MediaCard({
 }: MediaCardProps) {
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = media.coverImage !== undefined && !imageFailed;
+
+    const href = mediaHref(media);
 
     const sourceLabel = media.source
         ? (media.source.toLowerCase() === "tmdb"
@@ -36,54 +43,50 @@ export function MediaCard({
         media.releaseYear !== undefined ? String(media.releaseYear) : null,
     ].filter((part): part is string => part !== null);
 
-    if (variant === "wide") {
-        return (
-            <article className="media-card-wide">
-                <div className="media-card-wide-frame">
-                    {showImage ? (
-                        <Image
-                            src={media.coverImage as string}
-                            alt=""
-                            fill
-                            sizes="(max-width: 1280px) 100vw, 900px"
-                            className="media-card-wide-image"
-                            onError={() => setImageFailed(true)}
-                        />
-                    ) : (
-                        <div className="media-card-wide-image-placeholder">
-                            <ImageIcon className="media-card-wide-placeholder-icon" />
-                        </div>
-                    )}
-                    <div
-                        aria-hidden="true"
-                        className="media-card-wide-overlay"
+    const cardBody = variant === "wide" ? (
+        <article className="media-card-wide">
+            <div className="media-card-wide-frame">
+                {showImage ? (
+                    <Image
+                        src={media.coverImage as string}
+                        alt=""
+                        fill
+                        sizes="(max-width: 1280px) 100vw, 900px"
+                        className="media-card-wide-image"
+                        onError={() => setImageFailed(true)}
                     />
-                    <div className="media-card-wide-content">
-                        <p className="media-card-wide-metadata">
-                            {metadataParts.map((part) => (
-                                <span
-                                    key={part}
-                                    className="media-card-wide-metadata-part"
-                                >
-                                    {part}
-                                </span>
-                            ))}
-                        </p>
-                        <h3 className="media-card-wide-title">
-                            {media.title}
-                        </h3>
-                        {media.description !== undefined && (
-                            <p className="media-card-wide-description">
-                                {media.description}
-                            </p>
-                        )}
+                ) : (
+                    <div className="media-card-wide-image-placeholder">
+                        <ImageIcon className="media-card-wide-placeholder-icon" />
                     </div>
+                )}
+                <div
+                    aria-hidden="true"
+                    className="media-card-wide-overlay"
+                />
+                <div className="media-card-wide-content">
+                    <p className="media-card-wide-metadata">
+                        {metadataParts.map((part) => (
+                            <span
+                                key={part}
+                                className="media-card-wide-metadata-part"
+                            >
+                                {part}
+                            </span>
+                        ))}
+                    </p>
+                    <h3 className="media-card-wide-title">
+                        {media.title}
+                    </h3>
+                    {media.description !== undefined && (
+                        <p className="media-card-wide-description">
+                            {media.description}
+                        </p>
+                    )}
                 </div>
-            </article>
-        );
-    }
-
-    return (
+            </div>
+        </article>
+    ) : (
         <article className="media-card-poster">
             <div className="media-card-poster-frame">
                 {showImage ? (
@@ -119,5 +122,17 @@ export function MediaCard({
                 </p>
             </div>
         </article>
+    );
+
+    if (!href) {
+        return cardBody;
+    }
+
+    // One wrapping link covers the entire card: real link semantics, keyboard
+    // focusable, and no nested interactive elements (the card body has none).
+    return (
+        <Link href={href} className="media-card-link">
+            {cardBody}
+        </Link>
     );
 }

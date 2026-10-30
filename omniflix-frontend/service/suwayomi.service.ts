@@ -85,7 +85,7 @@ export async function fetchSuwayomiCatalog(
     query?: string,
 ): Promise<SuwayomiCatalogPage> {
     const source = (await getSuwayomiSources()).find(
-        (candidate) => candidate.type === sourceType,
+        (candidate) => candidate.type === sourceType || candidate.id === sourceType,
     );
     if (!source) {
         throw new Error(`Unsupported comic source: ${sourceType}`);
@@ -301,6 +301,7 @@ function mapMangaToMediaItems(
     });
 }
 
+
 async function graphQl<T>(
     baseUrl: string,
     query: string,
@@ -323,4 +324,3 @@ async function graphQl<T>(
 
     return response.data;
 }
-
