@@ -89,11 +89,11 @@ export default function NovelsPage() {
             {/* No <main> wrapper here: ExploreLayout's main already provides
                 the page padding (px-4 py-6 sm:px-6 lg:px-8 lg:py-8), matching
                 Comics. An extra wrapper double-applies it. */}
-            <header className="mb-6">
-                <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl">
+            <header className="novels-page-heading">
+                <h1 className="novels-page-title">
                     Novels
                 </h1>
-                <p className="mt-1 text-sm text-[#A1A1AA]">
+                <p className="novels-page-subtitle">
                     Discover light novels and translated web novels.
                 </p>
             </header>

@@ -27,23 +27,23 @@ export default function HomePage() {
                 <div
                     role="status"
                     aria-live="polite"
-                    className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950"
+                    className="home-loading-overlay"
                 >
                     <div
                         aria-hidden="true"
-                        className="h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-slate-200 motion-reduce:animate-none"
+                        className="home-loading-spinner"
                     />
-                    <p className="mt-6 text-base font-medium text-white">
+                    <p className="home-loading-title">
                         A moment, please...
                     </p>
-                    <p className="mt-1.5 text-sm text-slate-400">
+                    <p className="home-loading-subtitle">
                         We&apos;re getting things ready for you.
                     </p>
                 </div>
             ):(
-                <div className="min-h-screen flex flex-col bg-[#111111] text-[#F5F5F5] selection:bg-[#8B5CF6]/30 selection:text-white">
+                <div className="home-page-shell">
                     <Navbar />
-                    <main className="flex-1 flex flex-col">
+                    <main className="home-page-main">
                         <HeroSection />
                     </main>
                 </div>

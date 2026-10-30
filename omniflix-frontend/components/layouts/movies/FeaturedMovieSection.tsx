@@ -22,9 +22,9 @@ export function FeaturedMovieSection({
     featuredMovie,
 }: FeaturedMovieSectionProps) {
     return (
-        <section aria-label="Featured movie" className="mb-8">
+        <section aria-label="Featured movie" className="movies-featured-section">
             {isPending ? (
-                <LoadingSkeleton className="aspect-12/5 w-full" />
+                <LoadingSkeleton className="media-card-wide-frame" />
             ) : isError ? (
                 <ErrorState
                     message={errorMessage}

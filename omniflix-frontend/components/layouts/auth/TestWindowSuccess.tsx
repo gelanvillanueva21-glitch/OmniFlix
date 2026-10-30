@@ -10,10 +10,10 @@ interface Props {
 
 export function WindowSuccess({ onClose, description }: Props) {
     return createPortal(
-        <div className="fixed bottom-5 right-5 z-9999 flex w-[calc(100vw-2.5rem)] max-w-sm items-center gap-3 rounded-lg border border-emerald-800 bg-gray-900 p-4 shadow-lg">
+        <div className="success-toast">
             {/* Checkmark Icon */}
             <svg
-                className="h-5 w-5 shrink-0 text-emerald-500"
+                className="success-toast-icon"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth="2"
@@ -28,11 +28,11 @@ export function WindowSuccess({ onClose, description }: Props) {
             </svg>
 
             {/* Notification Message */}
-            <div className="min-w-0 flex-1 text-sm">
-                <p className="font-medium text-gray-100">
+            <div className="success-toast-body">
+                <p className="success-toast-title">
                     Operation successful!
                 </p>
-                <p className="text-gray-400">
+                <p className="success-toast-description">
                     {description}
                 </p>
             </div>
@@ -41,11 +41,11 @@ export function WindowSuccess({ onClose, description }: Props) {
             <button
                 type="button"
                 onClick={onClose}
-                className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-800 hover:text-gray-200"
+                className="success-toast-close"
                 aria-label="Close notification"
             >
                 <svg
-                    className="h-4 w-4"
+                    className="success-toast-close-icon"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth="2"

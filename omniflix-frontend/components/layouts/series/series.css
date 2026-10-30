@@ -1,0 +1,26 @@
+/* Series feature styles (components/layouts/series/ + app/explore/series/).
+   Imported through app/globals.css. */
+
+.series-page-heading {
+    @apply mb-6;
+}
+
+.series-page-title {
+    @apply font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl;
+}
+
+.series-page-subtitle {
+    @apply mt-1 text-sm text-[#A1A1AA];
+}
+
+.series-featured-section {
+    @apply mb-8;
+}
+
+.series-carousel-section {
+    @apply mb-8 space-y-4;
+}
+
+.series-browse-section {
+    @apply space-y-4;
+}

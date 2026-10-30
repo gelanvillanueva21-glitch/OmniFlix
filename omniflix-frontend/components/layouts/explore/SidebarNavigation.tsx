@@ -60,20 +60,20 @@ function NavButton({
 }) {
     const { Icon } = item;
     const classes = isActive
-        ? "bg-[#8B5CF6]/15 text-[#A78BFA] font-medium"
-        : "text-[#A1A1AA] hover:bg-[#242429]/70 hover:text-[#F5F5F5]";
+        ? "explore-nav-item--active"
+        : "explore-nav-item--inactive";
 
     const inner = (
         <>
-            <Icon className="h-5 w-5 shrink-0" />
-            <span className="truncate">{item.label}</span>
+            <Icon className="explore-nav-icon" />
+            <span className="explore-nav-truncate">{item.label}</span>
         </>
     );
 
     if (item.href === undefined) {
         return (
             <span
-                className={`flex min-h-11 cursor-not-allowed items-center gap-3.5 rounded-lg px-4 text-sm opacity-60 ${classes}`}
+                className={`explore-nav-item explore-nav-item--disabled-cursor ${classes}`}
                 aria-disabled="true"
                 title="Coming soon"
             >
@@ -85,7 +85,7 @@ function NavButton({
     if (isDisabled) {
         return (
             <span
-                className={`flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm transition-colors ${classes}`}
+                className={`explore-nav-item explore-nav-item--interactive ${classes}`}
                 aria-current={isActive ? "page" : undefined}
                 aria-disabled="true"
             >
@@ -99,7 +99,7 @@ function NavButton({
             href={item.href}
             onClick={onClick}
             aria-current={isActive ? "page" : undefined}
-            className={`flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] ${classes}`}
+            className={`explore-nav-item explore-nav-item--interactive ${classes}`}
         >
             {inner}
         </Link>
@@ -132,8 +132,8 @@ export function SidebarNavigation({ onNavigate }: SidebarNavigationProps) {
     }
 
     return (
-        <nav aria-label="Main navigation" className="space-y-1">
-            <p className="px-4 pb-2 text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase">
+        <nav aria-label="Main navigation" className="explore-nav">
+            <p className="explore-nav-heading">
                 Browse
             </p>
             {MAIN_NAVIGATION.map((item) => (
@@ -166,8 +166,8 @@ export function AccountNavigation({
 
     if (!isAuthenticated) {
         return (
-            <div className="space-y-1.5">
-                <p className="px-4 pb-2 text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase">
+            <div className="explore-nav-heading-group">
+                <p className="explore-nav-heading">
                     Account
                 </p>
                 {/* Guest profile section: avatar, name, link to /profile */}
@@ -175,26 +175,26 @@ export function AccountNavigation({
                     href={profileHref(pathname)}
                     onClick={onNavigate}
                     aria-current={pathname === "/profile" ? "page" : undefined}
-                    className={`flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] ${
+                    className={`explore-nav-item explore-nav-item--interactive ${
                         pathname === "/profile"
-                            ? "bg-[#8B5CF6]/15 text-[#A78BFA] font-medium"
-                            : "text-[#A1A1AA] hover:bg-[#242429]/70 hover:text-[#F5F5F5]"
+                            ? "explore-nav-item--active"
+                            : "explore-nav-item--inactive"
                     }`}
                 >
-                    <UserIcon className="h-5 w-5 shrink-0" />
-                    <span className="truncate">Profile</span>
+                    <UserIcon className="explore-nav-icon" />
+                    <span className="explore-nav-truncate">Profile</span>
                 </Link>
                 <Link
                     href="/auth/signin"
                     onClick={onNavigate}
-                    className="flex min-h-11 items-center rounded-lg px-4 text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                    className="explore-nav-signin"
                 >
                     Sign In
                 </Link>
                 <Link
                     href="/auth/signup"
                     onClick={onNavigate}
-                    className="flex min-h-11 items-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF]"
+                    className="explore-nav-signup"
                 >
                     Sign Up
                 </Link>
@@ -203,20 +203,20 @@ export function AccountNavigation({
     }
 
     return (
-        <div className="space-y-1.5">
-            <p className="px-4 pb-2 text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase">
+        <div className="explore-nav-heading-group">
+            <p className="explore-nav-heading">
                 Account
             </p>
             {username !== undefined && (
                 <Link
                     href={profileHref(pathname)}
                     onClick={onNavigate}
-                    className="flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm text-[#F5F5F5] transition-colors hover:bg-[#242429]/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                    className="explore-nav-item explore-nav-item--plain"
                 >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/15 text-[#A78BFA]">
-                        <UserIcon className="h-4 w-4" />
+                    <span className="explore-nav-avatar">
+                        <UserIcon className="explore-nav-avatar-icon" />
                     </span>
-                    <span className="truncate">
+                    <span className="explore-nav-truncate">
                         {username}
                     </span>
                 </Link>
@@ -224,9 +224,9 @@ export function AccountNavigation({
             <button
                 type="button"
                 onClick={onSignOut}
-                className="flex min-h-11 w-full items-center gap-3.5 rounded-lg px-4 text-left text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                className="explore-nav-signout"
             >
-                <LogOutIcon className="h-5 w-5 shrink-0" />
+                <LogOutIcon className="explore-nav-icon" />
                 Sign out
             </button>
         </div>

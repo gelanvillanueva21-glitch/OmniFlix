@@ -1,0 +1,26 @@
+/* Movies feature styles (components/layouts/movies/ + app/explore/movies/).
+   Imported through app/globals.css. */
+
+.movies-page-heading {
+    @apply mb-6;
+}
+
+.movies-page-title {
+    @apply font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl;
+}
+
+.movies-page-subtitle {
+    @apply mt-1 text-sm text-[#A1A1AA];
+}
+
+.movies-featured-section {
+    @apply mb-8;
+}
+
+.movies-carousel-section {
+    @apply mb-8 space-y-4;
+}
+
+.movies-browse-section {
+    @apply space-y-4;
+}

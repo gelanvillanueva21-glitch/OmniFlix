@@ -29,7 +29,7 @@ export function BrowseMoviesSection({
     onLoadMore,
 }: BrowseMoviesSectionProps) {
     return (
-        <section aria-label="Browse movies" className="space-y-4">
+        <section aria-label="Browse movies" className="movies-browse-section">
             <SectionHeader title="Browse Movies" />
             {isPending ? (
                 <BrowseGridSkeleton label="Loading movies" />
@@ -46,7 +46,7 @@ export function BrowseMoviesSection({
             ) : (
                 <ul
                     role="list"
-                    className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5"
+                    className="media-grid"
                 >
                     {browseMovies.map((item) => (
                         <li key={item.id}>
@@ -69,13 +69,13 @@ function BrowseGridSkeleton({ label }: { label: string }) {
         <div
             role="status"
             aria-label={label}
-            className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5"
+            className="media-grid"
         >
             {Array.from({ length: 10 }, (_, index) => (
-                <div key={index} className="space-y-2">
-                    <LoadingSkeleton className="aspect-2/3 w-full" />
-                    <LoadingSkeleton className="h-3.5 w-3/4" />
-                    <LoadingSkeleton className="h-3 w-1/2" />
+                <div key={index} className="media-grid-skeleton-cell">
+                    <LoadingSkeleton className="media-grid-skeleton-poster" />
+                    <LoadingSkeleton className="media-grid-skeleton-title" />
+                    <LoadingSkeleton className="media-grid-skeleton-subtitle" />
                 </div>
             ))}
         </div>

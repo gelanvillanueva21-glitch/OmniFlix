@@ -14,7 +14,7 @@ interface PopularMoviesCarouselProps {
 /** Popular movies carousel section. */
 export function PopularMoviesCarousel({ items, isPending }: PopularMoviesCarouselProps) {
     return (
-        <section aria-label="Popular movies carousel" className="mb-8 space-y-4">
+        <section aria-label="Popular movies carousel" className="movies-carousel-section">
             <SectionHeader title="Popular Movies" />
             {isPending ? (
                 <MediaRowSkeleton />

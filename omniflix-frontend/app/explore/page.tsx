@@ -83,14 +83,14 @@ export default function ExplorePage() {
     return (
         <ExploreLayout
             utilities={
-                <div className="space-y-4">
+                <div className="explore-overview-utilities">
                     <SearchBar
                         id="explore-search"
                         value={searchQuery}
                         onChange={setSearchQuery}
                         onSubmit={setSearchQuery}
                     />
-                    <p className="text-xs text-[#A1A1AA]">
+                    <p className="explore-overview-utilities-note">
                         Search anime, series, movies, comics, and novels as you type.
                     </p>
                 </div>
@@ -116,17 +116,17 @@ export default function ExplorePage() {
             ) : (
             <>
             {/* 1. Page heading */}
-            <header className="mb-6">
-                <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl">
+            <header className="explore-page-heading">
+                <h1 className="explore-page-title">
                     Explore
                 </h1>
-                <p className="mt-1 text-sm text-[#A1A1AA] sm:text-base">
+                <p className="explore-page-subtitle">
                     Discover comics, novels, movies, and series — all in one place.
                 </p>
             </header>
 
             {/* 2. Featured */}
-            <section aria-labelledby="featured-heading" className="mb-8">
+            <section aria-labelledby="featured-heading" className="explore-featured-section">
                 <h2 id="featured-heading" className="sr-only">
                     Featured content
                 </h2>
@@ -144,7 +144,7 @@ export default function ExplorePage() {
             </section>
 
             {/* 3. Trending Now */}
-            <section aria-labelledby="trending-heading" className="mb-8 space-y-4">
+            <section aria-labelledby="trending-heading" className="explore-carousel-section">
                 <SectionHeader title="Trending Now" />
                 <MediaCarousel
                     items={exploreData.trending}
@@ -153,7 +153,7 @@ export default function ExplorePage() {
             </section>
 
             {/* 4. Recommended (general selection — not personalized yet) */}
-            <section aria-labelledby="recommended-heading" className="mb-8 space-y-4">
+            <section aria-labelledby="recommended-heading" className="explore-carousel-section">
                 <SectionHeader title="Recommended for You" />
                 {exploreData.recommended.length === 0 ? (
                     <EmptyState
@@ -169,7 +169,7 @@ export default function ExplorePage() {
             </section>
 
             {/* 5. Browse by Genre */}
-            <section className="mb-8">
+            <section className="explore-genre-section">
                 <GenreSelector
                     genres={exploreData.genres}
                     items={exploreData.discover}
@@ -177,19 +177,19 @@ export default function ExplorePage() {
             </section>
 
             {/* 6. Discover More (server-paginated grid) */}
-            <section aria-labelledby="discover-heading" className="space-y-4">
+            <section aria-labelledby="discover-heading" className="explore-discover-section">
                 <SectionHeader title="Discover More" />
                 {discoverQuery.isPending ? (
                     <div
                         role="status"
                         aria-label="Loading discover content"
-                        className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5"
+                        className="media-grid"
                     >
                         {Array.from({ length: 10 }, (_, index) => (
-                            <div key={index} className="space-y-2">
-                                <LoadingSkeleton className="aspect-2/3 w-full" />
-                                <LoadingSkeleton className="h-3.5 w-3/4" />
-                                <LoadingSkeleton className="h-3 w-1/2" />
+                            <div key={index} className="media-grid-skeleton-cell">
+                                <LoadingSkeleton className="media-grid-skeleton-poster" />
+                                <LoadingSkeleton className="media-grid-skeleton-title" />
+                                <LoadingSkeleton className="media-grid-skeleton-subtitle" />
                             </div>
                         ))}
                     </div>
@@ -211,7 +211,7 @@ export default function ExplorePage() {
                     <>
                         <ul
                             role="list"
-                            className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5"
+                            className="media-grid"
                         >
                             {discoverItems.map((item) => (
                                 <li key={item.id}>

@@ -48,16 +48,16 @@ export function ProfileSidebar({
 
     if (isLoading) {
         return (
-            <div className="flex h-full flex-col">
+            <div className="explore-sidebar-body">
                 {showLogo && (
-                    <div className="px-2 pt-1 pb-6">
+                    <div className="explore-sidebar-logo-slot">
                         <SidebarLogo />
                     </div>
                 )}
-                <div className="mt-4 space-y-3 px-2" aria-hidden="true">
-                    <div className="h-16 w-16 rounded-full bg-[#27272A] animate-pulse motion-reduce:animate-none" />
-                    <div className="h-4 w-28 rounded bg-[#27272A] animate-pulse motion-reduce:animate-none" />
-                    <div className="h-24 rounded-lg bg-[#27272A] animate-pulse motion-reduce:animate-none" />
+                <div className="profile-sidebar-loading" aria-hidden="true">
+                    <div className="profile-sidebar-skeleton-avatar" />
+                    <div className="profile-sidebar-skeleton-name" />
+                    <div className="profile-sidebar-skeleton-box" />
                 </div>
             </div>
         );
@@ -65,43 +65,43 @@ export function ProfileSidebar({
 
     if (!isAuthenticated || user === null) {
         return (
-            <div className="flex h-full flex-col">
+            <div className="explore-sidebar-body">
                 {showLogo && (
-                    <div className="px-2 pt-1 pb-6">
+                    <div className="explore-sidebar-logo-slot">
                         <SidebarLogo />
                     </div>
                 )}
 
-                <div className="mt-6 flex flex-1 flex-col px-2">
-                    <div className="flex items-center gap-3">
-                        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#242429] text-[#A1A1AA]">
-                            <UserIcon className="h-7 w-7" />
+                <div className="profile-sidebar-guest">
+                    <div className="profile-sidebar-guest-identity">
+                        <span className="profile-sidebar-guest-avatar">
+                            <UserIcon className="profile-sidebar-guest-avatar-icon" />
                         </span>
-                        <p className="text-lg font-semibold text-[#F5F5F5]">Guest</p>
+                        <p className="profile-sidebar-guest-name">Guest</p>
                     </div>
 
-                    <p className="mt-4 text-xs leading-relaxed text-[#A1A1AA]">
+                    <p className="profile-sidebar-guest-note">
                         Sign in or create an account to save favorites, build your
                         watchlist, and organize your entertainment.
                     </p>
 
-                    <div className="mt-6 min-h-40 rounded-lg border border-[#29292E] bg-[#171719] p-4 min-[650px]:hidden">
-                        <p className="text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase">
+                    <div className="profile-history-box profile-history-box--mobile-only">
+                        <p className="profile-history-heading">
                             History
                         </p>
                         {recentActivity.length === 0 ? (
-                            <div className="mt-3">
+                            <div className="profile-history-empty">
                                 <EmptyState
                                     title="No recent activity yet"
                                     description="Sign in to keep track of your activity."
                                 />
                             </div>
                         ) : (
-                            <ul className="mt-3 space-y-2">
+                            <ul className="profile-history-list">
                                 {recentActivity.slice(0, 5).map((item) => (
                                     <li
                                         key={item.id}
-                                        className="truncate text-xs text-[#A1A1AA]"
+                                        className="profile-history-list-item"
                                         title={item.title}
                                     >
                                         {item.title}
@@ -111,18 +111,18 @@ export function ProfileSidebar({
                         )}
                     </div>
 
-                    <div className="mt-auto flex flex-col gap-2 pt-8">
+                    <div className="profile-sidebar-footer">
                         <Link
                             href="/auth/signin"
                             onClick={onNavigate}
-                            className="flex min-h-11 items-center justify-center rounded-lg px-4 text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                            className="profile-sidebar-signin"
                         >
                             Sign In
                         </Link>
                         <Link
                             href="/auth/signup"
                             onClick={onNavigate}
-                            className="flex min-h-11 items-center justify-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF]"
+                            className="profile-sidebar-signup"
                         >
                             Sign Up
                         </Link>
@@ -133,33 +133,33 @@ export function ProfileSidebar({
     }
 
     return (
-        <div className="flex h-full flex-col">
+        <div className="explore-sidebar-body">
             {showLogo && (
                 <div className="px-2 pt-1 pb-6">
                     <SidebarLogo />
                 </div>
             )}
 
-            <div className="mt-4 flex flex-1 flex-col space-y-5 px-2">
+            <div className="explore-sidebar-loading">
                 {/* Avatar + name (UserResponse has no profile picture or display
                     name yet — fallback: username + default avatar icon) */}
-                <div className="flex items-center gap-3">
-                    <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/15 text-[#A78BFA]">
-                        <UserIcon className="h-7 w-7" />
+                <div className="profile-sidebar-identity">
+                    <span className="profile-sidebar-avatar">
+                        <UserIcon className="profile-sidebar-avatar-icon" />
                     </span>
-                    <div className="min-w-0">
-                        <p className="truncate text-lg font-semibold text-[#F5F5F5]">
+                    <div className="profile-sidebar-name-slot">
+                        <p className="profile-sidebar-name">
                             {profile?.displayName ?? user.username}
                         </p>
                     </div>
                 </div>
 
-                <div className="min-h-40 rounded-lg border border-[#29292E] bg-[#171719] p-4">
-                    <p className="text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase">
+                <div className="profile-history-box">
+                    <p className="profile-history-heading">
                         History
                     </p>
                     {isActivityLoading ? (
-                        <p className="mt-2 text-xs text-[#A1A1AA]" role="status">
+                        <p className="profile-history-loading-text" role="status">
                             Loading recent activity...
                         </p>
                     ) : activityError ? (
@@ -168,18 +168,18 @@ export function ProfileSidebar({
                             onRetry={onRetryActivity}
                         />
                     ) : recentActivity.length === 0 ? (
-                        <div className="mt-2">
+                        <div className="profile-history-loading">
                             <EmptyState
                                 title="No recent activity yet"
                                 description="Titles you open will appear here."
                             />
                         </div>
                     ) : (
-                        <ul className="mt-3 space-y-2">
+                        <ul className="profile-history-list">
                             {recentActivity.slice(0, 5).map((item) => (
                                 <li
                                     key={item.id}
-                                    className="truncate text-xs text-[#A1A1AA]"
+                                    className="profile-history-list-item"
                                     title={item.title}
                                 >
                                     {item.title}
@@ -193,18 +193,18 @@ export function ProfileSidebar({
                     <button
                         type="button"
                         onClick={onOpenLibrary}
-                        className="flex min-h-12 items-center justify-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] lg:hidden"
+                        className="profile-sidebar-library-button"
                     >
                         Open Library
                     </button>
                 )}
 
-                <div className="mt-auto flex flex-col gap-2 pt-8">
+                <div className="profile-sidebar-footer">
                     {onGoBack && (
                         <button
                             type="button"
                             onClick={onGoBack}
-                            className="flex min-h-11 items-center gap-3 rounded-lg px-4 text-left text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                            className="profile-sidebar-action"
                         >
                             Go Back
                         </button>
@@ -214,16 +214,16 @@ export function ProfileSidebar({
                     <button
                         type="button"
                         onClick={onOpenChangePassword}
-                        className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-4 text-left text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                        className="profile-sidebar-action profile-sidebar-action--pointer"
                     >
                         Change Password
                     </button>
                     <button
                         type="button"
                         onClick={onSignOut}
-                        className="flex min-h-11 items-center gap-3 rounded-lg px-4 text-left text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                        className="profile-sidebar-action"
                     >
-                        <LogOutIcon className="h-5 w-5 shrink-0" />
+                        <LogOutIcon className="profile-sidebar-action-icon" />
                         Sign Out
                     </button>
                 </div>

@@ -84,11 +84,11 @@ export default function MoviesPage() {
         >
             {/* No <main> wrapper here: ExploreLayout's main already provides
                 the page padding, matching Comics and Explore. */}
-            <header className="mb-6">
-                <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl">
+            <header className="movies-page-heading">
+                <h1 className="movies-page-title">
                     Movies
                 </h1>
-                <p className="mt-1 text-sm text-[#A1A1AA]">
+                <p className="movies-page-subtitle">
                     Discover popular movies from TMDB.
                 </p>
             </header>

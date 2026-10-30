@@ -31,29 +31,29 @@ export function ExploreLayout({ children, utilities, popular }: ExploreLayoutPro
             />
 
             {isLibraryOpen && hasRightContent && (
-                <div className="fixed inset-0 z-50 lg:block xl:hidden" role="dialog" aria-modal="true" aria-label="Library">
+                <div className="explore-library-drawer-wrapper" role="dialog" aria-modal="true" aria-label="Library">
                     <button
                         type="button"
                         aria-label="Close library"
                         onClick={() => setIsLibraryOpen(false)}
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        className="explore-overlay-backdrop"
                     />
                     <div
                         id="library-drawer"
-                        className="absolute inset-y-0 right-0 w-80 max-w-[90vw] overflow-y-auto border-l border-[#29292E] bg-[#171719] px-5 py-6 shadow-xl"
+                        className="explore-library-drawer"
                     >
                         <button
                             type="button"
                             onClick={() => setIsLibraryOpen(false)}
                             aria-label="Close library"
-                            className="absolute top-4 right-3 inline-flex h-11 w-11 items-center justify-center rounded-lg text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                            className="explore-library-drawer-close"
                         >
                             <CloseIcon className="h-5 w-5" />
                         </button>
-                        <div className="space-y-8 pr-10">
+                        <div className="explore-library-drawer-body">
                             {utilities}
                             {popular !== undefined && (
-                                <div className="space-y-8 border-t border-[#29292E] pt-6">
+                                <div className="explore-library-drawer-popular">
                                     {popular}
                                 </div>
                             )}
@@ -62,16 +62,16 @@ export function ExploreLayout({ children, utilities, popular }: ExploreLayoutPro
                 </div>
             )}
 
-            <div className="flex">
-                <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <div className="explore-content-row">
+                <main className="explore-content-main">
                     {children}
                 </main>
 
                 {hasRightContent && (
-                    <aside className="sticky top-0 hidden h-screen w-80 shrink-0 overflow-y-auto border-l border-[#29292E] bg-[#171719] px-5 py-8 xl:block">
+                    <aside className="explore-content-aside">
                         {utilities}
                         {popular !== undefined && (
-                            <div className="mt-8 space-y-8 border-t border-[#29292E] pt-6">
+                            <div className="explore-content-aside-popular">
                                 {popular}
                             </div>
                         )}

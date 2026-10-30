@@ -40,11 +40,11 @@ export default function AuthPageClient({ mode }: AuthPageClientProps) {
             {isLoading ? (
                 <AuthPageSkeleton />
             ) : (
-                <div className="min-h-screen flex flex-col bg-[#111111] text-[#F5F5F5] relative overflow-hidden select-none">
-                    <header className="w-full max-w-360 mx-auto px-4 sm:px-8 h-20 flex items-center justify-between z-30">
+                <div className="auth-page-shell">
+                    <header className="auth-page-header">
                         <Link
                             href="/"
-                            className="inline-flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] rounded-md transition-opacity hover:opacity-90"
+                            className="auth-page-logo-link"
                             aria-label="Return to OmniFlix homepage"
                         >
                             <Image
@@ -53,26 +53,26 @@ export default function AuthPageClient({ mode }: AuthPageClientProps) {
                                 width={160}
                                 height={40}
                                 priority
-                                className="h-10 w-auto"
+                                className="auth-page-logo-image"
                             />
                         </Link>
 
                         <Link
                             href="/"
-                            className="text-xs tracking-wider uppercase text-[#A1A1AA] hover:text-[#F5F5F5] transition-colors py-1.5 px-3 rounded-full border border-transparent hover:border-[#27272A] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                            className="auth-page-home-link"
                         >
                             Back to home
                         </Link>
                     </header>
 
-                    <main className="flex-1 max-w-360 w-full mx-auto px-4 sm:px-12 flex items-center justify-center relative z-20 pb-6 sm:pb-12">
-                        <div className="w-full max-w-275 grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-16 items-center min-h-0 lg:min-h-145 relative">
+                    <main className="auth-page-main">
+                        <div className="auth-page-columns">
                             {/* Auth form */}
                             <div
-                                className={`flex items-center justify-center w-full transition-all duration-600 ease-in-out motion-reduce:transition-none ${
+                                className={`auth-page-form-column ${
                                     isSignIn
-                                        ? "lg:order-1 opacity-100 translate-x-0"
-                                        : "lg:order-2 opacity-100 translate-x-0"
+                                        ? "auth-page-form-column--signin"
+                                        : "auth-page-form-column--signup"
                                 }`}
                             >
                                 <AuthWindow
@@ -83,10 +83,10 @@ export default function AuthPageClient({ mode }: AuthPageClientProps) {
 
                             {/* Hide collage below lg (1024px); desktop keeps it */}
                             <div
-                                className={`max-lg:hidden flex items-center justify-center w-full transition-all duration-600 ease-in-out motion-reduce:transition-none ${
+                                className={`auth-page-collage-column ${
                                     isSignIn
-                                        ? "lg:order-2 opacity-100 translate-x-0"
-                                        : "lg:order-1 opacity-100 translate-x-0"
+                                        ? "auth-page-collage-column--signin"
+                                        : "auth-page-collage-column--signup"
                                 }`}
                             >
                                 <AuthCollage />
@@ -95,8 +95,8 @@ export default function AuthPageClient({ mode }: AuthPageClientProps) {
                     </main>
 
                     {/* Ambient background lighting */}
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#8B5CF6]/[0.05] via-transparent to-transparent pointer-events-none -z-10" />
-                    <div className="absolute inset-0 bg-linear-to-b from-transparent via-[#111111]/30 to-[#111111] pointer-events-none -z-10" />
+                    <div className="auth-page-ambient-glow" />
+                    <div className="auth-page-ambient-fade" />
                 </div>
             )}
         </>

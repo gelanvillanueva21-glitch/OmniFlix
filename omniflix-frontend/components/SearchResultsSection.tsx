@@ -39,13 +39,13 @@ export function SearchResultsSection({
     onLoadMore,
 }: SearchResultsSectionProps) {
     return (
-        <section aria-label="Search results" className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
+        <section aria-label="Search results" className="search-results-section">
+            <div className="search-results-header">
                 <SectionHeader title={`Results for “${submittedQuery}”`} />
                 <button
                     type="button"
                     onClick={onClearSearch}
-                    className="rounded text-sm font-medium text-[#A1A1AA] transition-colors hover:text-[#A78BFA] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                    className="search-results-clear"
                 >
                     Clear search
                 </button>

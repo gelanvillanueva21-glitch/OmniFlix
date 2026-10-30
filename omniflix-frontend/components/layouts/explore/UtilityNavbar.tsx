@@ -26,14 +26,13 @@ export function UtilityNavbar({
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
-    const buttonClasses =
-        "inline-flex h-11 w-11 items-center justify-center rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]";
+    const buttonClasses = "utility-navbar-button";
 
     return (
-        <div className="sticky top-0 z-40 hidden border-b border-[#29292E] bg-[#111111]/90 px-4 py-2 backdrop-blur-md lg:block xl:hidden">
-            <div className="flex items-center justify-end gap-1">
+        <div className="utility-navbar">
+            <div className="utility-navbar-row">
                 {/* Search */}
-                <div className="relative">
+                <div className="utility-navbar-button-slot">
                     <button
                         type="button"
                         aria-label="Search"
@@ -42,14 +41,14 @@ export function UtilityNavbar({
                             setIsSearchOpen((open) => !open);
                             setIsNotificationsOpen(false);
                         }}
-                        className={`${buttonClasses} text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] ${isSearchOpen ? "bg-[#8B5CF6]/15 text-[#A78BFA]" : ""}`}
+                        className={`${buttonClasses} utility-navbar-button--idle ${isSearchOpen ? "utility-navbar-button--open" : ""}`}
                     >
                         <SearchIcon className="h-5 w-5" />
                     </button>
                 </div>
 
                 {/* Notifications */}
-                <div className="relative">
+                <div className="utility-navbar-button-slot">
                     <button
                         type="button"
                         aria-label="Notifications"
@@ -58,7 +57,7 @@ export function UtilityNavbar({
                             setIsNotificationsOpen((open) => !open);
                             setIsSearchOpen(false);
                         }}
-                        className={`${buttonClasses} text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] ${isNotificationsOpen ? "bg-[#8B5CF6]/15 text-[#A78BFA]" : ""}`}
+                        className={`${buttonClasses} utility-navbar-button--idle ${isNotificationsOpen ? "utility-navbar-button--open" : ""}`}
                     >
                         <BellIcon className="h-5 w-5" />
                     </button>
@@ -67,7 +66,7 @@ export function UtilityNavbar({
                         <div
                             role="dialog"
                             aria-label="Notifications"
-                            className="absolute left-0 top-13 z-50 w-80 rounded-xl border border-[#29292E] bg-[#171719] p-4 shadow-xl"
+                            className="utility-navbar-popover"
                         >
                             {notificationsContent}
                         </div>
@@ -80,14 +79,14 @@ export function UtilityNavbar({
                     aria-label="Open library"
                     aria-haspopup="dialog"
                     onClick={onOpenLibrary}
-                    className={`${buttonClasses} text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5]`}
+                    className={`${buttonClasses} utility-navbar-button--idle`}
                 >
                     <LibraryIcon className="h-5 w-5" />
                 </button>
             </div>
 
             {isSearchOpen && (
-                <div className="pt-2 pb-1">{searchContent}</div>
+                <div className="utility-navbar-search-row">{searchContent}</div>
             )}
         </div>
     );
@@ -96,15 +95,15 @@ export function UtilityNavbar({
 /** Placeholder panel content until the notifications API exists. */
 export function NotificationsPlaceholder() {
     return (
-        <div className="relative">
-            <p className="text-sm font-medium text-[#F5F5F5]">Notifications</p>
-            <p className="mt-2 text-xs text-[#A1A1AA]">
+        <div className="utility-navbar-placeholder">
+            <p className="utility-navbar-placeholder-title">Notifications</p>
+            <p className="utility-navbar-placeholder-note">
                 Notifications arrive with the notifications API.
             </p>
             <button
                 type="button"
                 aria-label="Close notifications"
-                className="absolute -top-1 -right-1 inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                className="utility-navbar-placeholder-close"
             >
                 <CloseIcon className="h-4 w-4" />
             </button>

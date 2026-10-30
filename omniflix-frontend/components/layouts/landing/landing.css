@@ -1,0 +1,228 @@
+/* Landing page styles (app/page.tsx + components/layouts/landing/).
+   Imported through app/globals.css. */
+
+/* ── Home page shell & loading overlay (app/page.tsx) ── */
+.home-loading-overlay {
+    @apply fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950;
+}
+
+.home-loading-spinner {
+    @apply h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-slate-200 motion-reduce:animate-none;
+}
+
+.home-loading-title {
+    @apply mt-6 text-base font-medium text-white;
+}
+
+.home-loading-subtitle {
+    @apply mt-1.5 text-sm text-slate-400;
+}
+
+.home-page-shell {
+    @apply min-h-screen flex flex-col bg-[#111111] text-[#F5F5F5] selection:bg-[#8B5CF6]/30 selection:text-white;
+}
+
+.home-page-main {
+    @apply flex-1 flex flex-col;
+}
+
+/* ── Navbar ── */
+.landing-navbar {
+    @apply sticky top-0 z-50 w-full border-b border-[#27272A]/70 bg-[#111111]/80 backdrop-blur-md;
+}
+
+.landing-navbar-nav {
+    @apply mx-auto grid h-16 w-full grid-cols-[1fr_auto] items-center px-4 sm:h-20 sm:grid-cols-[1fr_auto_1fr] sm:px-8;
+    max-width: 1440px;
+}
+
+.landing-navbar-logo-slot {
+    @apply flex items-center justify-start;
+}
+
+.landing-navbar-logo-link {
+    @apply inline-flex items-center rounded-md transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.landing-navbar-logo-image {
+    @apply h-7 w-auto sm:h-10;
+}
+
+.landing-navbar-links {
+    @apply hidden items-center gap-9 sm:flex;
+}
+
+.landing-navbar-link {
+    @apply rounded py-1 text-sm tracking-wide transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.landing-navbar-link--active {
+    @apply text-[#F5F5F5] font-semibold;
+}
+
+.landing-navbar-link--inactive {
+    @apply text-[#A1A1AA] hover:text-[#F5F5F5] font-normal;
+}
+
+.landing-navbar-actions {
+    @apply flex items-center justify-end gap-1.5 sm:gap-4;
+}
+
+.landing-navbar-signin {
+    @apply rounded-full px-2.5 py-2 text-xs font-medium text-[#F5F5F5] transition-all duration-200 hover:bg-[#1C1C1F]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] sm:border sm:border-transparent sm:px-4 sm:text-sm sm:hover:border-[#27272A];
+}
+
+.landing-navbar-signup {
+    @apply rounded-full bg-[#8B5CF6] px-3.5 py-2 text-xs font-medium text-white shadow-sm shadow-[#8B5CF6]/30 transition-all duration-200 hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] sm:px-5 sm:text-sm;
+}
+
+/* ── HeroSection ── */
+.landing-hero {
+    @apply relative flex-1 flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] px-6 overflow-hidden;
+}
+
+.landing-hero-content {
+    @apply relative z-10 w-full mx-auto text-center flex flex-col items-center -mt-8 md:-mt-12;
+    max-width: 840px;
+}
+
+.landing-hero-category-line {
+    @apply text-xs md:text-sm uppercase tracking-[0.22em] text-[#A1A1AA] font-medium mb-5 select-none;
+}
+
+.landing-hero-headline {
+    @apply text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.08] text-[#F5F5F5] mb-5 font-sans;
+}
+
+.landing-hero-headline-accent {
+    @apply block mt-1 sm:mt-2 bg-linear-to-r from-[#8B5CF6] via-[#A855F7] to-[#D946EF] bg-clip-text text-transparent pb-1;
+}
+
+.landing-hero-description {
+    @apply text-base sm:text-lg text-[#A1A1AA] font-normal leading-relaxed mb-9;
+    max-width: 620px;
+}
+
+.landing-hero-search-slot {
+    @apply w-full mb-6;
+}
+
+/* ── HeroBackground ── */
+.landing-hero-background {
+    @apply absolute inset-0 overflow-hidden pointer-events-none select-none z-0;
+}
+
+.landing-hero-background-glow {
+    @apply absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#8B5CF6]/[0.07] via-transparent to-transparent;
+}
+
+.landing-hero-artwork {
+    @apply absolute rounded-2xl overflow-hidden border border-[#27272A]/40 shadow-2xl opacity-40 hover:opacity-60 transition-opacity duration-500;
+}
+
+.landing-hero-artwork-image {
+    @apply w-full h-full object-cover;
+}
+
+.landing-hero-artwork-overlay {
+    @apply absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/30 to-transparent;
+}
+
+.landing-hero-vignette-horizontal {
+    @apply absolute inset-0 bg-gradient-to-r from-[#111111] via-transparent to-[#111111] opacity-90;
+}
+
+.landing-hero-vignette-vertical {
+    @apply absolute inset-0 bg-gradient-to-b from-[#111111]/40 via-transparent to-[#111111];
+}
+
+/* ── Landing SearchBar ── */
+.landing-searchbar {
+    @apply relative mx-auto w-full;
+}
+
+.landing-searchbar--compact {
+    max-width: none;
+}
+
+.landing-searchbar--full {
+    @apply mx-auto;
+    max-width: 43.75rem;
+}
+
+.landing-searchbar-field {
+    @apply relative flex w-full items-center rounded-full border border-[#2E2E33] bg-[#1C1C1F]/80 backdrop-blur-md shadow-lg shadow-black/40 transition-all duration-200 hover:border-[#8B5CF6]/40 focus-within:border-[#8B5CF6] focus-within:ring-2 focus-within:ring-[#8B5CF6]/30;
+}
+
+.landing-searchbar-field--compact {
+    @apply min-h-10 px-2 py-1;
+}
+
+.landing-searchbar-field--full {
+    @apply px-5 py-3.5;
+}
+
+.landing-searchbar-icon-slot {
+    @apply flex shrink-0 items-center justify-center text-[#A1A1AA];
+}
+
+.landing-searchbar-icon-slot--compact {
+    @apply mr-1.5;
+}
+
+.landing-searchbar-icon-slot--full {
+    @apply mr-3.5;
+}
+
+.landing-searchbar-icon {
+    @apply opacity-70 invert;
+}
+
+.landing-searchbar-icon--compact {
+    @apply h-4 w-4;
+}
+
+.landing-searchbar-input {
+    @apply min-w-0 w-full bg-transparent text-sm font-normal text-[#F5F5F5] placeholder-[#71717A] outline-none;
+}
+
+.landing-searchbar-input--compact {
+    @apply pr-7 text-xs;
+}
+
+.landing-searchbar-input--full {
+    @apply pr-12 md:text-base;
+}
+
+.landing-searchbar-submit {
+    @apply absolute right-1 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-full border border-[#8B5CF6]/40 bg-[#8B5CF6]/20 text-[#F5F5F5] transition-all duration-200 hover:scale-105 hover:bg-[#8B5CF6] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF];
+}
+
+.landing-searchbar-submit--compact {
+    @apply h-7 w-7;
+}
+
+.landing-searchbar-submit--full {
+    @apply right-2.5 h-9 w-9;
+}
+
+.landing-searchbar-submit-icon {
+    @apply h-3.5 w-3.5 opacity-90 invert;
+}
+
+/* ── ExploreButton ── */
+.landing-explore-button-slot {
+    @apply flex items-center justify-center;
+}
+
+.landing-explore-button {
+    @apply inline-flex items-center gap-2.5 px-7 py-3 rounded-full bg-[#8B5CF6] hover:bg-[#7C3AED] active:bg-[#6D28D9] text-white font-medium text-sm md:text-base shadow-lg shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/40 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF];
+}
+
+.landing-explore-button-icon {
+    @apply invert transition-transform duration-200;
+
+.landing-explore-button:hover .landing-explore-button-icon {
+    transform: translateX(2px);
+}
+}

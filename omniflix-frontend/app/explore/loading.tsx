@@ -2,7 +2,7 @@ import { ExploreContentSkeleton } from "@/components/ExploreContentSkeleton";
 
 export default function Loading() {
     return (
-        <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main className="explore-loading-main">
             <ExploreContentSkeleton />
         </main>
     );

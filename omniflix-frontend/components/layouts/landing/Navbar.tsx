@@ -22,16 +22,16 @@ export function Navbar() {
     const currentPathname = usePathname();
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-[#27272A]/70 bg-[#111111]/80 backdrop-blur-md">
+        <header className="landing-navbar">
             <nav
-                className="mx-auto grid h-16 w-full max-w-1440px grid-cols-[1fr_auto] items-center px-4 sm:h-20 sm:grid-cols-[1fr_auto_1fr] sm:px-8"
+                className="landing-navbar-nav"
                 aria-label="Main Navigation"
             >
                 {/* Logo */}
-                <div className="flex items-center justify-start">
+                <div className="landing-navbar-logo-slot">
                     <Link
                         href="/"
-                        className="inline-flex items-center rounded-md transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                        className="landing-navbar-logo-link"
                         aria-label="OmniFlix Home"
                     >
                         <Image
@@ -40,27 +40,27 @@ export function Navbar() {
                             width={170}
                             height={50}
                             priority
-                            className="h-7 w-auto sm:h-10"
+                            className="landing-navbar-logo-image"
                         />
                     </Link>
                 </div>
 
                 {/* Desktop category navigation */}
-                <ul className="hidden items-center gap-9 sm:flex" role="list">
+                <ul className="landing-navbar-links" role="list">
                     {NAVIGATION_ITEMS.map((item) => {
                         const isRouteActive =
                             currentPathname === item.href ||
                             currentPathname?.startsWith(`${item.href}/`);
 
                         const navigationItemClasses = isRouteActive
-                            ? "text-[#F5F5F5] font-semibold"
-                            : "text-[#A1A1AA] hover:text-[#F5F5F5] font-normal";
+                            ? "landing-navbar-link landing-navbar-link--active"
+                            : "landing-navbar-link landing-navbar-link--inactive";
 
                         return (
                             <li key={item.label}>
                                 <Link
                                     href={item.href}
-                                    className={`rounded py-1 text-sm tracking-wide transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] ${navigationItemClasses}`}
+                                    className={navigationItemClasses}
                                     aria-current={isRouteActive ? "page" : undefined}
                                 >
                                     {item.label}
@@ -71,17 +71,17 @@ export function Navbar() {
                 </ul>
 
                 {/* Account actions */}
-                <div className="flex items-center justify-end gap-1.5 sm:gap-4">
+                <div className="landing-navbar-actions">
                     <Link
                         href="/auth/signin"
-                        className="rounded-full px-2.5 py-2 text-xs font-medium text-[#F5F5F5] transition-all duration-200 hover:bg-[#1C1C1F]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] sm:border sm:border-transparent sm:px-4 sm:text-sm sm:hover:border-[#27272A]"
+                        className="landing-navbar-signin"
                     >
                         Sign in
                     </Link>
 
                     <Link
                         href="/auth/signup"
-                        className="rounded-full bg-[#8B5CF6] px-3.5 py-2 text-xs font-medium text-white shadow-sm shadow-[#8B5CF6]/30 transition-all duration-200 hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] sm:px-5 sm:text-sm"
+                        className="landing-navbar-signup"
                     >
                         Sign up
                     </Link>

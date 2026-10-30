@@ -25,7 +25,7 @@ export function GenreSelector({ genres, items }: GenreSelectorProps) {
     }
 
     return (
-        <section aria-labelledby="genres-heading" className="space-y-4">
+        <section aria-labelledby="genres-heading" className="genre-chip-section">
             <SectionHeader title="Browse by Genre" />
             {genres.length === 0 ? (
                 <EmptyState
@@ -33,7 +33,7 @@ export function GenreSelector({ genres, items }: GenreSelectorProps) {
                     description="Genres will appear here once content data is available."
                 />
             ) : (
-                <ul role="list" className="flex flex-wrap gap-2">
+                <ul role="list" className="genre-chip-list">
                     {genres.map((genre) => {
                         const isSelected = selectedId === genre.id;
                         const count = countFor(genre.id);
@@ -46,13 +46,13 @@ export function GenreSelector({ genres, items }: GenreSelectorProps) {
                                     onClick={() =>
                                         setSelectedId(isSelected ? null : genre.id)
                                     }
-                                    className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] ${isSelected
-                                            ? "border-[#8B5CF6] bg-[#8B5CF6] text-white"
-                                            : "border-[#29292E] bg-transparent text-[#A1A1AA] hover:border-[#8B5CF6]/50 hover:text-[#F5F5F5]"
+                                    className={`genre-chip ${isSelected
+                                            ? "genre-chip--selected"
+                                            : "genre-chip--unselected"
                                         }`}
                                 >
                                     {genre.label}
-                                    <span className="ml-1.5 text-xs opacity-70">
+                                    <span className="genre-chip-count">
                                         {count}
                                     </span>
                                 </button>

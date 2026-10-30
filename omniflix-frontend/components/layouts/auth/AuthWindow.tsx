@@ -120,17 +120,17 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
 
     return (
         <div
-            className="w-full min-w-0 max-w-150 bg-[#191919] border border-[#3A3A40] rounded-2xl p-5 min-[390px]:p-6 sm:p-9 shadow-2xl shadow-black/90 backdrop-blur-sm relative z-20 transition-all duration-300"
+            className="auth-window"
             role="region"
             aria-label={isSignInMode ? "Sign in window" : "Sign up window"}
         >
-            <div className="absolute top-0 left-8 right-8 h-px bg-linear-to-r from-transparent via-[#8B5CF6]/40 to-transparent pointer-events-none" />
+            <div className="auth-window-accent-line" />
 
-            <div className="mb-7">
-                <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-[#F5F5F5] mb-2 font-sans">
+            <div className="auth-window-heading">
+                <h1 className="auth-window-title">
                     {isSignInMode ? "Welcome back." : "Join OmniFlix."}
                 </h1>
-                <p className="text-sm text-[#A1A1AA] leading-relaxed">
+                <p className="auth-window-subtitle">
                     {isSignInMode
                         ? "Sign in to continue your OmniFlix journey."
                         : "Create your account and discover your next obsession."}
@@ -138,20 +138,20 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
             </div>
 
             {isSignInMode ? (
-                <form onSubmit={handleSignInSubmit} noValidate className="space-y-5">
+                <form onSubmit={handleSignInSubmit} noValidate className="auth-window-form--signin">
                     {signInErrorMessage && (
                         <div
-                            className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3.5 py-2.5 leading-relaxed"
+                            className="form-error-banner"
                             role="alert"
                         >
                             {signInErrorMessage}
                         </div>
                     )}
 
-                    <div className="space-y-1.5">
+                    <div className="form-field-group">
                         <label
                             htmlFor="signin-username"
-                            className="block text-xs font-medium uppercase tracking-wider text-[#A1A1AA]"
+                            className="form-label"
                         >
                             Username
                         </label>
@@ -163,19 +163,19 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                             value={signInUsername}
                             onChange={(event) => setSignInUsername(event.target.value)}
                             required
-                            className="w-full px-3.5 py-2.5 rounded-lg bg-[#202020] border border-[#3A3A40] text-[#F5F5F5] placeholder-[#71717A] text-sm outline-none transition-colors duration-200 focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6]"
+                            className="form-input form-input--basic"
                             placeholder="Enter your username"
                         />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="form-field-group">
                         <label
                             htmlFor="signin-password"
-                            className="block text-xs font-medium uppercase tracking-wider text-[#A1A1AA]"
+                            className="form-label"
                         >
                             Password
                         </label>
-                        <div className="relative">
+                        <div className="form-input-shell">
                             <input
                                 id="signin-password"
                                 type={showSignInPassword ? "text" : "password"}
@@ -184,13 +184,13 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                                 value={signInPassword}
                                 onChange={(event) => setSignInPassword(event.target.value)}
                                 required
-                                className="w-full px-3.5 py-2.5 pr-10 rounded-lg bg-[#202020] border border-[#3A3A40] text-[#F5F5F5] placeholder-[#71717A] text-sm outline-none transition-colors duration-200 focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6]"
+                                className="form-input form-input--with-toggle"
                                 placeholder="Enter your password"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowSignInPassword((previousState) => !previousState)}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-[#A1A1AA] hover:text-[#F5F5F5] rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                                className="password-toggle-button"
                                 aria-label={showSignInPassword ? "Hide password" : "Show password"}
                             >
                                 <EyeToggleIcon isVisible={showSignInPassword} />
@@ -201,37 +201,37 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full py-2.5 px-4 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] active:bg-[#6D28D9] text-white font-medium text-sm transition-all duration-200 shadow-lg shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] cursor-pointer"
+                        className="auth-submit-button"
                     >
                         {isSubmitting ? "Signing in..." : "Sign in"}
                     </button>
 
-                    <div className="pt-2 text-center text-xs text-[#A1A1AA]">
+                    <div className="auth-window-switch">
                         Don&apos;t have an account?{" "}
                         <button
                             type="button"
                             onClick={() => onSwitchMode("signup")}
-                            className="text-[#8B5CF6] hover:text-[#A78BFA] font-medium transition-colors cursor-pointer underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] rounded"
+                            className="auth-window-switch-button"
                         >
                             Sign up
                         </button>
                     </div>
                 </form>
             ) : (
-                <form onSubmit={handleSignUpSubmit} noValidate className="space-y-4">
+                <form onSubmit={handleSignUpSubmit} noValidate className="auth-window-form--signup">
                     {signUpErrorMessage && (
                         <div
-                            className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3.5 py-2.5 leading-relaxed"
+                            className="form-error-banner"
                             role="alert"
                         >
                             {signUpErrorMessage}
                         </div>
                     )}
 
-                    <div className="space-y-1.5">
+                    <div className="form-field-group">
                         <label
                             htmlFor="signup-username"
-                            className="block text-xs font-medium uppercase tracking-wider text-[#A1A1AA]"
+                            className="form-label"
                         >
                             Username
                         </label>
@@ -243,19 +243,19 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                             value={signUpUsername}
                             onChange={(event) => setSignUpUsername(event.target.value)}
                             required
-                            className="w-full px-3.5 py-2.5 rounded-lg bg-[#202020] border border-[#3A3A40] text-[#F5F5F5] placeholder-[#71717A] text-sm outline-none transition-colors duration-200 focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6]"
+                            className="form-input form-input--basic"
                             placeholder="Choose a username"
                         />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="form-field-group">
                         <label
                             htmlFor="signup-password"
-                            className="block text-xs font-medium uppercase tracking-wider text-[#A1A1AA]"
+                            className="form-label"
                         >
                             Password
                         </label>
-                        <div className="relative">
+                        <div className="form-input-shell">
                             <input
                                 id="signup-password"
                                 type={showSignUpPassword ? "text" : "password"}
@@ -264,13 +264,13 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                                 value={signUpPassword}
                                 onChange={(event) => setSignUpPassword(event.target.value)}
                                 required
-                                className="w-full px-3.5 py-2.5 pr-10 rounded-lg bg-[#202020] border border-[#3A3A40] text-[#F5F5F5] placeholder-[#71717A] text-sm outline-none transition-colors duration-200 focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6]"
+                                className="form-input form-input--with-toggle"
                                 placeholder="At least 8 characters"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowSignUpPassword((previousState) => !previousState)}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-[#A1A1AA] hover:text-[#F5F5F5] rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                                className="password-toggle-button"
                                 aria-label={showSignUpPassword ? "Hide password" : "Show password"}
                             >
                                 <EyeToggleIcon isVisible={showSignUpPassword} />
@@ -278,14 +278,14 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                         </div>
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="form-field-group">
                         <label
                             htmlFor="signup-confirm-password"
-                            className="block text-xs font-medium uppercase tracking-wider text-[#A1A1AA]"
+                            className="form-label"
                         >
                             Confirm password
                         </label>
-                        <div className="relative">
+                        <div className="form-input-shell">
                             <input
                                 id="signup-confirm-password"
                                 type={showSignUpConfirmPassword ? "text" : "password"}
@@ -294,13 +294,13 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                                 value={signUpConfirmPassword}
                                 onChange={(event) => setSignUpConfirmPassword(event.target.value)}
                                 required
-                                className="w-full px-3.5 py-2.5 pr-10 rounded-lg bg-[#202020] border border-[#3A3A40] text-[#F5F5F5] placeholder-[#71717A] text-sm outline-none transition-colors duration-200 focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6]"
+                                className="form-input form-input--with-toggle"
                                 placeholder="Re-enter your password"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowSignUpConfirmPassword((previousState) => !previousState)}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-[#A1A1AA] hover:text-[#F5F5F5] rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                                className="password-toggle-button"
                                 aria-label={showSignUpConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                             >
                                 <EyeToggleIcon isVisible={showSignUpConfirmPassword} />
@@ -311,17 +311,17 @@ export function AuthWindow({ mode, onSwitchMode }: AuthWindowProps) {
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full py-2.5 px-4 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] active:bg-[#6D28D9] text-white font-medium text-sm transition-all duration-200 shadow-lg shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] cursor-pointer mt-1"
+                        className="auth-submit-button auth-submit-button--signup"
                     >
                         {isSubmitting ? "Creating account..." : "Creat account"}
                     </button>
 
-                    <div className="pt-2 text-center text-xs text-[#A1A1AA]">
+                    <div className="auth-window-switch">
                         Already have an account?{" "}
                         <button
                             type="button"
                             onClick={() => onSwitchMode("signin")}
-                            className="text-[#8B5CF6] hover:text-[#A78BFA] font-medium transition-colors cursor-pointer underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] rounded"
+                            className="auth-window-switch-button"
                         >
                             Sign in
                         </button>

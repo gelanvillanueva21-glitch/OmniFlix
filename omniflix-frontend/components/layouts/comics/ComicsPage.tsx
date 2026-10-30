@@ -189,7 +189,7 @@ function ComicsPageContent({
     return (
         <ExploreLayout
             utilities={
-                <div className="space-y-5">
+                <div className="comics-utilities">
                     <SearchBar
                         id="comics-search"
                         placeholder={`Search ${sourceHeading}…`}
@@ -211,11 +211,11 @@ function ComicsPageContent({
                 />
             }
         >
-            <header className="mb-6">
-                <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl">
+            <header className="comics-page-heading">
+                <h1 className="comics-page-title">
                     Comics
                 </h1>
-                <p className="mt-1 text-sm text-[#A1A1AA] sm:text-base">
+                <p className="comics-page-subtitle">
                     Browse manga from your installed Suwayomi sources.
                 </p>
             </header>
@@ -267,9 +267,9 @@ function BrowseSections({
 }) {
     return (
         <>
-            <section aria-label="Featured comic" className="mb-8">
+            <section aria-label="Featured comic" className="comics-featured-section">
                 {catalogQuery.isPending ? (
-                    <LoadingSkeleton className="aspect-12/5 w-full" />
+                    <LoadingSkeleton className="media-card-wide-frame" />
                 ) : catalogQuery.isError ? (
                     <ErrorState
                         message={errorMessage(catalogQuery.error)}
@@ -291,7 +291,7 @@ function BrowseSections({
                 )}
             </section>
 
-            <section aria-label="Popular comics" className="mb-8 space-y-4">
+            <section aria-label="Popular comics" className="comics-carousel-section">
                 <SectionHeader title={`Popular on ${sourceHeading}`} />
                 {catalogQuery.isPending ? (
                     <MediaRowSkeleton />
@@ -303,7 +303,7 @@ function BrowseSections({
                 )}
             </section>
 
-            <section aria-label="Browse comics" className="space-y-4">
+            <section aria-label="Browse comics" className="comics-browse-section">
                 <SectionHeader title={`Browse ${sourceHeading}`} />
                 <CatalogResultGrid
                     items={catalogItems}

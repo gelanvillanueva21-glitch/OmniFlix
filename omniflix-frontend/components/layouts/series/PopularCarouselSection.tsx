@@ -27,7 +27,7 @@ export function PopularCarouselSection({
     items,
 }: PopularCarouselSectionProps) {
     return (
-        <section aria-label={label} className="mb-8 space-y-4">
+        <section aria-label={label} className="series-carousel-section">
             <SectionHeader title={title} />
             {isPending ? (
                 <MediaRowSkeleton />

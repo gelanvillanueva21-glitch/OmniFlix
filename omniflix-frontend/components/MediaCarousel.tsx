@@ -32,16 +32,16 @@ export function MediaCarousel({
     if (items.length === 0) return null;
 
     return (
-        <div className="relative" role="region" aria-label={label}>
+        <div className="media-carousel" role="region" aria-label={label}>
             <ul
                 ref={trackRef}
-                className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="media-carousel-track"
                 role="list"
             >
                 {items.map((item) => (
                     <li
                         key={item.id}
-                        className="w-36 shrink-0 snap-start sm:w-44"
+                        className="media-carousel-item"
                     >
                         <MediaCard
                             media={item}
@@ -54,17 +54,17 @@ export function MediaCarousel({
                 type="button"
                 onClick={() => scrollByCard(-1)}
                 aria-label={`Scroll ${label} backward`}
-                className="absolute top-1/3 -left-3 z-10 hidden h-9 w-9 items-center justify-center rounded-full border border-[#29292E] bg-[#171719]/90 text-[#F5F5F5] transition-colors hover:bg-[#242429] focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:outline-none md:inline-flex"
+                className="media-carousel-arrow media-carousel-arrow--left"
             >
-                <ChevronLeftIcon className="h-4 w-4" />
+                <ChevronLeftIcon className="media-carousel-arrow-icon" />
             </button>
             <button
                 type="button"
                 onClick={() => scrollByCard(1)}
                 aria-label={`Scroll ${label} forward`}
-                className="absolute top-1/3 -right-3 z-10 hidden h-9 w-9 items-center justify-center rounded-full border border-[#29292E] bg-[#171719]/90 text-[#F5F5F5] transition-colors hover:bg-[#242429] focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:outline-none md:inline-flex"
+                className="media-carousel-arrow media-carousel-arrow--right"
             >
-                <ChevronRightIcon className="h-4 w-4" />
+                <ChevronRightIcon className="media-carousel-arrow-icon" />
             </button>
         </div>
     );

@@ -25,9 +25,9 @@ export function FeaturedSeriesSection({
     featuredSeries,
 }: FeaturedSeriesSectionProps) {
     return (
-        <section aria-label="Featured series" className="mb-8">
+        <section aria-label="Featured series" className="series-featured-section">
             {isPending ? (
-                <LoadingSkeleton className="aspect-12/5 w-full" />
+                <LoadingSkeleton className="media-card-wide-frame" />
             ) : isError ? (
                 <ErrorState
                     message={errorMessage}

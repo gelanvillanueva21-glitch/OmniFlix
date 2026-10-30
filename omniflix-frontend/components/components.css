@@ -1,0 +1,441 @@
+/* Shared component styles. Imported through app/globals.css. */
+
+/* ── MediaCard ── */
+.media-card-wide {
+    @apply relative w-full overflow-hidden rounded-xl border border-[#29292E] bg-[#171719];
+}
+
+
+.media-card-wide-frame {
+    @apply relative aspect-12/5 w-full;
+}
+
+.media-card-wide-image {
+    @apply object-cover;
+}
+
+.media-card-wide-image-placeholder {
+    @apply flex h-full w-full items-center justify-center bg-surface-secondary text-text-muted;
+}
+
+.media-card-wide-placeholder-icon {
+    @apply h-10 w-10;
+}
+
+.media-card-wide-overlay {
+    @apply absolute inset-0 bg-linear-to-t from-[#111111] via-[#111111]/55 to-transparent;
+}
+
+.media-card-wide-content {
+    @apply absolute inset-x-0 bottom-0 p-5 sm:p-8;
+}
+
+.media-card-wide-metadata {
+    @apply mb-2 flex flex-wrap items-center gap-2 text-xs font-medium text-text-muted;
+}
+
+.media-card-wide-metadata-part {
+    @apply rounded-full border border-[#29292E] bg-[#111111]/70 px-2.5 py-0.5;
+}
+
+.media-card-wide-title {
+    @apply font-[family-name:var(--font-space-grotesk)] text-xl font-semibold text-[#F5F5F5] sm:text-3xl;
+}
+
+.media-card-wide-description {
+    @apply mt-2 max-w-prose line-clamp-2 text-sm text-[#A1A1AA] sm:line-clamp-3;
+}
+
+.media-card-poster {
+    @apply flex flex-col gap-2;
+}
+
+.media-card-poster-frame {
+    @apply relative aspect-2/3 w-full overflow-hidden rounded-lg border border-[#29292E] bg-surface-secondary;
+}
+
+.media-card-poster-image {
+    @apply object-cover transition-transform duration-300;
+
+.media-card-poster:hover .media-card-poster-image {
+    transform: scale(1.05);
+}
+}
+
+.media-card-poster-placeholder {
+    @apply flex h-full w-full items-center justify-center text-text-muted;
+}
+
+.media-card-poster-placeholder-icon {
+    @apply h-8 w-8;
+}
+
+.media-card-poster-rating {
+    @apply absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-[#111111]/80 px-2 py-0.5 text-xs font-medium text-[#F5F5F5] backdrop-blur-sm;
+}
+
+.media-card-poster-rating-icon {
+    @apply h-3 w-3 text-[#8B5CF6];
+}
+
+.media-card-poster-caption {
+    @apply min-w-0;
+}
+
+.media-card-poster-title {
+    @apply truncate text-sm font-medium text-[#F5F5F5] transition-colors;
+
+.media-card-poster:hover .media-card-poster-title {
+    color: #A78BFA;
+}
+}
+
+.media-card-poster-source {
+    @apply truncate text-xs text-[#A1A1AA];
+}
+
+/* ── MediaCarousel ── */
+.media-carousel {
+    @apply relative;
+}
+
+.media-carousel-track {
+    @apply flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2;
+}
+
+.media-carousel-item {
+    @apply w-36 shrink-0 snap-start sm:w-44;
+}
+
+.media-carousel-arrow {
+    @apply absolute top-1/3 z-10 hidden h-9 w-9 items-center justify-center rounded-full border border-[#29292E] bg-[#171719]/90 text-[#F5F5F5] transition-colors hover:bg-[#242429] focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:outline-none md:inline-flex;
+}
+
+.media-carousel-arrow--left {
+    @apply -left-3;
+}
+
+.media-carousel-arrow--right {
+    @apply -right-3;
+}
+
+.media-carousel-arrow-icon {
+    @apply h-4 w-4;
+}
+
+/* WebKit scrollbar hiding for the carousel track
+   ([scrollbar-width:none] is inlined below; the ::-webkit-scrollbar
+   pseudo-element is not applyable). */
+.media-carousel-track {
+    scrollbar-width: none;
+}
+
+.media-carousel-track::-webkit-scrollbar {
+    display: none;
+}
+
+/* ── Shared SearchBar (components/SearchBar.tsx) ── */
+.searchbar {
+    @apply relative;
+}
+
+.searchbar-label {
+    @apply sr-only;
+}
+
+.searchbar-icon {
+    @apply pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#A1A1AA];
+}
+
+.searchbar-input {
+    @apply w-full rounded-lg border border-[#29292E] bg-[#111111] py-2 pr-3 pl-9 text-sm text-[#F5F5F5] placeholder:text-[#A1A1AA] transition-colors focus:border-[#8B5CF6] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#8B5CF6];
+}
+
+/* ── SectionHeader / EmptyState / ErrorState ── */
+.section-header {
+    @apply flex items-end justify-between gap-4;
+}
+
+.section-header-title {
+    @apply font-[family-name:var(--font-space-grotesk)] text-lg font-semibold text-[#F5F5F5] sm:text-xl;
+}
+
+.section-header-link {
+    @apply inline-flex items-center gap-0.5 rounded text-sm font-medium text-[#A1A1AA] transition-colors hover:text-[#A78BFA] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.section-header-link-icon {
+    @apply h-4 w-4;
+}
+
+.empty-state {
+    @apply flex flex-col items-center justify-center rounded-lg border border-dashed border-[#29292E] px-6 py-10 text-center;
+}
+
+.empty-state-title {
+    @apply text-sm font-medium text-[#F5F5F5];
+}
+
+.empty-state-description {
+    @apply mt-1 max-w-sm text-sm text-[#A1A1AA];
+}
+
+.error-state {
+    @apply flex flex-col items-center justify-center rounded-lg border border-[#29292E] px-6 py-10 text-center;
+}
+
+.error-state-title {
+    @apply text-sm font-medium text-[#F5F5F5];
+}
+
+.error-state-description {
+    @apply mt-1 max-w-sm text-sm text-[#A1A1AA];
+}
+
+.error-state-retry {
+    @apply mt-4 rounded-full bg-[#8B5CF6] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF];
+}
+
+/* ── PopularContentList ── */
+.popular-list {
+    @apply space-y-3;
+}
+
+.popular-list-title {
+    @apply font-[family-name:var(--font-space-grotesk)] text-sm font-semibold tracking-wide text-[#F5F5F5];
+}
+
+.popular-list-empty {
+    @apply text-xs text-[#A1A1AA];
+}
+
+.popular-list-items {
+    @apply space-y-2.5;
+}
+
+.popular-list-item {
+    @apply flex items-center gap-3;
+}
+
+.popular-list-rank {
+    @apply w-4 shrink-0 text-center font-[family-name:var(--font-space-grotesk)] text-sm font-semibold text-[#A1A1AA];
+}
+
+.popular-list-thumbnail {
+    @apply relative h-12 w-8 shrink-0 overflow-hidden rounded border border-[#29292E] bg-surface-secondary;
+}
+
+.popular-list-thumbnail-image {
+    @apply object-cover;
+}
+
+.popular-list-thumbnail-placeholder {
+    @apply flex h-full w-full items-center justify-center text-text-muted;
+}
+
+.popular-list-thumbnail-placeholder-icon {
+    @apply h-3 w-3;
+}
+
+.popular-list-item-caption {
+    @apply min-w-0;
+}
+
+.popular-list-item-title {
+    @apply truncate text-sm text-[#F5F5F5];
+}
+
+.popular-list-item-type {
+    @apply truncate text-xs text-[#A1A1AA];
+}
+
+/* ── CatalogResultGrid ── */
+.media-grid {
+    @apply grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5;
+}
+
+.media-grid-busy-wrapper {
+}
+
+.media-grid-more-status {
+    @apply mt-4 text-sm text-[#A1A1AA];
+}
+
+/* Skeleton cell used by every browse grid placeholder row. */
+.media-grid-skeleton-cell {
+    @apply space-y-2;
+}
+
+.media-grid-skeleton-poster {
+    @apply aspect-2/3 w-full;
+}
+
+.media-grid-skeleton-title {
+    @apply h-3.5 w-3/4;
+}
+
+.media-grid-skeleton-subtitle {
+    @apply h-3 w-1/2;
+}
+
+/* ── SearchResultsSection ── */
+.search-results-section {
+    @apply space-y-4;
+}
+
+.search-results-header {
+    @apply flex items-center justify-between gap-4;
+}
+
+.search-results-clear {
+    @apply rounded text-sm font-medium text-[#A1A1AA] transition-colors hover:text-[#A78BFA] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+/* ── LoadMoreControl ── */
+.load-more-wrapper {
+    @apply flex justify-center pt-2;
+}
+
+.load-more-button {
+    @apply rounded-full border-[#29292E] px-5 py-2 text-sm font-medium text-[#F5F5F5] transition-colors hover:border-[#8B5CF6]/60 hover:bg-[#8B5CF6]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] disabled:opacity-50;
+}
+
+/* ── LoadingSkeleton ── */
+/* skeleton-shimmer is a custom class (defined in globals.css), not a Tailwind
+   utility, so it cannot be @apply-ed — markup composes it instead. */
+.loading-skeleton {
+    @apply relative overflow-hidden rounded-lg bg-surface-secondary;
+}
+
+/* Base shimmer block used by ProfileSkeleton / AuthPageSkeleton. */
+.skeleton-block {
+    @apply animate-pulse rounded bg-[#27272A] motion-reduce:animate-none;
+}
+
+.media-row-skeleton {
+    @apply flex gap-4 overflow-hidden;
+}
+
+.media-row-skeleton-item {
+    @apply w-36 shrink-0 space-y-2 sm:w-44;
+}
+
+/* ── ExploreContentSkeleton ── */
+.explore-skeleton-heading {
+    @apply mb-6 space-y-3;
+}
+
+.explore-skeleton-title {
+    @apply h-9 w-36;
+}
+
+.explore-skeleton-subtitle {
+    @apply h-5 w-96 max-w-full;
+}
+
+.explore-skeleton-featured {
+    @apply mb-8 aspect-12/5 w-full;
+}
+
+.explore-skeleton-section {
+    @apply mb-8 space-y-4;
+}
+
+.explore-skeleton-section-title {
+    @apply h-6 w-40;
+}
+
+.explore-skeleton-section-title-wide {
+    @apply h-6 w-52;
+}
+
+.explore-skeleton-section-title-small {
+    @apply h-8 w-44;
+}
+
+.explore-skeleton-chips {
+    @apply flex gap-2 overflow-hidden;
+}
+
+.explore-skeleton-chip {
+    @apply h-9 w-24 shrink-0 rounded-full;
+}
+
+.explore-skeleton-grid-section {
+    @apply space-y-4;
+}
+
+.explore-skeleton-grid-title {
+    @apply h-6 w-36;
+}
+
+/* ── SidebarLogo ── */
+.sidebar-logo {
+    @apply inline-flex items-center;
+}
+
+.sidebar-logo-image {
+    @apply h-7 w-auto sm:h-9;
+}
+
+/* ── Shared form styles (AuthWindow + ChangePassword) ── */
+.form-field-group {
+    @apply space-y-1.5;
+}
+
+.form-label {
+    @apply block text-xs font-medium uppercase tracking-wider text-[#A1A1AA];
+}
+
+.form-input-shell {
+    @apply relative;
+}
+
+.form-input {
+    @apply w-full rounded-lg bg-[#202020] border border-[#3A3A40] text-[#F5F5F5] placeholder-[#71717A] text-sm outline-none transition-colors duration-200 focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6];
+}
+
+.form-input--basic {
+    @apply px-3.5 py-2.5;
+}
+
+.form-input--with-toggle {
+    @apply px-3.5 py-2.5 pr-10;
+}
+
+.password-toggle-button {
+    @apply absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-[#A1A1AA] hover:text-[#F5F5F5] rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.form-error-banner {
+    @apply text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3.5 py-2.5 leading-relaxed;
+}
+
+/* ── Shared success toast (TestWindowSuccess) ── */
+.success-toast {
+    @apply fixed bottom-5 right-5 z-9999 flex w-[calc(100vw-2.5rem)] max-w-sm items-center gap-3 rounded-lg border border-emerald-800 bg-gray-900 p-4 shadow-lg;
+}
+
+.success-toast-icon {
+    @apply h-5 w-5 shrink-0 text-emerald-500;
+}
+
+.success-toast-body {
+    @apply min-w-0 flex-1 text-sm;
+}
+
+.success-toast-title {
+    @apply font-medium text-gray-100;
+}
+
+.success-toast-description {
+    @apply text-gray-400;
+}
+
+.success-toast-close {
+    @apply shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-800 hover:text-gray-200;
+}
+
+.success-toast-close-icon {
+    @apply h-4 w-4;
+}

@@ -1,0 +1,39 @@
+/* Comics feature styles (components/layouts/comics/ + app/explore/comics/).
+   Imported through app/globals.css. */
+
+.comics-utilities {
+    @apply space-y-5;
+}
+
+.comics-page-heading {
+    @apply mb-6;
+}
+
+.comics-page-title {
+    @apply font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl;
+}
+
+.comics-page-subtitle {
+    @apply mt-1 text-sm text-[#A1A1AA] sm:text-base;
+}
+
+.comics-featured-section {
+    @apply mb-8;
+}
+
+.comics-carousel-section {
+    @apply mb-8 space-y-4;
+}
+
+.comics-browse-section {
+    @apply space-y-4;
+}
+
+/* ── SourceSelector ── */
+.comics-source-label {
+    @apply mb-1 block text-xs font-medium text-[#A1A1AA];
+}
+
+.comics-source-select {
+    @apply w-full rounded-lg border-[#29292E] bg-[#111] px-3 py-2 text-sm text-[#F5F5F5] focus:border-[#8B5CF6] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#8B5CF6];
+}

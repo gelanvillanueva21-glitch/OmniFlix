@@ -30,13 +30,13 @@ export function CatalogResultGrid({
             <div
                 role="status"
                 aria-label="Loading comics"
-                className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5"
+                className="media-grid"
             >
                 {Array.from({ length: 10 }, (_, index) => (
-                    <div key={index} className="space-y-2">
-                        <LoadingSkeleton className="aspect-2/3 w-full" />
-                        <LoadingSkeleton className="h-3.5 w-3/4" />
-                        <LoadingSkeleton className="h-3 w-1/2" />
+                    <div key={index} className="media-grid-skeleton-cell">
+                        <LoadingSkeleton className="media-grid-skeleton-poster" />
+                        <LoadingSkeleton className="media-grid-skeleton-title" />
+                        <LoadingSkeleton className="media-grid-skeleton-subtitle" />
                     </div>
                 ))}
             </div>
@@ -60,7 +60,7 @@ export function CatalogResultGrid({
         <div aria-busy={isFetching}>
             <ul
                 role="list"
-                className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5"
+                className="media-grid"
             >
                 {items.map((item) => (
                     <li key={item.id}>
@@ -71,7 +71,7 @@ export function CatalogResultGrid({
                 ))}
             </ul>
             {isFetching && (
-                <p role="status" className="mt-4 text-sm text-[#A1A1AA]">
+                <p role="status" className="media-grid-more-status">
                     Loading more…
                 </p>
             )}

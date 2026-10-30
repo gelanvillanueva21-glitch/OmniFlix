@@ -14,7 +14,7 @@ interface PopularNovelsCarouselProps {
 /** Popular novels carousel section. */
 export function PopularNovelsCarousel({ items, isPending }: PopularNovelsCarouselProps) {
     return (
-        <section aria-label="Popular novels" className="mb-8 space-y-4">
+        <section aria-label="Popular novels" className="novels-carousel-section">
             <SectionHeader title="Popular Novels" />
             {isPending ? (
                 <MediaRowSkeleton />

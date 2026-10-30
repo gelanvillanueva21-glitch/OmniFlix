@@ -98,11 +98,11 @@ export default function SeriesPage() {
             utilities={sidebar.utilities}
             popular={sidebar.popular}
         >
-            <header className="mb-6">
-                <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl">
+            <header className="series-page-heading">
+                <h1 className="series-page-title">
                     Series
                 </h1>
-                <p className="mt-1 text-sm text-[#A1A1AA]">
+                <p className="series-page-subtitle">
                     Discover popular TV series from TMDB and anime from Jikan.
                 </p>
             </header>

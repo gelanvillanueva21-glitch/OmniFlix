@@ -110,7 +110,7 @@ export function ProfileContent({
             {!isGuest && (
                 <nav
                     aria-label="Collections"
-                    className={`mb-8 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${mobileLibrary ? "sticky top-0 z-10 -mx-4 bg-[#111111] px-4 py-3 sm:-mx-6 sm:px-6" : ""}`}
+                    className={`profile-collection-nav ${mobileLibrary ? "profile-collection-nav--sticky" : ""}`}
                 >
                     {COLLECTIONS.map((collection) => {
                         const isSelected = selectedCollection === collection.key;
@@ -120,10 +120,10 @@ export function ProfileContent({
                                 type="button"
                                 aria-pressed={isSelected}
                                 onClick={() => setSelectedCollection(collection.key)}
-                                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] ${
+                                className={`profile-collection-tab ${
                                     isSelected
-                                        ? "bg-[#8B5CF6] text-white"
-                                        : "border border-[#29292E] text-[#A1A1AA] hover:border-[#8B5CF6]/60 hover:bg-[#8B5CF6]/10 hover:text-[#F5F5F5]"
+                                        ? "profile-collection-tab--selected"
+                                        : "profile-collection-tab--unselected"
                                 }`}
                             >
                                 {collection.label}
@@ -135,9 +135,9 @@ export function ProfileContent({
 
             {/* ── Authenticated: four media-category rows ── */}
             {!isGuest && (
-                <div className="space-y-8">
+                <div className="profile-collections-body">
                     {isCollectionLoading && (
-                        <p className="text-sm text-[#A1A1AA]" role="status">
+                        <p className="profile-collections-status" role="status">
                             Loading your collection...
                         </p>
                     )}
@@ -150,7 +150,7 @@ export function ProfileContent({
                     {CATEGORY_KEYS.map((category) => (
                         <section
                             key={category}
-                            className="space-y-4"
+                            className="profile-collection-row"
                         >
                             <h3 className="sr-only">
                                 {collectionLabel} — {MEDIA_CATEGORY_LABELS[category]}
@@ -170,11 +170,11 @@ export function ProfileContent({
 
             {/* ── Guest: History only ── */}
             {isGuest && (
-                <section className="space-y-4">
+                <section className="profile-guest-section">
                     <SectionHeader title="History" />
                     <h3 className="sr-only">Browsing history</h3>
                     {guestHistory.length === 0 ? (
-                        <div className="min-h-48">
+                        <div className="profile-guest-history-slot">
                             <EmptyState
                                 title="No browsing history yet"
                                 description="Titles you browse will appear here. Sign in to keep your history across devices."

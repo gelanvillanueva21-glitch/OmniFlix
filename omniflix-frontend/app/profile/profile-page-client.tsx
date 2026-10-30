@@ -155,32 +155,32 @@ export default function ProfilePageClient() {
     }
 
     return (
-        <main className="fixed inset-0 overflow-hidden bg-[#111111] text-[#F5F5F5]">
+        <main className="profile-page-shell">
             {isChangePasswordOpen && (
                 <ChangePasswordWindow onClose={() => setIsChangePasswordOpen(false)} />
             )}
-            <section className="flex h-full flex-col min-[650px]:hidden lg:hidden">
+            <section className="profile-mobile-view">
                 {mobileView === "profile" ? (
-                    <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 py-6 sm:px-8 sm:py-8">
+                    <div className="profile-mobile-scroll">
                         {profileSidebar}
                     </div>
                 ) : (
-                    <div className="flex min-h-0 flex-1 flex-col">
-                        <header className="sticky top-0 z-20 flex min-h-16 shrink-0 items-center gap-3 border-b border-[#29292E] bg-[#111111]/95 px-4 backdrop-blur-md sm:px-6">
+                    <div className="profile-library-view">
+                        <header className="profile-library-header">
                             <button
                                 type="button"
                                 onClick={() => setMobileView("profile")}
                                 aria-label="Back to Profile"
-                                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[#A1A1AA] transition-colors hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                                className="profile-library-back"
                             >
                                 <ChevronLeftIcon className="h-5 w-5" />
                             </button>
                             <div>
-                                <h1 className="font-[family-name:var(--font-space-grotesk)] text-xl font-bold">Library</h1>
-                                <p className="text-xs text-[#A1A1AA]">Your collections</p>
+                                <h1 className="profile-library-title">Library</h1>
+                                <p className="profile-library-subtitle">Your collections</p>
                             </div>
                         </header>
-                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-6">
+                        <div className="profile-library-scroll">
                             <ProfileContent
                                 isGuest={false}
                                 collections={collections}
@@ -197,32 +197,32 @@ export default function ProfilePageClient() {
                 )}
             </section>
 
-            <section className="hidden h-full flex-col min-[650px]:flex lg:hidden">
-                <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-[#29292E] bg-[#111111]/95 px-5 backdrop-blur-md">
+            <section className="profile-tablet-view">
+                <header className="profile-tablet-header">
                     <button
                         type="button"
                         onClick={() => setIsTabletDrawerOpen(true)}
                         aria-label="Open profile menu"
                         aria-expanded={isTabletDrawerOpen}
                         aria-controls="tablet-profile-drawer"
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#F5F5F5] transition-colors hover:bg-[#242429] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                        className="profile-tablet-menu-button"
                     >
                         <MenuIcon className="h-5 w-5" />
                     </button>
                     <SidebarLogo />
                 </header>
 
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-7 sm:px-8 sm:py-8">
-                    <div className="mx-auto w-full max-w-6xl">
-                        <header className="mb-7 flex items-center gap-4">
-                            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/15 text-[#A78BFA]">
-                                <UserIcon className="h-6 w-6" />
+                <div className="profile-tablet-scroll">
+                    <div className="profile-tablet-container">
+                        <header className="profile-tablet-hero">
+                            <span className="profile-tablet-hero-avatar">
+                                <UserIcon className="profile-tablet-hero-avatar-icon" />
                             </span>
-                            <div className="min-w-0">
-                                <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold">
+                            <div className="profile-tablet-hero-caption">
+                                <h1 className="profile-tablet-hero-title">
                                     My Profile
                                 </h1>
-                                <p className="truncate text-sm text-[#A1A1AA]">
+                                <p className="profile-tablet-hero-name">
                                     {isGuest
                                         ? "Guest"
                                         : profileQuery.data?.displayName ?? user?.username}
@@ -235,7 +235,7 @@ export default function ProfilePageClient() {
 
                 {isTabletDrawerOpen && (
                     <div
-                        className="fixed inset-0 z-50"
+                        className="profile-tablet-drawer-wrapper"
                         role="dialog"
                         aria-modal="true"
                         aria-label="Profile menu"
@@ -244,25 +244,25 @@ export default function ProfilePageClient() {
                             type="button"
                             aria-label="Close profile menu"
                             onClick={() => setIsTabletDrawerOpen(false)}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            className="explore-overlay-backdrop"
                         />
                         <aside
                             id="tablet-profile-drawer"
-                            className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto border-r border-[#29292E] bg-[#171719] p-5 shadow-xl"
+                            className="profile-tablet-drawer"
                         >
-                            <div className="flex items-center justify-between px-2 pb-6">
+                            <div className="profile-tablet-drawer-head">
                                 <SidebarLogo />
                                 <button
                                     ref={tabletDrawerCloseRef}
                                     type="button"
                                     onClick={() => setIsTabletDrawerOpen(false)}
                                     aria-label="Close profile menu"
-                                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                                    className="profile-tablet-drawer-close"
                                 >
                                     <CloseIcon className="h-5 w-5" />
                                 </button>
                             </div>
-                            <div className="h-[calc(100%-4rem)]">
+                            <div className="profile-tablet-drawer-body">
                                 {profileSidebar}
                             </div>
                         </aside>
@@ -270,18 +270,18 @@ export default function ProfilePageClient() {
                 )}
             </section>
 
-            <section className="hidden h-full lg:flex">
-                <aside className="fixed inset-y-0 left-0 z-10 w-[280px] border-r border-[#29292E] bg-[#171719] p-5 xl:w-[300px]">
+            <section className="profile-desktop-view">
+                <aside className="profile-desktop-sidebar">
                     {profileSidebar}
                 </aside>
-                <div className="ml-[280px] min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain xl:ml-[300px]">
-                    <div className="mx-auto w-full max-w-6xl px-8 py-10 xl:px-12">
-                        <header className="mb-8 flex items-start justify-between gap-4">
+                <div className="profile-desktop-scroll">
+                    <div className="profile-desktop-container">
+                        <header className="profile-desktop-hero">
                             <div>
-                                <h1 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-bold">
+                                <h1 className="profile-desktop-hero-title">
                                     {isGuest ? "Guest Profile" : "Profile"}
                                 </h1>
-                                <p className="mt-1 text-base text-[#A1A1AA]">
+                                <p className="profile-desktop-hero-subtitle">
                                     {isGuest
                                         ? "You are browsing as a guest. Sign in to unlock collections and keep your history."
                                         : "Manage your collections and activity."}

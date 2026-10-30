@@ -22,9 +22,9 @@ export function FeaturedNovelSection({
     featuredItem,
 }: FeaturedNovelSectionProps) {
     return (
-        <section aria-label="Featured novel" className="mb-8">
+        <section aria-label="Featured novel" className="novels-featured-section">
             {isPending ? (
-                <LoadingSkeleton className="aspect-12/5 w-full" />
+                <LoadingSkeleton className="media-card-wide-frame" />
             ) : isError ? (
                 <ErrorState
                     message={errorMessage}

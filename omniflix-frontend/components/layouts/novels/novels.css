@@ -1,0 +1,26 @@
+/* Novels feature styles (components/layouts/novels/ + app/explore/novels/).
+   Imported through app/globals.css. */
+
+.novels-page-heading {
+    @apply mb-6;
+}
+
+.novels-page-title {
+    @apply font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl;
+}
+
+.novels-page-subtitle {
+    @apply mt-1 text-sm text-[#A1A1AA];
+}
+
+.novels-featured-section {
+    @apply mb-8;
+}
+
+.novels-carousel-section {
+    @apply mb-8 space-y-4;
+}
+
+.novels-browse-section {
+    @apply space-y-4;
+}

@@ -1,0 +1,289 @@
+/* Explore feature styles (components/layouts/explore/ + app/explore/).
+   Imported through app/globals.css. */
+
+/* ── Route-level explore shell (app/explore/layout.tsx) ── */
+.explore-shell {
+    @apply min-h-screen bg-[#111111] text-[#F5F5F5];
+}
+
+.explore-shell-sidebar {
+    @apply fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-[#29292E] bg-[#171719] px-4 py-4 lg:block xl:w-64;
+}
+
+.explore-shell-header {
+    @apply sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-[#29292E] bg-[#111111]/90 px-4 backdrop-blur-md lg:hidden;
+}
+
+.explore-shell-header-menu-button {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#F5F5F5] transition-colors hover:bg-[#242429] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.explore-shell-header-actions {
+    @apply ml-auto flex items-center gap-1;
+}
+
+.explore-shell-header-icon-button {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#A1A1AA] transition-colors hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.explore-shell-drawer-overlay-wrapper {
+    @apply fixed inset-0 z-50 lg:hidden;
+}
+
+.explore-overlay-backdrop {
+    @apply absolute inset-0 bg-black/60 backdrop-blur-sm;
+}
+
+.explore-shell-drawer {
+    @apply absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto border-r border-[#29292E] bg-[#171719] px-4 py-5 shadow-xl;
+}
+
+.explore-shell-drawer-inner {
+    @apply relative flex h-full min-h-full flex-col;
+}
+
+.explore-shell-drawer-close {
+    @apply absolute top-5 right-3 inline-flex h-11 w-11 items-center justify-center rounded-lg text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.explore-shell-content {
+    @apply lg:pl-60 xl:pl-64;
+}
+
+/* Sidebar inner structure (shell, ProfileSkeleton, ProfileSidebar) */
+.explore-sidebar-body {
+    @apply flex h-full flex-col;
+}
+
+.explore-sidebar-logo-slot {
+    @apply px-2 pt-1 pb-6;
+}
+
+.explore-sidebar-main {
+    @apply flex-1 space-y-6;
+}
+
+.explore-sidebar-account {
+    @apply mt-8 border-t border-[#29292E] pt-5 pb-2;
+}
+
+.explore-sidebar-loading {
+    @apply mt-4 flex flex-1 flex-col space-y-5 px-2;
+}
+
+/* ── ExploreLayout (page content frame) ── */
+.explore-library-drawer-wrapper {
+    @apply fixed inset-0 z-50 lg:block xl:hidden;
+}
+
+.explore-library-drawer {
+    @apply absolute inset-y-0 right-0 w-80 max-w-[90vw] overflow-y-auto border-l border-[#29292E] bg-[#171719] px-5 py-6 shadow-xl;
+}
+
+.explore-library-drawer-close {
+    @apply absolute top-4 right-3 inline-flex h-11 w-11 items-center justify-center rounded-lg text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.explore-library-drawer-body {
+    @apply space-y-8 pr-10;
+}
+
+.explore-library-drawer-popular {
+    @apply space-y-8 border-t border-[#29292E] pt-6;
+}
+
+.explore-content-row {
+    @apply flex;
+}
+
+.explore-content-main {
+    @apply min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8;
+}
+
+.explore-content-aside {
+    @apply sticky top-0 hidden h-screen w-80 shrink-0 overflow-y-auto border-l border-[#29292E] bg-[#171719] px-5 py-8 xl:block;
+}
+
+.explore-content-aside-popular {
+    @apply mt-8 space-y-8 border-t border-[#29292E] pt-6;
+}
+
+/* ── UtilityNavbar ── */
+.utility-navbar {
+    @apply sticky top-0 z-40 hidden border-b border-[#29292E] bg-[#111111]/90 px-4 py-2 backdrop-blur-md lg:block xl:hidden;
+}
+
+.utility-navbar-row {
+    @apply flex items-center justify-end gap-1;
+}
+
+.utility-navbar-button-slot {
+    @apply relative;
+}
+
+.utility-navbar-button {
+    @apply inline-flex h-11 w-11 items-center justify-center rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.utility-navbar-button--idle {
+    @apply text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5];
+}
+
+.utility-navbar-button--open {
+    @apply bg-[#8B5CF6]/15 text-[#A78BFA];
+}
+
+.utility-navbar-popover {
+    @apply absolute left-0 top-13 z-50 w-80 rounded-xl border border-[#29292E] bg-[#171719] p-4 shadow-xl;
+}
+
+.utility-navbar-search-row {
+    @apply pt-2 pb-1;
+}
+
+.utility-navbar-placeholder {
+    @apply relative;
+}
+
+.utility-navbar-placeholder-title {
+    @apply text-sm font-medium text-[#F5F5F5];
+}
+
+.utility-navbar-placeholder-note {
+    @apply mt-2 text-xs text-[#A1A1AA];
+}
+
+.utility-navbar-placeholder-close {
+    @apply absolute -top-1 -right-1 inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+/* ── SidebarNavigation ── */
+.explore-nav {
+    @apply space-y-1;
+}
+
+.explore-nav-heading {
+    @apply px-4 pb-2 text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase;
+}
+
+.explore-nav-heading-group {
+    @apply space-y-1.5;
+}
+
+.explore-nav-item {
+    @apply flex min-h-11 items-center gap-3.5 rounded-lg px-4 text-sm;
+}
+
+.explore-nav-item--interactive {
+    @apply transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.explore-nav-item--disabled-cursor {
+    @apply cursor-not-allowed opacity-60;
+}
+
+.explore-nav-item--active {
+    @apply bg-[#8B5CF6]/15 text-[#A78BFA] font-medium;
+}
+
+.explore-nav-item--inactive {
+    @apply text-[#A1A1AA] hover:bg-[#242429]/70 hover:text-[#F5F5F5];
+}
+
+.explore-nav-item--plain {
+    @apply text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.explore-nav-icon {
+    @apply h-5 w-5 shrink-0;
+}
+
+.explore-nav-avatar {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/15 text-[#A78BFA];
+}
+
+.explore-nav-avatar-icon {
+    @apply h-4 w-4;
+}
+
+.explore-nav-signin {
+    @apply flex min-h-11 items-center rounded-lg px-4 text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.explore-nav-signup {
+    @apply flex min-h-11 items-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF];
+}
+
+.explore-nav-signout {
+    @apply flex min-h-11 w-full items-center gap-3.5 rounded-lg px-4 text-left text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.explore-nav-truncate {
+    @apply truncate;
+}
+
+/* ── GenreSelector ── */
+.genre-chip-section {
+    @apply space-y-4;
+}
+
+.genre-chip-list {
+    @apply flex flex-wrap gap-2;
+}
+
+.genre-chip {
+    @apply rounded-full border px-4 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.genre-chip--selected {
+    @apply border-[#8B5CF6] bg-[#8B5CF6] text-white;
+}
+
+.genre-chip--unselected {
+    @apply border-[#29292E] bg-transparent text-[#A1A1AA] hover:border-[#8B5CF6]/50 hover:text-[#F5F5F5];
+}
+
+.genre-chip-count {
+    @apply ml-1.5 text-xs opacity-70;
+}
+
+/* ── Explore overview page (app/explore/page.tsx) ── */
+.explore-overview-utilities {
+    @apply space-y-4;
+}
+
+.explore-overview-utilities-note {
+    @apply text-xs text-[#A1A1AA];
+}
+
+.explore-page-heading {
+    @apply mb-6;
+}
+
+.explore-page-title {
+    @apply font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl;
+}
+
+.explore-page-subtitle {
+    @apply mt-1 text-sm text-[#A1A1AA] sm:text-base;
+}
+
+.explore-featured-section {
+    @apply mb-8;
+}
+
+.explore-carousel-section {
+    @apply mb-8 space-y-4;
+}
+
+.explore-genre-section {
+    @apply mb-8;
+}
+
+.explore-discover-section {
+    @apply space-y-4;
+}
+
+.explore-loading-main {
+    @apply px-4 py-6 sm:px-6 lg:px-8 lg:py-8;
+}

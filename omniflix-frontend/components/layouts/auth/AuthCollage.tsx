@@ -16,7 +16,7 @@ function ImageSlot({ src, alt, className, fallbackGradient, label }: ImageSlotPr
 
     return (
         <div
-            className={`relative overflow-hidden border border-[#3A3A40]/50 shadow-2xl shadow-black/80 transition-all duration-500 hover:opacity-100 ${className}`}
+            className={`auth-collage-slot ${className}`}
         >
             {!hasError ? (
                 <>
@@ -25,25 +25,25 @@ function ImageSlot({ src, alt, className, fallbackGradient, label }: ImageSlotPr
                         alt={alt}
                         fill
                         sizes="(max-width: 1440px) 320px, 360px"
-                        className="object-cover"
+                        className="auth-collage-slot-image"
                         onError={() => setHasError(true)}
                         priority
                     />
                     {/* Subtle dark vignette overlay for cinematic atmosphere */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#111111]/70 via-transparent to-[#111111]/20 pointer-events-none" />
+                    <div className="auth-collage-slot-overlay" />
                 </>
             ) : (
                 /* Elegant charcoal-black fallback surface when image files are not yet present */
                 <div
-                    className={`w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br ${fallbackGradient} relative`}
+                    className={`auth-collage-fallback bg-gradient-to-br ${fallbackGradient}`}
                 >
-                    <div className="w-10 h-10 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 flex items-center justify-center mb-2">
-                        <div className="w-3 h-3 rounded-full bg-[#8B5CF6]/50 animate-pulse" />
+                    <div className="auth-collage-fallback-icon-ring">
+                        <div className="auth-collage-fallback-icon-dot" />
                     </div>
-                    <span className="text-[11px] font-medium tracking-wider uppercase text-[#A1A1AA]/70">
+                    <span className="auth-collage-fallback-label">
                         {label}
                     </span>
-                    <div className="absolute inset-0 border border-white/5 rounded-[inherit] pointer-events-none" />
+                    <div className="auth-collage-fallback-border" />
                 </div>
             )}
         </div>
@@ -53,11 +53,11 @@ function ImageSlot({ src, alt, className, fallbackGradient, label }: ImageSlotPr
 export function AuthCollage() {
     return (
         <div
-            className="w-full h-full min-h-[580px] flex flex-col justify-center items-center pointer-events-none select-none relative"
+            className="auth-collage"
             aria-hidden="true"
         >
             {/* Ambient soft glow background behind the collage */}
-            <div className="absolute w-80 h-80 rounded-full bg-[#8B5CF6]/10 blur-[100px] pointer-events-none -z-10" />
+            <div className="auth-collage-glow" />
 
             {/* 
                 Staggered 3-layer composition:
@@ -65,9 +65,9 @@ export function AuthCollage() {
                 2. Middle image: offset to the LEFT (leaves noticeable gap on the RIGHT).
                 3. Bottom image: offset to the RIGHT (leaves noticeable gap on the LEFT).
             */}
-            <div className="w-full max-w-[460px] flex flex-col gap-6 relative">
+            <div className="auth-collage-stack">
                 {/* 1. Top Image Element (.auth-image-top) */}
-                <div className="w-full flex justify-end pr-2">
+                <div className="auth-collage-slot-row-right">
                     <ImageSlot
                         src="/images/hero/top.jpg"
                         alt="Featured Comics and Manga"
@@ -78,7 +78,7 @@ export function AuthCollage() {
                 </div>
 
                 {/* 2. Middle Image Element (.auth-image-middle) */}
-                <div className="w-full flex justify-start pl-2">
+                <div className="auth-collage-slot-row-left">
                     <ImageSlot
                         src="/images/hero/middle.jpg"
                         alt="Featured Movies and Cinema"
@@ -89,7 +89,7 @@ export function AuthCollage() {
                 </div>
 
                 {/* 3. Bottom Image Element (.auth-image-bottom) */}
-                <div className="w-full flex justify-end pr-4">
+                <div className="auth-collage-slot-row-right-wide">
                     <ImageSlot
                         src="/images/hero/bottom.jpg"
                         alt="Featured Novels and Stories"

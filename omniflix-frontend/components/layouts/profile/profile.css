@@ -1,0 +1,502 @@
+/* Profile feature styles (components/layouts/profile/ + app/profile/).
+   Imported through app/globals.css. */
+
+/* ── Profile page shell (app/profile/profile-page-client.tsx) ── */
+.profile-page-shell {
+    @apply fixed inset-0 overflow-hidden bg-[#111111] text-[#F5F5F5];
+}
+
+.profile-mobile-view {
+    @apply flex h-full flex-col min-[650px]:hidden lg:hidden;
+}
+
+.profile-mobile-scroll {
+    @apply relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 py-6 sm:px-8 sm:py-8;
+}
+
+.profile-library-view {
+    @apply flex min-h-0 flex-1 flex-col;
+}
+
+.profile-library-header {
+    @apply sticky top-0 z-20 flex min-h-16 shrink-0 items-center gap-3 border-b border-[#29292E] bg-[#111111]/95 px-4 backdrop-blur-md sm:px-6;
+}
+
+.profile-library-back {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[#A1A1AA] transition-colors hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.profile-library-title {
+    @apply font-[family-name:var(--font-space-grotesk)] text-xl font-bold;
+}
+
+.profile-library-subtitle {
+    @apply text-xs text-[#A1A1AA];
+}
+
+.profile-library-scroll {
+    @apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-6;
+}
+
+.profile-library-container {
+    @apply mx-auto w-full max-w-6xl;
+}
+
+.profile-tablet-view {
+    @apply hidden h-full flex-col min-[650px]:flex lg:hidden;
+}
+
+.profile-tablet-header {
+    @apply sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-[#29292E] bg-[#111111]/95 px-5 backdrop-blur-md;
+}
+
+.profile-tablet-menu-button {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#F5F5F5] transition-colors hover:bg-[#242429] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.profile-tablet-scroll {
+    @apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-7 sm:px-8 sm:py-8;
+}
+
+.profile-tablet-container {
+    @apply mx-auto w-full max-w-6xl;
+}
+
+.profile-tablet-hero {
+    @apply mb-7 flex items-center gap-4;
+}
+
+.profile-tablet-hero-avatar {
+    @apply flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/15 text-[#A78BFA];
+}
+
+.profile-tablet-hero-avatar-icon {
+    @apply h-6 w-6;
+}
+
+.profile-tablet-hero-caption {
+    @apply min-w-0;
+}
+
+.profile-tablet-hero-title {
+    @apply font-[family-name:var(--font-space-grotesk)] text-2xl font-bold;
+}
+
+.profile-tablet-hero-name {
+    @apply truncate text-sm text-[#A1A1AA];
+}
+
+.profile-tablet-drawer-wrapper {
+    @apply fixed inset-0 z-50;
+}
+
+.profile-tablet-drawer {
+    @apply absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto border-r border-[#29292E] bg-[#171719] p-5 shadow-xl;
+}
+
+.profile-tablet-drawer-head {
+    @apply flex items-center justify-between px-2 pb-6;
+}
+
+.profile-tablet-drawer-close {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-lg text-[#A1A1AA] hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.profile-tablet-drawer-body {
+    @apply h-[calc(100%-4rem)];
+}
+
+.profile-desktop-view {
+    @apply hidden h-full lg:flex;
+}
+
+.profile-desktop-sidebar {
+    @apply fixed inset-y-0 left-0 z-10 w-[280px] border-r border-[#29292E] bg-[#171719] p-5 xl:w-[300px];
+}
+
+.profile-desktop-scroll {
+    @apply ml-[280px] min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain xl:ml-[300px];
+}
+
+.profile-desktop-container {
+    @apply mx-auto w-full max-w-6xl px-8 py-10 xl:px-12;
+}
+
+.profile-desktop-hero {
+    @apply mb-8 flex items-start justify-between gap-4;
+}
+
+.profile-desktop-hero-title {
+    @apply font-[family-name:var(--font-space-grotesk)] text-3xl font-bold;
+}
+
+.profile-desktop-hero-subtitle {
+    @apply mt-1 text-base text-[#A1A1AA];
+}
+
+/* ── ProfileSidebar ── */
+.profile-sidebar-loading {
+    @apply mt-4 space-y-3 px-2;
+}
+
+.profile-sidebar-skeleton-avatar {
+    @apply h-16 w-16 rounded-full bg-[#27272A] animate-pulse motion-reduce:animate-none;
+}
+
+.profile-sidebar-skeleton-name {
+    @apply h-4 w-28 rounded bg-[#27272A] animate-pulse motion-reduce:animate-none;
+}
+
+.profile-sidebar-skeleton-box {
+    @apply h-24 rounded-lg bg-[#27272A] animate-pulse motion-reduce:animate-none;
+}
+
+.profile-sidebar-guest {
+    @apply mt-6 flex flex-1 flex-col px-2;
+}
+
+.profile-sidebar-guest-identity {
+    @apply flex items-center gap-3;
+}
+
+.profile-sidebar-guest-avatar {
+    @apply flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#242429] text-[#A1A1AA];
+}
+
+.profile-sidebar-guest-avatar-icon {
+    @apply h-7 w-7;
+}
+
+.profile-sidebar-guest-name {
+    @apply text-lg font-semibold text-[#F5F5F5];
+}
+
+.profile-sidebar-guest-note {
+    @apply mt-4 text-xs leading-relaxed text-[#A1A1AA];
+}
+
+.profile-history-box {
+    @apply min-h-40 rounded-lg border border-[#29292E] bg-[#171719] p-4;
+}
+
+.profile-history-box--mobile-only {
+    @apply min-[650px]:hidden;
+}
+
+.profile-history-heading {
+    @apply text-xs font-semibold tracking-wider text-[#A1A1AA] uppercase;
+}
+
+.profile-history-empty {
+    @apply mt-3;
+}
+
+.profile-history-loading {
+    @apply mt-2;
+}
+
+.profile-history-loading-text {
+    @apply text-xs text-[#A1A1AA];
+}
+
+.profile-history-list {
+    @apply mt-3 space-y-2;
+}
+
+.profile-history-list-item {
+    @apply truncate text-xs text-[#A1A1AA];
+}
+
+.profile-sidebar-footer {
+    @apply mt-auto flex flex-col gap-2 pt-8;
+}
+
+.profile-sidebar-footer--wide {
+    @apply flex flex-col gap-3 pt-8;
+}
+
+.profile-sidebar-signin {
+    @apply flex min-h-11 items-center justify-center rounded-lg px-4 text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.profile-sidebar-signup {
+    @apply flex min-h-11 items-center justify-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF];
+}
+
+.profile-sidebar-identity {
+    @apply flex items-center gap-3;
+}
+
+.profile-sidebar-avatar {
+    @apply flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/15 text-[#A78BFA];
+}
+
+.profile-sidebar-avatar-icon {
+    @apply h-7 w-7;
+}
+
+.profile-sidebar-name-slot {
+    @apply min-w-0;
+}
+
+.profile-sidebar-name {
+    @apply truncate text-lg font-semibold text-[#F5F5F5];
+}
+
+.profile-sidebar-library-button {
+    @apply flex min-h-12 items-center justify-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] lg:hidden;
+}
+
+.profile-sidebar-action {
+    @apply flex min-h-11 items-center gap-3 rounded-lg px-4 text-left text-sm text-[#A1A1AA] transition-colors hover:bg-[#242429]/70 hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.profile-sidebar-action--pointer {
+    @apply cursor-pointer;
+}
+
+.profile-sidebar-action-icon {
+    @apply h-5 w-5 shrink-0;
+}
+
+/* ── ProfileContent ── */
+.profile-collection-nav {
+    @apply mb-8 flex gap-2 overflow-x-auto pb-1;
+}
+
+.profile-collection-nav--sticky {
+    @apply sticky top-0 z-10 -mx-4 bg-[#111111] px-4 py-3 sm:-mx-6 sm:px-6;
+}
+
+.profile-collection-tab {
+    @apply whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.profile-collection-tab--selected {
+    @apply bg-[#8B5CF6] text-white;
+}
+
+.profile-collection-tab--unselected {
+    @apply border border-[#29292E] text-[#A1A1AA] hover:border-[#8B5CF6]/60 hover:bg-[#8B5CF6]/10 hover:text-[#F5F5F5];
+}
+
+.profile-collections-body {
+    @apply space-y-8;
+}
+
+.profile-collections-status {
+    @apply text-sm text-[#A1A1AA];
+}
+
+.profile-collection-row {
+    @apply space-y-4;
+}
+
+.profile-guest-section {
+    @apply space-y-4;
+}
+
+.profile-guest-history-slot {
+    @apply min-h-48;
+}
+
+/* Hidden scrollbars for the collection tab row
+   ([scrollbar-width:none] and the WebKit pseudo-element are not applyable). */
+.profile-collection-nav {
+    scrollbar-width: none;
+}
+
+.profile-collection-nav::-webkit-scrollbar {
+    display: none;
+}
+
+/* ── ProfileSkeleton ── */
+.profile-skeleton-shell {
+    @apply fixed inset-0 overflow-hidden bg-[#111111] text-[#F5F5F5];
+}
+
+.profile-skeleton-mobile {
+    @apply flex h-full flex-col min-[650px]:hidden lg:hidden;
+}
+
+.profile-skeleton-mobile-scroll {
+    @apply relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 py-6 sm:px-8 sm:py-8;
+}
+
+.profile-skeleton-tablet {
+    @apply hidden h-full flex-col min-[650px]:flex lg:hidden;
+}
+
+.profile-skeleton-tablet-header {
+    @apply flex h-14 shrink-0 items-center gap-3 border-b border-[#29292E] bg-[#111111]/95 px-5;
+}
+
+.profile-skeleton-tablet-hero {
+    @apply mb-7 flex items-center gap-4;
+}
+
+.profile-skeleton-tablet-scroll {
+    @apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-7 sm:px-8 sm:py-8;
+}
+
+.profile-skeleton-tablet-container {
+    @apply mx-auto w-full max-w-6xl;
+}
+
+.profile-skeleton-tablet-caption {
+    @apply space-y-2;
+}
+
+.profile-skeleton-desktop {
+    @apply hidden h-full lg:flex;
+}
+
+.profile-skeleton-desktop-sidebar {
+    @apply fixed inset-y-0 left-0 z-10 w-[280px] border-r border-[#29292E] bg-[#171719] p-5 xl:w-[300px];
+}
+
+.profile-skeleton-desktop-scroll {
+    @apply ml-[280px] min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain xl:ml-[300px];
+}
+
+.profile-skeleton-desktop-container {
+    @apply mx-auto w-full max-w-6xl px-8 py-10 xl:px-12;
+}
+
+.profile-skeleton-main {
+    @apply mb-8 flex items-start justify-between gap-4;
+}
+
+.profile-skeleton-main-caption {
+    @apply space-y-3;
+}
+
+.profile-skeleton-main-title {
+    @apply h-9 w-40;
+}
+
+.profile-skeleton-main-subtitle {
+    @apply h-5 w-72 max-w-full;
+}
+
+.profile-skeleton-rows {
+    @apply space-y-8;
+}
+
+.profile-skeleton-row {
+    @apply space-y-4;
+}
+
+.profile-skeleton-row-title {
+    @apply h-6 w-48;
+}
+
+.profile-skeleton-row-track {
+    @apply flex gap-4 overflow-hidden;
+}
+
+.profile-skeleton-row-card {
+    @apply w-36 shrink-0 space-y-2 sm:w-44;
+}
+
+.profile-skeleton-row-poster {
+    @apply aspect-2/3 w-full;
+}
+
+.profile-skeleton-row-title-line {
+    @apply h-4 w-4/5;
+}
+
+.profile-skeleton-row-subtitle-line {
+    @apply h-3 w-1/2;
+}
+
+.profile-skeleton-tabs {
+    @apply mb-8 flex gap-2 overflow-x-auto pb-1;
+}
+
+.profile-skeleton-tab {
+    @apply h-9 shrink-0 rounded-full;
+}
+
+/* Hidden scrollbars for the skeleton tab row. */
+.profile-skeleton-tabs {
+    scrollbar-width: none;
+}
+
+.profile-skeleton-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.profile-sidebar-avatar-shim {
+    @apply h-10 w-10 rounded-lg;
+}
+
+.profile-sidebar-library-button-shim {
+    @apply h-12 w-full rounded-lg lg:hidden;
+}
+
+/* ── ChangePasswordWindow ── */
+.change-password-overlay {
+    @apply fixed inset-0 z-[60] flex items-center justify-center p-4;
+}
+
+.change-password-backdrop {
+    @apply absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm;
+}
+
+.change-password-window {
+    @apply relative w-full max-w-md overflow-hidden rounded-2xl border border-[#3A3A40] bg-[#191919] shadow-2xl shadow-black/90;
+}
+
+.change-password-accent-line {
+    @apply absolute top-0 left-8 right-8 h-px bg-linear-to-r from-transparent via-[#8B5CF6]/40 to-transparent pointer-events-none;
+}
+
+.change-password-header {
+    @apply flex items-center justify-between gap-3 border-b border-[#29292E] px-5 py-4 sm:px-7;
+}
+
+.change-password-header-identity {
+    @apply flex items-center gap-3;
+}
+
+.change-password-header-icon {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8B5CF6]/15 text-[#A78BFA];
+}
+
+.change-password-header-icon-svg {
+    @apply h-5 w-5;
+}
+
+.change-password-title {
+    @apply text-base font-semibold tracking-tight text-[#F5F5F5] font-sans;
+}
+
+.change-password-subtitle {
+    @apply text-xs text-[#A1A1AA];
+}
+
+.change-password-close {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#A1A1AA] transition-colors hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.change-password-close-icon {
+    @apply h-5 w-5;
+}
+
+.change-password-form {
+    @apply space-y-4 px-5 py-5 sm:px-7 sm:py-6;
+}
+
+.change-password-footer {
+    @apply flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end;
+}
+
+.change-password-cancel {
+    @apply w-full py-2.5 px-4 rounded-lg border border-[#3A3A40] bg-transparent text-sm font-medium text-[#A1A1AA] transition-colors hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] disabled:opacity-60 sm:w-auto cursor-pointer;
+}
+
+.change-password-submit {
+    @apply w-full py-2.5 px-4 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] active:bg-[#6D28D9] text-white font-medium text-sm transition-all duration-200 shadow-lg shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed sm:w-auto;
+}

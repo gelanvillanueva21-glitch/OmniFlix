@@ -23,16 +23,16 @@ export function PopularContentList({
     error,
 }: PopularContentListProps) {
     return (
-        <section aria-label={title} className="space-y-3">
-            <h2 className="font-[family-name:var(--font-space-grotesk)] text-sm font-semibold tracking-wide text-[#F5F5F5]">
+        <section aria-label={title} className="popular-list">
+            <h2 className="popular-list-title">
                 {title}
             </h2>
             {items.length === 0 && error !== undefined ? (
                 <ErrorState message={error} />
             ) : items.length === 0 ? (
-                <p className="text-xs text-[#A1A1AA]">Nothing to show yet.</p>
+                <p className="popular-list-empty">Nothing to show yet.</p>
             ) : (
-                <ol role="list" className="space-y-2.5">
+                <ol role="list" className="popular-list-items">
                     {items.slice(0, 5).map((item, index) => (
                         <PopularListItem
                             key={item.id}
@@ -57,34 +57,34 @@ function PopularListItem({
     const showImage = item.coverImage !== undefined && !imageFailed;
 
     return (
-        <li className="flex items-center gap-3">
+        <li className="popular-list-item">
             <span
                 aria-hidden="true"
-                className="w-4 shrink-0 text-center font-[family-name:var(--font-space-grotesk)] text-sm font-semibold text-[#A1A1AA]"
+                className="popular-list-rank"
             >
                 {rank}
             </span>
-            <div className="relative h-12 w-8 shrink-0 overflow-hidden rounded border border-[#29292E] bg-surface-secondary">
+            <div className="popular-list-thumbnail">
                 {showImage ? (
                     <Image
                         src={item.coverImage as string}
                         alt=""
                         fill
                         sizes="32px"
-                        className="object-cover"
+                        className="popular-list-thumbnail-image"
                         onError={() => setImageFailed(true)}
                     />
                 ) : (
-                    <div className="flex h-full w-full items-center justify-center text-text-muted">
-                        <ImageIcon className="h-3 w-3" />
+                    <div className="popular-list-thumbnail-placeholder">
+                        <ImageIcon className="popular-list-thumbnail-placeholder-icon" />
                     </div>
                 )}
             </div>
-            <div className="min-w-0">
-                <p className="truncate text-sm text-[#F5F5F5]" title={item.title}>
+            <div className="popular-list-item-caption">
+                <p className="popular-list-item-title" title={item.title}>
                     {item.title}
                 </p>
-                <p className="truncate text-xs text-[#A1A1AA]">
+                <p className="popular-list-item-type">
                     {mediaTypeLabel(item.type)}
                 </p>
             </div>

@@ -26,9 +26,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     return (
         <html
         lang="en"
-        className={`${inter.variable} ${spaceGrotesk.variable} h-full antialiased`}
+        className={`${inter.variable} ${spaceGrotesk.variable} app-root`}
         >
-            <body className="min-h-full flex flex-col">
+            <body className="app-shell">
                 <QueryProvider>
                     <AuthProvider>
                         {children}

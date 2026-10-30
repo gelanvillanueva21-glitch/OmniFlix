@@ -102,7 +102,7 @@ export function ChangePasswordWindow({ onClose }: ChangePasswordWindowProps) {
 
     return (
         <div
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+            className="change-password-overlay"
             role="dialog"
             aria-modal="true"
             aria-label="Change password"
@@ -111,18 +111,18 @@ export function ChangePasswordWindow({ onClose }: ChangePasswordWindowProps) {
                 type="button"
                 aria-label="Close change password window"
                 onClick={onClose}
-                className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
+                className="change-password-backdrop"
             />
 
-            <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-[#3A3A40] bg-[#191919] shadow-2xl shadow-black/90">
-                <div className="absolute top-0 left-8 right-8 h-px bg-linear-to-r from-transparent via-[#8B5CF6]/40 to-transparent pointer-events-none" />
+            <div className="change-password-window">
+                <div className="change-password-accent-line" />
 
                 {/* Window header bar */}
-                <div className="flex items-center justify-between gap-3 border-b border-[#29292E] px-5 py-4 sm:px-7">
-                    <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8B5CF6]/15 text-[#A78BFA]">
+                <div className="change-password-header">
+                    <div className="change-password-header-identity">
+                        <span className="change-password-header-icon">
                             <svg
-                                className="h-5 w-5"
+                                className="change-password-header-icon-svg"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 strokeWidth="1.75"
@@ -137,10 +137,10 @@ export function ChangePasswordWindow({ onClose }: ChangePasswordWindowProps) {
                             </svg>
                         </span>
                         <div>
-                            <h2 className="text-base font-semibold tracking-tight text-[#F5F5F5] font-sans">
+                            <h2 className="change-password-title">
                                 Change password
                             </h2>
-                            <p className="text-xs text-[#A1A1AA]">
+                            <p className="change-password-subtitle">
                                 Keep your account secure.
                             </p>
                         </div>
@@ -149,11 +149,11 @@ export function ChangePasswordWindow({ onClose }: ChangePasswordWindowProps) {
                         ref={closeButtonRef}
                         type="button"
                         onClick={onClose}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#A1A1AA] transition-colors hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                        className="change-password-close"
                         aria-label="Close window"
                     >
                         <svg
-                            className="h-5 w-5"
+                            className="change-password-close-icon"
                             fill="none"
                             viewBox="0 0 24 24"
                             strokeWidth="2"
@@ -166,24 +166,24 @@ export function ChangePasswordWindow({ onClose }: ChangePasswordWindowProps) {
                 </div>
 
                 {/* Window body */}
-                <form onSubmit={changPasswordClick} noValidate className="space-y-4 px-5 py-5 sm:px-7 sm:py-6">
+                <form onSubmit={changPasswordClick} noValidate className="change-password-form">
                     {errorMessage && (
                         <div
-                            className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3.5 py-2.5 leading-relaxed"
+                            className="form-error-banner"
                             role="alert"
                         >
                             {errorMessage}
                         </div>
                     )}
 
-                    <div className="space-y-1.5">
+                    <div className="form-field-group">
                         <label
                             htmlFor="change-current-password"
-                            className="block text-xs font-medium uppercase tracking-wider text-[#A1A1AA]"
+                            className="form-label"
                         >
                             Current password
                         </label>
-                        <div className="relative">
+                        <div className="form-input-shell">
                             <input
                                 id="change-current-password"
                                 type={showCurrentPassword ? "text" : "password"}
@@ -192,13 +192,13 @@ export function ChangePasswordWindow({ onClose }: ChangePasswordWindowProps) {
                                 value={currentPassword}
                                 onChange={(event) => setCurrentPassword(event.target.value)}
                                 required
-                                className="w-full px-3.5 py-2.5 pr-10 rounded-lg bg-[#202020] border border-[#3A3A40] text-[#F5F5F5] placeholder-[#71717A] text-sm outline-none transition-colors duration-200 focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6]"
+                                className="form-input form-input--with-toggle"
                                 placeholder="Enter your current password"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowCurrentPassword((previousState) => !previousState)}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-[#A1A1AA] hover:text-[#F5F5F5] rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                                className="password-toggle-button"
                                 aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}
                             >
                                 <EyeToggleIcon isVisible={showCurrentPassword} />
@@ -206,14 +206,14 @@ export function ChangePasswordWindow({ onClose }: ChangePasswordWindowProps) {
                         </div>
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="form-field-group">
                         <label
                             htmlFor="change-new-password"
-                            className="block text-xs font-medium uppercase tracking-wider text-[#A1A1AA]"
+                            className="form-label"
                         >
                             New password
                         </label>
-                        <div className="relative">
+                        <div className="form-input-shell">
                             <input
                                 id="change-new-password"
                                 type={showNewPassword ? "text" : "password"}
@@ -222,13 +222,13 @@ export function ChangePasswordWindow({ onClose }: ChangePasswordWindowProps) {
                                 value={newPassword}
                                 onChange={(event) => setNewPassword(event.target.value)}
                                 required
-                                className="w-full px-3.5 py-2.5 pr-10 rounded-lg bg-[#202020] border border-[#3A3A40] text-[#F5F5F5] placeholder-[#71717A] text-sm outline-none transition-colors duration-200 focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6]"
+                                className="form-input form-input--with-toggle"
                                 placeholder="At least 8 characters"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowNewPassword((previousState) => !previousState)}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-[#A1A1AA] hover:text-[#F5F5F5] rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                                className="password-toggle-button"
                                 aria-label={showNewPassword ? "Hide new password" : "Show new password"}
                             >
                                 <EyeToggleIcon isVisible={showNewPassword} />
@@ -236,14 +236,14 @@ export function ChangePasswordWindow({ onClose }: ChangePasswordWindowProps) {
                         </div>
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="form-field-group">
                         <label
                             htmlFor="change-confirm-password"
-                            className="block text-xs font-medium uppercase tracking-wider text-[#A1A1AA]"
+                            className="form-label"
                         >
                             Confirm new password
                         </label>
-                        <div className="relative">
+                        <div className="form-input-shell">
                             <input
                                 id="change-confirm-password"
                                 type={showConfirmNewPassword ? "text" : "password"}
@@ -252,13 +252,13 @@ export function ChangePasswordWindow({ onClose }: ChangePasswordWindowProps) {
                                 value={confirmNewPassword}
                                 onChange={(event) => setConfirmNewPassword(event.target.value)}
                                 required
-                                className="w-full px-3.5 py-2.5 pr-10 rounded-lg bg-[#202020] border border-[#3A3A40] text-[#F5F5F5] placeholder-[#71717A] text-sm outline-none transition-colors duration-200 focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6]"
+                                className="form-input form-input--with-toggle"
                                 placeholder="Re-enter your new password"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowConfirmNewPassword((previousState) => !previousState)}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-[#A1A1AA] hover:text-[#F5F5F5] rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                                className="password-toggle-button"
                                 aria-label={showConfirmNewPassword ? "Hide confirm password" : "Show confirm password"}
                             >
                                 <EyeToggleIcon isVisible={showConfirmNewPassword} />
@@ -267,19 +267,19 @@ export function ChangePasswordWindow({ onClose }: ChangePasswordWindowProps) {
                     </div>
 
                     {/* Window footer actions */}
-                    <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                    <div className="change-password-footer">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="w-full py-2.5 px-4 rounded-lg border border-[#3A3A40] bg-transparent text-sm font-medium text-[#A1A1AA] transition-colors hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] disabled:opacity-60 sm:w-auto cursor-pointer"
+                            className="change-password-cancel"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full py-2.5 px-4 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] active:bg-[#6D28D9] text-white font-medium text-sm transition-all duration-200 shadow-lg shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed sm:w-auto"
+                            className="change-password-submit"
                         >
                             {isSubmitting ? "Updating..." : "Change password"}
                         </button>
