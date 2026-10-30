@@ -9,15 +9,7 @@
     @apply min-h-full flex flex-col;
 }
 
-@import "../components/components.css";
-@import "../components/layouts/landing/landing.css";
-@import "../components/layouts/auth/auth.css";
-@import "../components/layouts/explore/explore.css";
-@import "../components/layouts/comics/comics.css";
-@import "../components/layouts/movies/movies.css";
-@import "../components/layouts/novels/novels.css";
-@import "../components/layouts/series/series.css";
-@import "../components/layouts/profile/profile.css";
+
 
 :root {
     --background: #111111;
@@ -89,3 +81,13 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .skeleton-shimmer::after { animation: none; }
 }
+
+@import "../components/components.css";
+@import "../components/layouts/landing/landing.css";
+@import "../components/layouts/auth/auth.css";
+@import "../components/layouts/explore/explore.css";
+@import "../components/layouts/comics/comics.css";
+@import "../components/layouts/movies/movies.css";
+@import "../components/layouts/novels/novels.css";
+@import "../components/layouts/series/series.css";
+@import "../components/layouts/profile/profile.css";

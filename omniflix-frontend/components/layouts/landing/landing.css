@@ -221,8 +221,8 @@
 
 .landing-explore-button-icon {
     @apply invert transition-transform duration-200;
+}
 
 .landing-explore-button:hover .landing-explore-button-icon {
     transform: translateX(2px);
-}
 }

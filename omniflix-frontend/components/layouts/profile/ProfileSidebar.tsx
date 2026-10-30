@@ -112,6 +112,12 @@ export function ProfileSidebar({
                     </div>
 
                     <div className="profile-sidebar-footer">
+                        <button
+                            onClick={onGoBack}
+                            className="profile-sidebar-signin"
+                        >
+                            Go Back
+                        </button>
                         <Link
                             href="/auth/signin"
                             onClick={onNavigate}
