@@ -7,6 +7,52 @@
     width: 100%;
 }
 
+/* ── Back navigation ── */
+.backButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin: 0.25rem 0 0.75rem;
+    background-color: #111;
+    color: #F5F5F5;
+    cursor: pointer;
+}
+
+
+.backButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #111111, 0 0 0 4px #A78BFA;
+}
+
+.backButtonIcon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* ── Chapter search ── */
+.chapterSearch {
+    flex: 1;
+    max-width: 16rem;
+    min-width: 0;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #29292E;
+    background-color: #111;
+    color: #F5F5F5;
+    font-size: 0.8rem;
+}
+
+.chapterSearch::placeholder {
+    color: #71717A;
+}
+
+.chapterSearch:focus-visible {
+    outline: none;
+    border-color: #8B5CF6;
+}
+
 .detailRow {
     display: flex;
     margin: 10px;
@@ -184,6 +230,7 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 0.75rem;
+    margin-top: 1.5rem;
     margin-bottom: 0.5rem;
 }
 
@@ -203,7 +250,7 @@
 .chapterList {
     max-height: 22rem;
     overflow-y: auto;
-    margin: 0;
+    margin-top: 15px;
     padding: 0 0.25rem 0 0;
     list-style: none;
     border: 1px solid #29292E;

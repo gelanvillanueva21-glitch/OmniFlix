@@ -2,25 +2,22 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ImageIcon } from "@/components/icons/icons";
-import type { MediaItem } from "@/lib/media";
+import { useRouter } from "next/navigation";
+import { ArrowLeftIcon, ImageIcon } from "@/components/icons/icons";
 import { ExploreLayout } from "@/components/layouts/explore/ExploreLayout";
 import { PopularContentList } from "@/components/PopularContentList";
 import { useComicsCatalog } from "@/components/layouts/comics/useComicsCatalog";
-import type {
+import {
     SuwayomiChapterInfo,
-    SuwayomiComicDetailsResult,
+} from "@/service/types/suwayomi.fetch.payload";
+import type {
+    SuwayomiComicPayload,
 } from "@/service/suwayomi.fetch.service";
 
-/** Detail-only fields layered on top of `MediaItem` by the fetch service. */
-interface ComicDetails extends MediaItem {
-    readonly status?: string;
-}
-
 interface ReadContentProps {
-    /** Comic metadata as mapped by `fetchSuwayomiComicDetails`. */
-    readonly comic: Omit<SuwayomiComicDetailsResult["comic"], "status"> & ComicDetails;
-    /** Chapters as mapped by `fetchSuwayomiChapters`; order is preserved. */
+    /** Comic metadata as mapped by `fetchSuwayomiComicPayload`. */
+    readonly comic: SuwayomiComicPayload["comic"];
+    /** Chapters as mapped by `fetchSuwayomiComicPayload`; order is preserved. */
     readonly chapters: readonly SuwayomiChapterInfo[];
     /** Optional origin label, e.g. the Suwayomi source display name. */
     readonly sourceName?: string;
@@ -89,12 +86,32 @@ function ReadContentHelper({
     sourceName
 }: ReadContentProps) {
 
+    const router = useRouter();
     const [imageFailed, setImageFailed] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+    const [chapterQuery, setChapterQuery] = useState("");
+
+    // Source id from the source-aware id (suwayomi:<sourceId>:<comicId>)
+    const sourceIdentifier = comic.id ? comic.id.split(":")[1] ?? null : null;
 
     const showCover = comic.coverImage !== undefined && !imageFailed;
     const genres = comic.genres ?? [];
     const chapterCount = chapters.length;
+
+    const trimmedQuery = chapterQuery.trim();
+    const visibleChapters = trimmedQuery
+        ? chapters.filter((chapter) => {
+              const name = chapter.name.toLowerCase();
+              const number =
+                  chapter.chapterNumber !== undefined
+                      ? String(chapter.chapterNumber)
+                      : "";
+              return (
+                  name.includes(trimmedQuery.toLowerCase()) ||
+                  number.includes(trimmedQuery)
+              );
+          })
+        : chapters;
 
     const metadataParts = [
         sourceName,
@@ -103,6 +120,22 @@ function ReadContentHelper({
 
     return (
         <article className="readContent">
+                <button
+                    type="button"
+                    aria-label="Go back"
+                    className="backButton"
+                    onClick={() => {
+                        // Return to the source's catalog page the comic was
+                        // opened from (e.g. Asura Scans → /explore/comics/<sourceId>).
+                        if (sourceIdentifier) {
+                            router.push(`/explore/comics/${sourceIdentifier}`);
+                        } else {
+                            router.push("/explore/comics");
+                        }
+                    }}
+                >
+                    <ArrowLeftIcon className="backButtonIcon" />
+                </button>
                 <div className="detailRow">
                     <div className="coverSection">
                         <div className="coverFrame">
@@ -135,7 +168,7 @@ function ReadContentHelper({
                     <div className="detailsSection">
                         <p className="metadataLine">
                             {metadataParts.map((part, index) => (
-                                <span 
+                                <span
                                     key={`${part}-${index}`}
                                     className="metadataPart">
                                     {part}
@@ -184,25 +217,36 @@ function ReadContentHelper({
                         </div>
 
                         <div className="chaptersHeader">
-                            <h3 className="chaptersHeading">Chapters</h3>
+                            <input
+                                type="search"
+                                className="chapterSearch"
+                                placeholder="Search chapters"
+                                aria-label="Search chapters"
+                                value={chapterQuery}
+                                onChange={(event) => setChapterQuery(event.target.value)}
+                            />
                             <span className="chaptersCount">
                                 {chapterCount} {chapterCount === 1 ? "chapter" : "chapters"}
                             </span>
                         </div>
 
                         {chapters.length > 0 ? (
-                            <ol className="chapterList">
-                                {chapters.map((chapter) => (
-                                    <li key={chapter.id} className="chapterRow">
-                                        <span className="chapterName">
-                                            {chapter.name}
-                                        </span>
-                                        <span className="chapterMeta">
-                                            {formatChapterDate(chapter.uploadDate)}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ol>
+                            visibleChapters.length > 0 ? (
+                                <ol className="chapterList">
+                                    {visibleChapters.map((chapter) => (
+                                        <li key={chapter.id} className="chapterRow">
+                                            <span className="chapterName">
+                                                {chapter.name}
+                                            </span>
+                                            <span className="chapterMeta">
+                                                {formatChapterDate(chapter.uploadDate)}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ol>
+                            ) : (
+                                <p className="chaptersEmpty">No chapters match your search.</p>
+                            )
                         ) : (
                         <p className="chaptersEmpty">No chapters available yet
                         </p>
@@ -214,14 +258,23 @@ function ReadContentHelper({
 }
 
 
-/** Renders the chapter upload date as a short local date, if present. */
+/**
+ * Renders the chapter upload date deterministically (fixed locale + UTC) so
+ * server-rendered HTML always matches the client — `toLocaleDateString()` with
+ * the ambient locale/timezone caused hydration mismatches.
+ */
 function formatChapterDate(uploadDate: SuwayomiChapterInfo["uploadDate"]): string {
     if (uploadDate === undefined) {
         return "";
     }
-    return new Date(uploadDate).toLocaleDateString(undefined, {
+    const date = new Date(Number(uploadDate));
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+    return new Intl.DateTimeFormat("en-US", {
+        timeZone: "UTC",
         year: "numeric",
-        month: "short",
+        month: "numeric",
         day: "numeric",
-    });
+    }).format(date);
 }

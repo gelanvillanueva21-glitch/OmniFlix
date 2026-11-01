@@ -1,11 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { ReadContent } from "@/components/ReadContent";
-import {
-    fetchSuwayomiComicDetails,
-    fetchSuwayomiChapters,
-} from "@/service/suwayomi.fetch.service";
-import styles from "@/components/ReadContent.module.css";
+import { fetchSuwayomiComicPayload } from "@/service/suwayomi.fetch.service";
 
 export const instant = false;
 
@@ -30,11 +26,9 @@ export default async function ComicsDetailPage({ params }: ComicsDetailPageProps
 }
 
 async function ComicsDetailContent({ sourceAwareId }: { sourceAwareId: string }) {
-    let details;
-    let chaptersPage;
+    let payload;
     try {
-        details = await fetchSuwayomiComicDetails(sourceAwareId);
-        chaptersPage = await fetchSuwayomiChapters(sourceAwareId, 1);
+        payload = await fetchSuwayomiComicPayload(sourceAwareId);
     } catch (error) {
         return (
             <ComicsDetailError
@@ -49,21 +43,18 @@ async function ComicsDetailContent({ sourceAwareId }: { sourceAwareId: string })
 
     return (
         <ReadContent
-            comic={details.comic}
-            chapters={chaptersPage.chapters}
-            sourceName={details.sourceName}
+            comic={payload.comic}
+            chapters={payload.chapters}
+            sourceName={payload.sourceName}
         />
     );
 }
 
 function ComicsDetailSkeleton() {
     return (
-        <article className={styles.readContent} aria-busy="true">
-            <div className={styles.detailRow}>
-                <div className={styles.coverSection}>
-                    <div className={`${styles.coverFrame} skeleton-shimmer`} />
-                </div>
-                <div className={styles.infoSection}>
+        <article className="readContent" aria-busy="true">
+            <div className="detailRow">
+                <div className="detailsSection">
                     <div className="skeleton-shimmer h-8 w-2/3 rounded-md mb-4" />
                     <div className="skeleton-shimmer h-4 w-1/3 rounded-md mb-6" />
                     <div className="skeleton-shimmer h-24 w-full rounded-md mb-6" />
@@ -84,7 +75,7 @@ function ComicsDetailError({ message }: { message: string }) {
         <section className="comic-detail-error ">
             <h1>Comic unavailable</h1>
             <p>{message}</p>
-            <Link href="/comics">Back to Comics</Link>
+            <Link href="explore/comics">Back to Comics</Link>
         </section>
     );
 }
