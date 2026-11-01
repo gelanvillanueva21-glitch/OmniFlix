@@ -75,7 +75,7 @@ function ComicsDetailError({ message }: { message: string }) {
         <section className="comic-detail-error ">
             <h1>Comic unavailable</h1>
             <p>{message}</p>
-            <Link href="explore/comics">Back to Comics</Link>
+            <Link href="/explore/comics">Back to Comics</Link>
         </section>
     );
 }

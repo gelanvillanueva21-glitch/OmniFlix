@@ -95,7 +95,7 @@ function ComicsPageContent({
     };
 
     const activeSource = visibleSources.find(
-        (source) => source.type === sourceType,
+        (source) => source.type === sourceType || source.id === sourceType,
     );
     const catalogQuery = useComicsInfiniteCatalog(
         activeSource?.type ?? null,
