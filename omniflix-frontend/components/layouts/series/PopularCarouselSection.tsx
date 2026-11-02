@@ -2,7 +2,7 @@
 
 import { MediaCarousel } from "@/components/MediaCarousel";
 import { ErrorState, SectionHeader } from "@/components/SectionHeader";
-import { MediaRowSkeleton } from "@/components/LoadingSkeleton";
+import { MediaRowSkeleton } from "@/components/loading/LoadingSkeleton";
 import { PAGE_LIMIT } from "./seriesQueries";
 import type { MediaItem } from "@/lib/media";
 

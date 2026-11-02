@@ -2,7 +2,7 @@
 
 import { MediaCarousel } from "@/components/MediaCarousel";
 import { SectionHeader } from "@/components/SectionHeader";
-import { MediaRowSkeleton } from "@/components/LoadingSkeleton";
+import { MediaRowSkeleton } from "@/components/loading/LoadingSkeleton";
 import { POPULAR_MOVIES_LIMIT } from "./moviesQueries";
 import type { MediaItem } from "@/lib/media";
 

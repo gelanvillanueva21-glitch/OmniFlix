@@ -1,4 +1,4 @@
-import { ExploreContentSkeleton } from "@/components/ExploreContentSkeleton";
+import { ExploreContentSkeleton } from "@/components/loading/ExploreContentSkeleton";
 
 export default function Loading() {
     return (

@@ -42,6 +42,9 @@ docker compose version
    cat <<EOF> omniflix-frontend/.env
    NEXT_PUBLIC_SUWAYOMI_URL=http://localhost:4567
    NEXT_PUBLIC_KAVITA_URL=http://localhost:5001
+   NEXT_PUBLIC_LNCRAWL_API_URL=http://localhost:8181
+   LNCRAWL_USERNAME=your_lncrawl_username
+   LNCRAWL_PASSWORD=your_lncrawl_password
    EOF
    ```
 

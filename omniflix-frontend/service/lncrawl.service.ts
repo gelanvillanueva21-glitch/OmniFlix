@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { MediaItem } from "@/lib/media";
 import { htmlToText } from "@/lib/html";
 import {
@@ -229,7 +231,7 @@ export async function searchLncrawlNovels(
 /** Logs in once and caches the bearer token for the process lifetime. */
 let cachedLncrawlToken: Promise<string> | undefined;
 
-function getLncrawlAccessToken(baseUrl: string): Promise<string> {
+export function getLncrawlAccessToken(baseUrl: string): Promise<string> {
     cachedLncrawlToken ??= (async () => {
         const username = configuredEnvironmentValue("LNCRAWL_USERNAME");
         const password = configuredEnvironmentValue("LNCRAWL_PASSWORD");

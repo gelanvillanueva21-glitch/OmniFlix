@@ -13,11 +13,11 @@ import {
     ErrorState,
     SectionHeader,
 } from "@/components/SectionHeader";
-import { ExploreContentSkeleton } from "@/components/ExploreContentSkeleton";
+import { ExploreContentSkeleton } from "@/components/loading/ExploreContentSkeleton";
 import {
     LoadingSkeleton,
     MediaRowSkeleton,
-} from "@/components/LoadingSkeleton";
+} from "@/components/loading/LoadingSkeleton";
 import { CatalogResultGrid } from "@/components/CatalogResultGrid";
 import { LoadMoreControl } from "@/components/LoadMoreControl";
 import { SearchResultsSection } from "@/components/SearchResultsSection";

@@ -58,7 +58,7 @@ const MEDIA_TYPE_LABELS: Record<MediaType, string> = {
  */
 export function mediaHref(media: Pick<MediaItem, "id" | "type">): string | null {
     if (!media.id) return null;
-
+    console.log(media.id);
     switch (media.type) {
         case "comics": {
             // Source-aware Suwayomi id: suwayomi:<sourceIdentifier>:<comicId>.

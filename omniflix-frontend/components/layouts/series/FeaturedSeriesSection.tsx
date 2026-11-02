@@ -5,7 +5,7 @@ import {
     EmptyState,
     ErrorState,
 } from "@/components/SectionHeader";
-import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { LoadingSkeleton } from "@/components/loading/LoadingSkeleton";
 import type { MediaItem } from "@/lib/media";
 
 interface FeaturedSeriesSectionProps {
