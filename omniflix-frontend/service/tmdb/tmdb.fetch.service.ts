@@ -14,6 +14,9 @@ import {
   configuredEnvironmentValue,
   providerRequest,
 } from "../provider-client.service";
+import { resolveProviderBaseUrl } from "@/lib/baseUrl";
+
+
 import type {
   TmdbEpisode,
   TmdbEpisodeDetailResponse,
@@ -25,9 +28,14 @@ import type {
   TmdbEpisodeDetail,
   TmdbSeasonSummary
 } from "../types/TmdbFetchPayload";
-import { resolveBaseUrl } from "@/lib/baseUrl";
 
 export type { TmdbSeriesFetchPayload } from "../types/TmdbFetchPayload";
+
+const TMDB_BASE_URL = resolveProviderBaseUrl({
+  envVar: "NEXT_PUBLIC_TMDB_API_URL",
+  defaultUrl: "https://api.themoviedb.org/3",
+  serviceName: "TMDB",
+});
 
 /**
  * Complete series payload — GET /tv/{series_id} for the series metadata, then
@@ -66,7 +74,7 @@ export async function fetchSeriesDetail(
 ): Promise<import("../types/TmdbFetchPayload").TmdbSeriesDetail> {
   const { headers, apiKeyQuery } = resolveTmdbAuth();
   const response = await providerRequest<TmdbSeriesDetailResponse>(
-    `${resolveBaseUrl()}/tv/${encodeURIComponent(String(seriesId))}?language=en-US${apiKeyQuery}`,
+    `${TMDB_BASE_URL}/tv/${encodeURIComponent(String(seriesId))}?language=en-US${apiKeyQuery}`,
     { headers },
   );
 
@@ -88,7 +96,7 @@ export async function fetchSeasonDetail(
 ): Promise<import("../types/TmdbFetchPayload").TmdbSeasonDetail> {
   const { headers, apiKeyQuery } = resolveTmdbAuth();
   const response = await providerRequest<TmdbSeasonDetailResponse>(
-    `${resolveBaseUrl()}/tv/${encodeURIComponent(String(seriesId))}/season/${seasonNumber}?language=en-US${apiKeyQuery}`,
+    `${TMDB_BASE_URL}/tv/${encodeURIComponent(String(seriesId))}/season/${seasonNumber}?language=en-US${apiKeyQuery}`,
     { headers },
   );
 
@@ -110,7 +118,7 @@ export async function fetchEpisodeDetail(
 ): Promise<TmdbEpisodeDetail> {
   const { headers, apiKeyQuery } = resolveTmdbAuth();
   const response = await providerRequest<TmdbEpisodeDetailResponse>(
-    `${resolveBaseUrl()}/tv/${encodeURIComponent(String(seriesId))}/season/${seasonNumber}/episode/${episodeNumber}?language=en-US${apiKeyQuery}`,
+    `${TMDB_BASE_URL}/tv/${encodeURIComponent(String(seriesId))}/season/${seasonNumber}/episode/${episodeNumber}?language=en-US${apiKeyQuery}`,
     { headers },
   );
 
@@ -219,6 +227,7 @@ function mapSeasonEpisodes(
 function tmdbImage(path: string | null | undefined): string | undefined {
   return path ? `https://image.tmdb.org/t/p/w500${path}` : undefined;
 }
+
 
 interface TmdbAuth {
   headers: Record<string, string> | undefined;

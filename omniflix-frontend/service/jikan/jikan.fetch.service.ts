@@ -20,9 +20,15 @@ import type {
   JikanEpisodeListItem,
   JikanEpisodesResponse,
 } from "../types/JikanFetchPayload";
-import { resolveBaseUrl } from "@/lib/baseUrl";
+import { resolveProviderBaseUrl } from "@/lib/baseUrl";
 
 export type { JikanAnimeFetchPayload } from "../types/JikanFetchPayload";
+
+const JIKAN_BASE_URL = resolveProviderBaseUrl({
+  envVar: "NEXT_PUBLIC_JIKAN_API_URL",
+  stripJikanPath: true,
+  serviceName: "Jikan",
+});
 
 /** Proxy caps list pages; hard-stop pagination so a misbehaving proxy cannot loop forever. */
 const EPISODES_MAX_PAGE = 100;
@@ -62,9 +68,8 @@ export async function fetchAnimeDataPayload(
 export async function fetchAnimeDetail(
   animeId: string | number,
 ): Promise<import("../types/JikanFetchPayload").JikanAnimeDetail> {
-  const baseUrl = resolveBaseUrl();
   const response = await providerRequest<JikanAnimeDetailResponse>(
-    `${baseUrl}/anime/${encodeURIComponent(String(animeId))}`,
+    `${JIKAN_BASE_URL}/anime/${encodeURIComponent(String(animeId))}`,
   );
 
   const anime = response.data;
@@ -82,10 +87,9 @@ export async function fetchAnimeEpisodePage(
   animeId: string | number,
   page: number,
 ): Promise<{ episodes: JikanEpisode[]; hasNextPage: boolean }> {
-  const baseUrl = resolveBaseUrl();
   const safePage = Math.max(page, 1);
   const response = await providerRequest<JikanEpisodesResponse>(
-    `${baseUrl}/anime/${encodeURIComponent(String(animeId))}/episodes?page=${safePage}`,
+    `${JIKAN_BASE_URL}/anime/${encodeURIComponent(String(animeId))}/episodes?page=${safePage}`,
   );
 
   const pagination = response.meta?.pagination;
@@ -104,7 +108,6 @@ export async function fetchAnimeEpisodePage(
 export async function fetchAnimeEpisodes(
   animeId: string | number,
 ): Promise<{ episodes: JikanEpisode[]; episodesTruncated: boolean }> {
-  const baseUrl = resolveBaseUrl();
   const encodedId = encodeURIComponent(String(animeId));
 
   const collected: JikanEpisode[] = [];
@@ -113,7 +116,7 @@ export async function fetchAnimeEpisodes(
 
   while (page <= EPISODES_MAX_PAGE) {
     const response = await providerRequest<JikanEpisodesResponse>(
-      `${baseUrl}/anime/${encodedId}/episodes?page=${page}`,
+      `${JIKAN_BASE_URL}/anime/${encodedId}/episodes?page=${page}`,
     );
 
     const pageEpisodes = mapEpisodeListItems(response.data ?? []);
@@ -143,9 +146,8 @@ export async function fetchAnimeEpisode(
   animeId: string | number,
   episodeNumber: number,
 ): Promise<import("../types/JikanFetchPayload").JikanEpisodeDetail> {
-  const baseUrl = resolveBaseUrl();
   const response = await providerRequest<JikanEpisodeDetailResponse>(
-    `${baseUrl}/anime/${encodeURIComponent(String(animeId))}/episodes/${encodeURIComponent(String(episodeNumber))}`,
+    `${JIKAN_BASE_URL}/anime/${encodeURIComponent(String(animeId))}/episodes/${encodeURIComponent(String(episodeNumber))}`,
   );
 
   const episode = response.data;

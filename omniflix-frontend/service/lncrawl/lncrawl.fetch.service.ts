@@ -1,7 +1,8 @@
 
 import "server-only";
 
-import { providerRequest, serverProviderUrl } from "../provider-client.service";
+import { providerRequest } from "../provider-client.service";
+import { resolveProviderBaseUrl } from "@/lib/baseUrl";
 import { getLncrawlAccessToken } from "./lncrawl.service";
 import type {
   LncrawlChapterInfo,
@@ -69,13 +70,10 @@ export async function fetchNovelChapterPage(
 
 
 function resolveBaseUrl(): string {
-  const baseUrl = serverProviderUrl(
-    "NEXT_PUBLIC_LNCRAWL_API_URL",
-    "lncrawl",
-    8181,
-  );
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_LNCRAWL_API_URL is not configured.");
-  }
-  return baseUrl;
+  return resolveProviderBaseUrl({
+    envVar: "NEXT_PUBLIC_LNCRAWL_API_URL",
+    dockerHost: "lncrawl",
+    dockerPort: 8181,
+    serviceName: "LNCrawl",
+  });
 }
