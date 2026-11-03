@@ -13,7 +13,7 @@ import {
 } from "@/service/types/suwayomi.fetch.payload";
 import type {
     SuwayomiComicPayload,
-} from "@/service/suwayomi.fetch.service";
+} from "@/service/suwayomi/suwayomi.fetch.service";
 
 /**
  * Comic details view with source-specific popular sidebar. All comic data

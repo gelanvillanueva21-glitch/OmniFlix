@@ -1,11 +1,11 @@
-import { providerRequest, serverProviderUrl } from "./provider-client.service";
+import { providerRequest, serverProviderUrl } from "../provider-client.service";
 import type {
   SuwayomiChapter,
   SuwayomiChapterInfo,
   SuwayomiComicDetailsResult,
   SuwayomiComicPayload,
   SuwayomiComicPayloadResponse,
-} from "./types/suwayomi.fetch.payload";
+} from "../types/suwayomi.fetch.payload";
 
 
 export type {
@@ -13,7 +13,7 @@ export type {
   SuwayomiChaptersPage,
   SuwayomiComicDetailsResult,
   SuwayomiComicPayload,
-} from "./types/suwayomi.fetch.payload";
+} from "../types/suwayomi.fetch.payload";
 
 interface SuwayomiResponse<T> {
   data?: T;

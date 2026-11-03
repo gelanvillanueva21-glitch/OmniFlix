@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchJikanAnime } from "@/service/jikan.service";
+import { searchJikanAnime } from "@/service/jikan/jikan.service";
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;

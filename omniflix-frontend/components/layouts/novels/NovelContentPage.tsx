@@ -8,6 +8,9 @@ import type {
     LncrawlNovelDetailPayload,
 } from "@/service/types/lncrawl.fetch.payload";
 import { DetailSkeleton } from "@/components/loading/ContentDetailLoad";
+import { useNovels } from "./novelsQueries";
+import { ExploreLayout } from "../explore/ExploreLayout";
+import { PopularContentList } from "@/components/PopularContentList";
 
 interface NovelContentPageProps {
     /** Raw LNCrawl id. The route page removes the catalog prefix. */
@@ -51,6 +54,9 @@ export function NovelContentPage({ novelId }: NovelContentPageProps) {
         staleTime: 5 * 60 * 1000,
     });
 
+    const novel = useNovels();
+    const popularNovels = novel.data?.pages.flatMap((page) => page.items) ?? [];
+
     if (!novelId) {
         return <NovelDetailError message="No novel selected." />;
     }
@@ -74,22 +80,31 @@ export function NovelContentPage({ novelId }: NovelContentPageProps) {
     const payload = novelQuery.data;
 
     return (
-        <ReadContent
-            data={{
-                id: payload.novel.id,
-                title: payload.novel.title,
-                coverImage: payload.novel.coverImage,
-                description: payload.novel.description,
-                genres: payload.novel.genres,
-            }}
-            chapters={payload.chapters.map(toSharedChapter)}
-            loadMoreChapters={(offset) =>
-                fetchNovelChapterPage(novelId, offset).then(
-                    (batch) => batch.items.map(toSharedChapter),
-                )
+        <ExploreLayout
+            popular={
+                <PopularContentList
+                    items={popularNovels}
+                    title="Novels"
+                />
             }
-            sourceName="novels"
-        />
+        >
+            <ReadContent
+                data={{
+                    id: payload.novel.id,
+                    title: payload.novel.title,
+                    coverImage: payload.novel.coverImage,
+                    description: payload.novel.description,
+                    genres: payload.novel.genres,
+                }}
+                chapters={payload.chapters.map(toSharedChapter)}
+                loadMoreChapters={(offset) =>
+                    fetchNovelChapterPage(novelId, offset).then(
+                        (batch) => batch.items.map(toSharedChapter),
+                    )
+                }
+                sourceName="novels"
+            />
+        </ExploreLayout>
     );
 }
 

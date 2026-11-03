@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { htmlToText } from "@/lib/html";
-import { fetchNovelDataPayload } from "@/service/lncrawl.fetch.service";
+import { fetchNovelDataPayload } from "@/service/lncrawl/lncrawl.fetch.service";
 import type { LncrawlNovelDetailPayload } from "@/service/types/lncrawl.fetch.payload";
 
 const MAX_NOVEL_ID_LENGTH = 200;

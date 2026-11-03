@@ -3,7 +3,7 @@ import {
   COMICK_SOURCE_TYPE,
   fetchSuwayomiCatalog,
   getSuwayomiSources,
-} from "@/service/suwayomi.service";
+} from "@/service/suwayomi/suwayomi.service";
 import { isAdminRequest } from "@/service/server-auth.service";
 
 /**

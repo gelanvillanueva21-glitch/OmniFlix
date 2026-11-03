@@ -1,17 +1,6 @@
 import type { MediaItem, SeriesSearchResult } from "@/lib/media";
-import { configuredEnvironmentValue, providerRequest } from "./provider-client.service";
-
-interface TmdbResult {
-    id: number;
-    title?: string;
-    name?: string;
-    overview?: string;
-    poster_path?: string;
-    vote_average?: number;
-    release_date?: string;
-    first_air_date?: string;
-    genre_ids?: number[];
-}
+import { configuredEnvironmentValue, providerRequest } from "../provider-client.service";
+import type { TmdbResult } from "../types/TmdbFetchPayload";
 
 export const TMDB_TV_GENRES: Record<number, string> = {
     10759: "Action & Adventure",

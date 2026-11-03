@@ -2,57 +2,17 @@
 // format. Uses the configured Jikan proxy URL, which serves /top/anime with
 // camelCase fields and pagination under `meta.pagination` (page is 1-1000).
 import type { MediaItem, SeriesSearchResult } from "@/lib/media";
-import { configuredEnvironmentValue, providerRequest } from "./provider-client.service";
+import { configuredEnvironmentValue, providerRequest } from "../provider-client.service";
+import type {
+    JikanAnime,
+    JikanAnimePage,
+    JikanResponse,
+    JikanSearchItem,
+} from "../types/JikanFetchPayload";
 
-interface JikanAnime {
-    malId?: number;
-    title?: string;
-    imageUrl?: string;
-    score?: number | null;
-    startDate?: string | null;
-}
+export type { JikanAnimePage } from "../types/JikanFetchPayload";
 
 export type JikanAnimeSearchResult = SeriesSearchResult;
-
-interface JikanSearchItem {
-    malId?: number;
-    mal_id?: number;
-    title?: string;
-    title_english?: string;
-    synopsis?: string;
-    imageUrl?: string;
-    images?: {
-        webp?: {
-            large_image_url?: string;
-            image_url?: string;
-        };
-        jpg?: {
-            large_image_url?: string;
-            image_url?: string;
-        };
-    };
-    score?: number | null;
-    year?: number;
-    startDate?: string | null;
-    aired?: {
-        from?: string | null;
-    };
-    genres?: Array<{ name?: string } | string>;
-    themes?: Array<{ name?: string } | string>;
-    status?: string;
-    type?: string;
-    episodes?: number | null;
-}
-
-interface JikanResponse {
-    data?: JikanAnime[];
-    meta?: { pagination?: { hasNextPage?: boolean } };
-}
-
-export interface JikanAnimePage {
-    items: MediaItem[];
-    hasNextPage: boolean;
-}
 
 /** The proxy only accepts pages 1-1000 for /top/anime. */
 const JIKAN_MAX_PAGE = 1000;

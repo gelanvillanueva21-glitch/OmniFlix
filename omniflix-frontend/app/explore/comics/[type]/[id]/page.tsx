@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ReadContentComic } from "@/components/layouts/comics/ComicContentPage";
 import { DetailSkeleton } from "@/components/loading/ContentDetailLoad";
-import { fetchSuwayomiComicPayload } from "@/service/suwayomi.fetch.service";
+import { fetchSuwayomiComicPayload } from "@/service/suwayomi/suwayomi.fetch.service";
 
 export const instant = false;
 

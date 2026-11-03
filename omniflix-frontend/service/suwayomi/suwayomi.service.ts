@@ -1,5 +1,5 @@
 import type { MediaItem } from "@/lib/media";
-import { providerRequest, serverProviderUrl } from "./provider-client.service";
+import { providerRequest, serverProviderUrl } from "../provider-client.service";
 
 interface SuwayomiResponse<T> {
     data?: T;

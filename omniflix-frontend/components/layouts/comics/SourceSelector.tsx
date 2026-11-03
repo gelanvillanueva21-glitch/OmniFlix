@@ -1,6 +1,6 @@
 "use client";
 
-import type { SuwayomiSourceInfo } from "@/service/suwayomi.service";
+import type { SuwayomiSourceInfo } from "@/service/suwayomi/suwayomi.service";
 
 interface SourceSelectorProps {
     sources: SuwayomiSourceInfo[];

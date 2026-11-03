@@ -6,7 +6,7 @@ import {
     configuredEnvironmentValue,
     providerRequest,
     serverProviderUrl,
-} from "./provider-client.service";
+} from "../provider-client.service";
 
 interface LncrawlNovel {
     id?: number | string;

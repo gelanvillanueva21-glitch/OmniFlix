@@ -1,13 +1,13 @@
 
 import "server-only";
 
-import { providerRequest, serverProviderUrl } from "./provider-client.service";
+import { providerRequest, serverProviderUrl } from "../provider-client.service";
 import { getLncrawlAccessToken } from "./lncrawl.service";
 import type {
   LncrawlChapterInfo,
   LncrawlChaptersPage,
   LncrawlNovelDetail,
-} from "./types/lncrawl.fetch.payload";
+} from "../types/lncrawl.fetch.payload";
 
 export type {
   LncrawlChapterBatchPayload,
@@ -16,7 +16,7 @@ export type {
   LncrawlNovelDetail,
   LncrawlNovelDetailPayload,
   LncrawlNovelPayload,
-} from "./types/lncrawl.fetch.payload";
+} from "../types/lncrawl.fetch.payload";
 
 /** Fixed LNCrawl chapter page size; pages are walked by `offset`. */
 const CHAPTER_PAGE_SIZE = 100;

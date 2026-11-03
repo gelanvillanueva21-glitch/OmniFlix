@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchNovelChapterPage } from "@/service/lncrawl.fetch.service";
+import { fetchNovelChapterPage } from "@/service/lncrawl/lncrawl.fetch.service";
 import type { LncrawlChapterBatchPayload } from "@/service/types/lncrawl.fetch.payload";
 
 const MAX_NOVEL_ID_LENGTH = 200;

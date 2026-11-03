@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchTmdbMovies } from "@/service/tmdb.service";
+import { searchTmdbMovies } from "@/service/tmdb/tmdb.service";
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;

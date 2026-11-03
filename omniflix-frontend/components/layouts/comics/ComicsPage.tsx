@@ -29,7 +29,7 @@ import {
     useComicsSources,
 } from "@/components/layouts/comics/useComicsCatalog";
 import type { MediaItem } from "@/lib/media";
-import { COMICK_SOURCE_TYPE } from "@/service/suwayomi.service";
+import { COMICK_SOURCE_TYPE } from "@/service/suwayomi/suwayomi.service";
 import useDebounce from '@/lib/debounce';
 
 interface ComicsPageProps {
