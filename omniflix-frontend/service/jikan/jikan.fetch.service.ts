@@ -9,6 +9,7 @@
  */
 import "server-only";
 
+import type { MediaItem } from "@/lib/media";
 import {
   providerRequest,
 } from "../provider-client.service";
@@ -19,6 +20,7 @@ import type {
   JikanEpisodeDetailResponse,
   JikanEpisodeListItem,
   JikanEpisodesResponse,
+  JikanMangaDetailResponse,
 } from "../types/JikanFetchPayload";
 import { resolveProviderBaseUrl } from "@/lib/baseUrl";
 
@@ -77,6 +79,42 @@ export async function fetchAnimeDetail(
     throw new Error(`Anime not found for id ${animeId}.`);
   }
   return anime;
+}
+
+export async function fetchJikanMangaDetail(
+    mangaId: string | number,
+): Promise<MediaItem> {
+    const response = await providerRequest<JikanMangaDetailResponse>(
+        `${JIKAN_BASE_URL}/manga/${encodeURIComponent(String(mangaId))}`,
+    );
+    const manga = response.data;
+    const malId = manga?.malId;
+    const title = manga?.title?.trim();
+
+    if (!manga || typeof malId !== "number" || !title) {
+        throw new Error(`Manga not found for id ${mangaId}.`);
+    }
+
+    const genres = (manga.genres ?? [])
+        .map((genre) => genre.name)
+        .filter((name): name is string => Boolean(name));
+    const score =
+        typeof manga.score === "number" && manga.score > 0
+            ? Number(manga.score.toFixed(1))
+            : undefined;
+    const releaseYear = getYear(manga.published?.from);
+
+    return {
+        id: `jikan:manga:${malId}`,
+        title,
+        type: "comics",
+        coverImage: manga.imageUrl ?? manga.images?.large ?? undefined,
+        description: manga.synopsis?.trim() || undefined,
+        genres: genres.length ? genres : undefined,
+        rating: score,
+        releaseYear,
+        source: "Jikan Manga",
+    };
 }
 
 /**
@@ -181,4 +219,8 @@ function sortEpisodes(episodes: JikanEpisode[]): JikanEpisode[] {
   return [...episodes].sort((first, second) => first.number - second.number);
 }
 
-
+function getYear(date: string | null | undefined): number | undefined {
+    const match = /\d{4}/.exec(date ?? "");
+    const year = match ? Number(match[0]) : NaN;
+    return Number.isInteger(year) ? year : undefined;
+}

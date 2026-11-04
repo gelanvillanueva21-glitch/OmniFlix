@@ -53,6 +53,13 @@ export interface JikanSearchItem {
   episodes?: number | null;
 }
 
+export interface JikanGenreEntry {
+    malId?: number;
+    mal_id?: number;
+    name?: string;
+    type?: string;
+}
+
 export interface JikanResponse {
   data?: JikanAnime[];
   meta?: { pagination?: { hasNextPage?: boolean } };
@@ -85,6 +92,10 @@ export interface JikanEnvelope<T> {
     pagination?: JikanPagination;
   };
 }
+
+export type JikanGenreListResponse = JikanEnvelope<JikanGenreEntry[]>;
+
+export type JikanGenreResultsResponse = JikanEnvelope<JikanSearchItem[]>;
 
 
 
@@ -169,6 +180,25 @@ export interface JikanAnimeDetail {
 }
 
 export type JikanAnimeDetailResponse = JikanEnvelope<JikanAnimeDetail>;
+
+export interface JikanMangaDetail {
+    malId?: number;
+    title?: string;
+    imageUrl?: string | null;
+    images?: JikanImages;
+    synopsis?: string | null;
+    background?: string | null;
+    status?: string | null;
+    score?: number | null;
+    chapters?: number | null;
+    volumes?: number | null;
+    published?: {
+        from?: string | null;
+    };
+    genres?: JikanNamedEntry[];
+}
+
+export type JikanMangaDetailResponse = JikanEnvelope<JikanMangaDetail>;
 
 
 /** One episode entry from the paginated episode list. */

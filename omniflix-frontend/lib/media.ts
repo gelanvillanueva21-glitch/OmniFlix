@@ -61,6 +61,17 @@ export function mediaHref(media: Pick<MediaItem, "id" | "type">): string | null 
     console.log(media.id);
     switch (media.type) {
         case "comics": {
+            const jikanMangaParts = media.id.split(":");
+            if (
+                jikanMangaParts.length === 3 &&
+                jikanMangaParts[0] === "jikan" &&
+                jikanMangaParts[1] === "manga" &&
+                /^[1-9]\d*$/.test(jikanMangaParts[2]) &&
+                Number.isSafeInteger(Number(jikanMangaParts[2]))
+            ) {
+                return `/explore/comics/jikan/${encodeURIComponent(jikanMangaParts[2])}`;
+            }
+
             // Source-aware Suwayomi id: suwayomi:<sourceIdentifier>:<comicId>.
             // The source identifier stays a string — it is a LongString that can
             // exceed Number.MAX_SAFE_INTEGER, so it is never parsed as a number.

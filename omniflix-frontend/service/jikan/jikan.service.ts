@@ -1,18 +1,22 @@
 // Jikan provider service: popular/top anime, mapped to the shared MediaItem
 // format. Uses the configured Jikan proxy URL, which serves /top/anime with
 // camelCase fields and pagination under `meta.pagination` (page is 1-1000).
-import type { MediaItem, SeriesSearchResult } from "@/lib/media";
+import type { Genre, MediaItem, SeriesSearchResult } from "@/lib/media";
 import { configuredEnvironmentValue, providerRequest } from "../provider-client.service";
 import type {
     JikanAnime,
     JikanAnimePage,
+    JikanGenreListResponse,
+    JikanGenreResultsResponse,
     JikanResponse,
     JikanSearchItem,
 } from "../types/JikanFetchPayload";
+import { resolveProviderBaseUrl } from "@/lib/baseUrl";
 
 export type { JikanAnimePage } from "../types/JikanFetchPayload";
 
 export type JikanAnimeSearchResult = SeriesSearchResult;
+export type JikanGenreMediaType = "anime" | "manga";
 
 /** The proxy only accepts pages 1-1000 for /top/anime. */
 const JIKAN_MAX_PAGE = 1000;
@@ -44,6 +48,52 @@ export async function getJikanAnimePage(
     const hasNextPage = response.meta?.pagination?.hasNextPage === true
         && safePage < JIKAN_MAX_PAGE;
     return { items, hasNextPage };
+}
+
+export async function getJikanGenres(
+    mediaType: JikanGenreMediaType,
+): Promise<Genre[]> {
+    const response = await providerRequest<JikanGenreListResponse>(
+        `${getJikanBaseUrl()}/genres/${mediaType}`,
+    );
+
+    return (response.data ?? []).flatMap((genre) => {
+        const genreId = genre.malId ?? genre.mal_id;
+        if (
+            genre.type !== "genres" ||
+            typeof genreId !== "number" ||
+            typeof genre.name !== "string" ||
+            !genre.name.trim()
+        ) {
+            return [];
+        }
+        return [{ id: String(genreId), label: genre.name }];
+    });
+}
+
+/**
+ * One provider-native genre-filtered page. The proxy uses `genres` with a
+ * MyAnimeList genre ID and reports continuation under `meta.pagination`.
+ */
+export async function getJikanGenrePage(
+    mediaType: JikanGenreMediaType,
+    genreId: string,
+    page: number,
+): Promise<{ items: MediaItem[]; hasNextPage: boolean }> {
+    const searchParams = new URLSearchParams({
+        genres: genreId,
+        page: String(page),
+    });
+    const response = await providerRequest<JikanGenreResultsResponse>(
+        `${getJikanBaseUrl()}/${mediaType}?${searchParams}`,
+    );
+
+    return {
+        items: (response.data ?? []).flatMap((item) =>
+            mapJikanGenreItem(item, mediaType),
+        ),
+        hasNextPage: response.meta?.pagination?.hasNextPage === true,
+    };
 }
 
 /**
@@ -165,6 +215,51 @@ function mapAnimeToMediaItems(anime: JikanAnime): MediaItem[] {
         rating: anime.score ?? undefined,
         releaseYear: getYear(anime.startDate),
     }];
+}
+
+function mapJikanGenreItem(
+    item: JikanSearchItem,
+    mediaType: JikanGenreMediaType,
+): MediaItem[] {
+    const malId = item.mal_id ?? item.malId;
+    const title = item.title_english || item.title;
+    if (typeof malId !== "number" || !title) {
+        return [];
+    }
+
+    const genreNames = (item.genres ?? [])
+        .map((genre) => (typeof genre === "string" ? genre : genre.name))
+        .filter((genre): genre is string => Boolean(genre));
+    const year = item.year ?? getYear(item.startDate ?? item.aired?.from);
+
+    return [{
+        id: mediaType === "manga"
+            ? `jikan:manga:${malId}`
+            : `jikan:${malId}`,
+        title,
+        type: mediaType === "manga" ? "comics" : "series",
+        description: item.synopsis?.trim() || undefined,
+        coverImage:
+            item.images?.webp?.large_image_url ||
+            item.images?.jpg?.large_image_url ||
+            item.imageUrl ||
+            undefined,
+        genres: genreNames.length ? genreNames : undefined,
+        rating:
+            typeof item.score === "number" && item.score > 0
+                ? Number(item.score.toFixed(1))
+                : undefined,
+        releaseYear: year,
+        source: mediaType === "manga" ? "Jikan Manga" : "Anime",
+    }];
+}
+
+function getJikanBaseUrl(): string {
+    return resolveProviderBaseUrl({
+        envVar: "NEXT_PUBLIC_JIKAN_API_URL",
+        stripJikanPath: true,
+        serviceName: "Jikan",
+    });
 }
 
 /** Extracts the first 4-digit year from a range like "Sep 2023 - Mar 2024". */

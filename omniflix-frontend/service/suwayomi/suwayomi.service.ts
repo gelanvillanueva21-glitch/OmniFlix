@@ -1,4 +1,4 @@
-import type { MediaItem } from "@/lib/media";
+import type { Genre, MediaItem } from "@/lib/media";
 import { providerRequest, serverProviderUrl } from "../provider-client.service";
 
 interface SuwayomiResponse<T> {
@@ -40,6 +40,31 @@ interface SuwayomiManga {
     genre: string[];
 }
 
+interface SuwayomiFilter {
+    __typename: string;
+    name: string;
+    values?: string[];
+    filters?: SuwayomiFilter[];
+}
+
+interface SuwayomiFilterChange {
+    position: number;
+    checkBoxState?: boolean;
+    selectState?: number;
+    triState?: "IGNORE" | "INCLUDE" | "EXCLUDE";
+    groupChange?: SuwayomiFilterChange;
+}
+
+type SuwayomiFilterState =
+    | { checkBoxState: boolean }
+    | { selectState: number }
+    | { triState: "IGNORE" | "INCLUDE" | "EXCLUDE" };
+
+interface SuwayomiGenreOption {
+    genre: Genre;
+    filterChange: SuwayomiFilterChange;
+}
+
 const EXTENSIONS_QUERY = `
     { extensions(condition: { isInstalled: true }) {
         nodes { source { nodes { id lang supportsLatest displayName } } }
@@ -51,11 +76,67 @@ const MANGA_QUERY = `
         $source: LongString!,
         $page: Int!,
         $type: FetchSourceMangaType!,
-        $query: String
+        $query: String,
+        $filters: [FilterChangeInput!]
     ) {
-        fetchSourceManga(input: { source: $source, page: $page, type: $type, query: $query }) {
+        fetchSourceManga(input: {
+            source: $source,
+            page: $page,
+            type: $type,
+            query: $query,
+            filters: $filters
+        }) {
             hasNextPage
             mangas { id title thumbnailUrl description genre }
+        }
+    }
+`;
+
+const SOURCE_FILTERS_QUERY = `
+    query SourceFilters($id: LongString!) {
+        source(id: $id) {
+            filters {
+                __typename
+                ... on CheckBoxFilter { name }
+                ... on SelectFilter { name values }
+                ... on TriStateFilter { name }
+                ... on GroupFilter {
+                    name
+                    filters {
+                        __typename
+                        ... on CheckBoxFilter { name }
+                        ... on SelectFilter { name values }
+                        ... on TriStateFilter { name }
+                        ... on GroupFilter {
+                            name
+                            filters {
+                                __typename
+                                ... on CheckBoxFilter { name }
+                                ... on SelectFilter { name values }
+                                ... on TriStateFilter { name }
+                                ... on GroupFilter {
+                                    name
+                                    filters {
+                                        __typename
+                                        ... on CheckBoxFilter { name }
+                                        ... on SelectFilter { name values }
+                                        ... on TriStateFilter { name }
+                                        ... on GroupFilter {
+                                            name
+                                            filters {
+                                                __typename
+                                                ... on CheckBoxFilter { name }
+                                                ... on SelectFilter { name values }
+                                                ... on TriStateFilter { name }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 `;
@@ -104,10 +185,11 @@ async function fetchSuwayomiCatalogById(
     page: number,
     type: "POPULAR" | "LATEST" | "SEARCH",
     query?: string,
+    filters?: SuwayomiFilterChange[],
 ): Promise<SuwayomiCatalogPage> {
     const baseUrl = serverProviderUrl("NEXT_PUBLIC_SUWAYOMI_API_URL", "suwayomi", 4567);
     if (!baseUrl) throw new Error("Suwayomi URL is not configured.");
-    if (type === "SEARCH" && !query) {
+    if (type === "SEARCH" && query === undefined) {
         throw new Error("A query is required for source search.");
     }
 
@@ -116,13 +198,181 @@ async function fetchSuwayomiCatalogById(
     }>(
         baseUrl,
         MANGA_QUERY,
-        { source: sourceId, page, type, query },
+        { source: sourceId, page, type, query, filters },
     );
 
     const catalog = response.fetchSourceManga;
     return {
         items: mapMangaToMediaItems(sourceId, catalog?.mangas ?? []),
         hasNextPage: catalog?.hasNextPage ?? false,
+    };
+}
+
+export async function getSuwayomiGenreOptions(
+    sourceType: string,
+): Promise<{ genres: Genre[]; supported: boolean }> {
+    const source = await getSuwayomiSource(sourceType);
+    const filters = await getSuwayomiSourceFilters(source.id);
+    const options = collectAllSuwayomiGenreOptions(filters);
+    return {
+        genres: options.map((option) => option.genre),
+        supported: options.length > 0,
+    };
+}
+
+export async function fetchSuwayomiGenrePage(
+    sourceType: string,
+    genreId: string,
+    page: number,
+): Promise<SuwayomiCatalogPage & { supported: boolean }> {
+    const source = await getSuwayomiSource(sourceType);
+    const filters = await getSuwayomiSourceFilters(source.id);
+    const genreOptions = collectAllSuwayomiGenreOptions(filters);
+    const selectedOption = genreOptions.find(
+        (option) => option.genre.id === genreId,
+    );
+    if (genreOptions.length === 0) {
+        return { items: [], hasNextPage: false, supported: false };
+    }
+    if (!selectedOption) {
+        throw new Error("The selected genre is not available for this source.");
+    }
+
+    const catalog = await fetchSuwayomiCatalogById(
+        source.id,
+        page,
+        "SEARCH",
+        "",
+        [selectedOption.filterChange],
+    );
+    return { ...catalog, supported: true };
+}
+
+async function getSuwayomiSource(sourceType: string): Promise<SuwayomiSourceInfo> {
+    const source = (await getSuwayomiSources()).find(
+        (candidate) =>
+            candidate.type === sourceType || candidate.id === sourceType,
+    );
+    if (!source) {
+        throw new Error(`Unsupported comic source: ${sourceType}`);
+    }
+    return source;
+}
+
+async function getSuwayomiSourceFilters(
+    sourceId: string,
+): Promise<SuwayomiFilter[]> {
+    const baseUrl = serverProviderUrl("NEXT_PUBLIC_SUWAYOMI_API_URL", "suwayomi", 4567);
+    if (!baseUrl) {
+        throw new Error("Suwayomi URL is not configured.");
+    }
+    const response = await graphQl<{
+        source: { filters: SuwayomiFilter[] } | null;
+    }>(baseUrl, SOURCE_FILTERS_QUERY, { id: sourceId });
+    return response.source?.filters ?? [];
+}
+
+function collectAllSuwayomiGenreOptions(
+    filters: SuwayomiFilter[],
+): SuwayomiGenreOption[] {
+    const genreGroupIndex = filters.findIndex(
+        (filter) =>
+            filter.__typename === "GroupFilter" &&
+            filter.name.trim().toLowerCase() === "genre",
+    );
+    if (genreGroupIndex >= 0) {
+        return collectSuwayomiGenreOptions(filters[genreGroupIndex], [
+            genreGroupIndex,
+        ]);
+    }
+
+    const directGenreIndex = filters.findIndex(
+        (filter) =>
+            filter.name.trim().toLowerCase() === "genre" &&
+            filter.__typename === "SelectFilter",
+    );
+    return directGenreIndex >= 0
+        ? collectSuwayomiGenreOptions(filters[directGenreIndex], [
+            directGenreIndex,
+        ])
+        : [];
+}
+
+function collectSuwayomiGenreOptions(
+    filter: SuwayomiFilter,
+    positions: number[],
+): SuwayomiGenreOption[] {
+    if (filter.__typename === "GroupFilter") {
+        return (filter.filters ?? []).flatMap((nestedFilter, index) =>
+            collectSuwayomiGenreOptions(nestedFilter, [...positions, index]),
+        );
+    }
+
+    if (filter.__typename === "SelectFilter") {
+        return (filter.values ?? []).flatMap((value, index) =>
+            value.trim()
+                ? [{
+                    genre: {
+                        id: `select:${positions.join(".")}:${index}`,
+                        label: value,
+                    },
+                    filterChange: buildSuwayomiFilterChange(
+                        positions,
+                        { selectState: index },
+                    ),
+                }]
+                : [],
+        );
+    }
+
+    if (filter.__typename === "TriStateFilter") {
+        return filter.name.trim()
+            ? [{
+                genre: {
+                    id: `tri:${positions.join(".")}`,
+                    label: filter.name,
+                },
+                filterChange: buildSuwayomiFilterChange(
+                    positions,
+                    { triState: "INCLUDE" },
+                ),
+            }]
+            : [];
+    }
+
+    if (filter.__typename === "CheckBoxFilter") {
+        return filter.name.trim()
+            ? [{
+                genre: {
+                    id: `check:${positions.join(".")}`,
+                    label: filter.name,
+                },
+                filterChange: buildSuwayomiFilterChange(
+                    positions,
+                    { checkBoxState: true },
+                ),
+            }]
+            : [];
+    }
+
+    return [];
+}
+
+function buildSuwayomiFilterChange(
+    positions: number[],
+    state: SuwayomiFilterState,
+): SuwayomiFilterChange {
+    const [position, ...nestedPositions] = positions;
+    if (nestedPositions.length === 0) {
+        return { position, ...state };
+    }
+
+    return {
+        position,
+        groupChange: buildSuwayomiFilterChange(
+            nestedPositions,
+            state,
+        ),
     };
 }
 
@@ -305,7 +555,7 @@ function mapMangaToMediaItems(
 async function graphQl<T>(
     baseUrl: string,
     query: string,
-    variables?: Record<string, string | number | undefined>,
+    variables?: Record<string, unknown>,
 ): Promise<T> {
     const response = await providerRequest<SuwayomiResponse<T>>(
         `${baseUrl}/api/graphql`,

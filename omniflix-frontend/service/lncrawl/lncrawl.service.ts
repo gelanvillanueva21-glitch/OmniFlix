@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { MediaItem } from "@/lib/media";
+import type { Genre, MediaItem } from "@/lib/media";
 import { htmlToText } from "@/lib/html";
 import {
     configuredEnvironmentValue,
@@ -36,6 +36,8 @@ export interface LncrawlNovelsPage {
     /** True while the server reports more novels past the current offset. */
     hasNextPage: boolean;
 }
+
+const LNCRAWL_GENRE_PAGE_SIZE = 20;
 
 export async function getLncrawlNovels(
     limit = 12,
@@ -124,6 +126,90 @@ export function getLncrawlNovelsPage(
     page = 1,
 ): Promise<LncrawlNovelsPage> {
     return getLncrawlNovels(limit, (Math.max(page, 1) - 1) * limit);
+}
+
+export async function getLncrawlGenreTags(): Promise<Genre[]> {
+    const baseUrl = serverProviderUrl(
+        "NEXT_PUBLIC_LNCRAWL_API_URL",
+        "lncrawl",
+        8181,
+    );
+    if (!baseUrl) {
+        throw new Error("NEXT_PUBLIC_LNCRAWL_API_URL is not configured.");
+    }
+
+    const accessToken = await getLncrawlAccessToken(baseUrl);
+    const tags = await providerRequest<Record<string, unknown>>(
+        `${baseUrl}/api/novel/tags`,
+        { headers: { Authorization: "Bearer " + accessToken } },
+    );
+
+    return Object.entries(tags)
+        .filter(
+            ([tag, count]) =>
+                tag.trim().length > 0 &&
+                typeof count === "number" &&
+                Number.isFinite(count),
+        )
+        .map(([tag]) => ({ id: tag, label: tag }))
+        .sort((first, second) => first.label.localeCompare(second.label));
+}
+
+/**
+ * LNCrawl's `tags` query parameter requires novels to match every supplied
+ * provider tag. This endpoint uses offset/limit rather than page numbers.
+ */
+export async function getLncrawlNovelsByTag(
+    tag: string,
+    page: number,
+): Promise<LncrawlNovelsPage> {
+    const baseUrl = serverProviderUrl(
+        "NEXT_PUBLIC_LNCRAWL_API_URL",
+        "lncrawl",
+        8181,
+    );
+    if (!baseUrl) {
+        throw new Error("NEXT_PUBLIC_LNCRAWL_API_URL is not configured.");
+    }
+
+    const accessToken = await getLncrawlAccessToken(baseUrl);
+    const offset = (page - 1) * LNCRAWL_GENRE_PAGE_SIZE;
+    const searchParams = new URLSearchParams({
+        limit: String(LNCRAWL_GENRE_PAGE_SIZE),
+        offset: String(offset),
+        sort: "updated",
+    });
+    searchParams.append("tags", tag);
+
+    const response = await providerRequest<
+        LncrawlListResponse | LncrawlNovel[]
+    >(`${baseUrl}/api/novels?${searchParams}`, {
+        headers: { Authorization: "Bearer " + accessToken },
+    });
+    const novels = Array.isArray(response)
+        ? response
+        : response.items ?? response.novels ?? [];
+    const items = novels.flatMap((novel) => {
+        const title = novel.title ?? novel.name;
+        const identifier = novel.id;
+        if (!title || identifier === undefined) {
+            return [];
+        }
+        return [mapNovelToMediaItem(novel, title, identifier)];
+    });
+    const total = Array.isArray(response)
+        ? novels.length
+        : response.total ?? novels.length;
+
+    return {
+        items,
+        total,
+        hasNextPage: Array.isArray(response)
+            ? novels.length >= LNCRAWL_GENRE_PAGE_SIZE
+            : response.total !== undefined
+                ? offset + novels.length < response.total
+                : novels.length >= LNCRAWL_GENRE_PAGE_SIZE,
+    };
 }
 
 /**
