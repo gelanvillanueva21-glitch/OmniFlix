@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { getEntertainmentCollection } from "@/service/profile.service";
 import { ExploreLayout } from "../explore/ExploreLayout";
 import { PopularContentList } from "@/components/PopularContentList";
 import { DetailSkeleton } from "@/components/loading/ContentDetailLoad";
@@ -69,7 +70,7 @@ export function SeriesReadContent({ seriesId }: SeriesReadContentProps) {
                     message="This series address is malformed or unsupported."
                 />
             ) : detailQuery.isPending ? (
-                <div className="p-4">
+                <div className="series-detail-loading">
                     <DetailSkeleton />
                 </div>
             ) : detailQuery.isError ? (
@@ -220,12 +221,243 @@ interface DetailHeaderData {
  * Poster + information block shared by both providers so they present
  * identically while each maps its own payload into `DetailHeaderData`.
  */
+/**
+ * Collapsible description. The collapsed height is expressed in line heights
+ * (not a character cut) so the underlying text is never truncated — only the
+ * visible box is clamped and a `See more` control appears when the content
+ * actually overflows.
+ */
+function SeriesDescription({ text }: { text: string }) {
+    const [expanded, setExpanded] = useState(false);
+    const [overflows, setOverflows] = useState(false);     const textRef = useRef<HTMLParagraphElement | null>(null);
+
+    // Measure overflow only while collapsed: while expanded the paragraph's
+    // scrollHeight equals its clientHeight, so re-measuring would erase the
+    // toggle and trap the description open. Re-runs on `text` changes and on
+    // collapse so the clamp re-evaluates after a provider switch.
+    useEffect(() => {
+        const element = textRef.current;
+        if (element === null || expanded) {
+            return;
+        }
+        const nowOverflows = element.scrollHeight > element.clientHeight + 1;
+        setOverflows((current) =>
+            current === nowOverflows ? current : nowOverflows,
+        );
+    }, [expanded, text]);
+
+    return (
+        <div className="series-detail-description-container">
+            <p
+                ref={textRef}
+                className={`series-detail-description${expanded ? " series-detail-description-expanded" : ""}`}
+            >
+                {text}
+            </p>
+            {overflows && (
+                <button
+                    type="button"
+                    aria-expanded={expanded}
+                    onClick={() => setExpanded((current) => !current)}
+                    className="series-detail-description-toggle"
+                >
+                    {expanded ? "See less" : "See more"}
+                </button>
+            )}
+        </div>
+    );
+}
+
+/** Which OmniFlix lists this title already belongs to (per provider+id). */
+interface SeriesListState {
+    readonly favorite: boolean;
+    readonly watchlist: boolean;
+}
+
+/**
+ * Reads the signed-in profile's FAVORITE and WATCHLIST collections through the
+ * existing read-only entertainment API and reports membership for this exact
+ * provider + id. There is no write endpoint for entertainment lists yet, so
+ * the entries are shown read-only with an explanatory tooltip rather than
+ * pretending a toggle exists.
+ */
+function useSeriesListState(
+    provider: SeriesProvider,
+    providerId: string,
+): { lists: SeriesListState; loading: boolean } {
+    const favoriteQuery = useQuery({
+        queryKey: ["entertainment", "collection", "FAVORITE"],
+        queryFn: () => getEntertainmentCollection("FAVORITE"),
+        staleTime: 60 * 1000,
+    });
+    const watchlistQuery = useQuery({
+        queryKey: ["entertainment", "collection", "WATCHLIST"],
+        queryFn: () => getEntertainmentCollection("WATCHLIST"),
+        staleTime: 60 * 1000,
+    });
+
+    const matches = (items: { externalId: string; apiSource: string }[]) =>
+        items.some(
+            (item) =>
+                item.externalId === providerId &&
+                item.apiSource.toUpperCase() === provider.toUpperCase(),
+        );
+
+    return {
+        lists: {
+            favorite: matches(favoriteQuery.data ?? []),
+            watchlist: matches(watchlistQuery.data ?? []),
+        },
+        loading:
+            (favoriteQuery.isPending || watchlistQuery.isPending) &&
+            favoriteQuery.isError === null &&
+            watchlistQuery.isError === null,
+    };
+}
+
+/**
+ * Action row for the series header: an honest `Play` placeholder (TMDB/Jikan
+ * payloads carry episode metadata only — there is no video stream to play, so
+ * the button stays disabled with an explanation) and a secondary `More`
+ * popover listing Favorite / Watchlist membership.
+ */
+function SeriesDetailActions({
+    provider,
+    providerId,
+}: {
+    provider: SeriesProvider;
+    providerId: string;
+}) {
+    const { lists, loading } = useSeriesListState(provider, providerId);
+    const [moreOpen, setMoreOpen] = useState(false);
+    const wrapperRef = useRef<HTMLDivElement | null>(null);
+    const popoverId = useId();
+
+    // Dismiss the popover on any outside click or Escape.
+    useEffect(() => {
+        if (!moreOpen) {
+            return;
+        }
+
+        function handlePointerDown(event: PointerEvent) {
+            if (
+                wrapperRef.current !== null &&
+                !wrapperRef.current.contains(event.target as Node)
+            ) {
+                setMoreOpen(false);
+            }
+        }
+
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === "Escape") {
+                setMoreOpen(false);
+            }
+        }
+
+        document.addEventListener("pointerdown", handlePointerDown);
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("pointerdown", handlePointerDown);
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [moreOpen]);
+
+    const listOptions = [
+        {
+            key: "FAVORITE" as const,
+            label: "Favorite",
+            icon: HeartIcon,
+            selected: lists.favorite,
+        },
+        {
+            key: "WATCHLIST" as const,
+            label: "Watchlist",
+            icon: BookmarkIcon,
+            selected: lists.watchlist,
+        },
+    ];
+
+    return (
+        <div className="series-detail-actions">
+            <button
+                type="button"
+                disabled
+                className="series-detail-play-button"
+                title="Episode playback is not available yet — OmniFlix does not host video streams."
+            >
+                <PlayIcon className="series-detail-control-icon" />
+                Play
+            </button>
+
+            <div
+                ref={wrapperRef}
+                className="series-detail-more-wrapper"
+            >
+                <button
+                    type="button"
+                    className="series-detail-more-button"
+                    aria-haspopup="menu"
+                    aria-expanded={moreOpen}
+                    aria-controls={moreOpen ? popoverId : undefined}
+                    aria-label="More actions"
+                    onClick={() => setMoreOpen((current) => !current)}
+                >
+                    <MoreVerticalIcon className="series-detail-control-icon" />
+                </button>
+
+                {moreOpen && (
+                    <div
+                        id={popoverId}
+                        role="menu"
+                        aria-label="List options"
+                        className="series-detail-more-popover"
+                    >
+                        {loading ? (
+                            <p className="series-detail-list-status">
+                                Checking your lists…
+                            </p>
+                        ) : (
+                            listOptions.map((option) => (
+                                <button
+                                    key={option.key}
+                                    type="button"
+                                    role="menuitem"
+                                    disabled
+                                    className={`series-detail-list-option${option.selected ? " series-detail-list-option-selected" : ""}`}
+                                    title={
+                                        option.selected
+                                            ? `Already in your ${option.label.toLowerCase()} list.`
+                                            : "Saving to lists is not available yet."
+                                    }
+                                    onClick={() => setMoreOpen(false)}
+                                >
+                                    <option.icon className="series-detail-list-option-icon" />
+                                    <span className="series-detail-list-option-label">
+                                        {option.label}
+                                    </span>
+                                    {option.selected && (
+                                        <CheckIcon className="series-detail-list-option-selected-icon" />
+                                    )}
+                                </button>
+                            ))
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function SeriesDetailHeader({
     data,
     onBack,
+    provider,
+    providerId,
 }: {
     data: DetailHeaderData;
     onBack: () => void;
+    provider: SeriesProvider;
+    providerId: string;
 }) {
     const [posterFailed, setPosterFailed] = useState(false);
     const showPoster = data.posterImage !== undefined && !posterFailed;
@@ -307,15 +539,11 @@ function SeriesDetailHeader({
 
                     <h1 className="series-detail-title">{data.title}</h1>
 
-                    {data.description !== undefined ? (
-                        <p className="series-detail-description">
-                            {data.description}
-                        </p>
-                    ) : (
-                        <p className="series-detail-description">
-                            No description available.
-                        </p>
-                    )}
+                    <SeriesDescription
+                        text={
+                            data.description ?? "No description available."
+                        }
+                    />
 
                     {(data.firstYear !== undefined ||
                         data.status !== undefined ||
@@ -339,22 +567,10 @@ function SeriesDetailHeader({
                             </dl>
                         )}
 
-                    <div className="series-detail-actions">
-                        <button
-                            type="button"
-                            disabled
-                            className="series-detail-action-primary"
-                        >
-                            Watchlist
-                        </button>
-                        <button
-                            type="button"
-                            disabled
-                            className="series-detail-action-secondary"
-                        >
-                            Favorite
-                        </button>
-                    </div>
+                    <SeriesDetailActions
+                        provider={provider}
+                        providerId={providerId}
+                    />
                 </div>
             </div>
         </>
@@ -428,6 +644,8 @@ function TmdbSeriesDetail({
         <article className="series-detail">
             <SeriesDetailHeader
                 onBack={back}
+                provider="tmdb"
+                providerId={payload.series.id?.toString() ?? ""}
                 data={{
                     title,
                     posterImage: series.poster_path
@@ -511,59 +729,61 @@ function TmdbEpisodeList({
     }
 
     return (
-        <ol className="series-detail-episode-list">
-            {episodes.map((episode) => (
-                <li
-                    key={`${seasonNumber}-${episode.episodeNumber}`}
-                    className="series-detail-episode-row"
-                >
-                    <div className="series-detail-episode-still">
-                        {episode.stillImage !== undefined ? (
-                            <Image
-                                src={episode.stillImage}
-                                alt={episode.title ?? `Episode ${episode.episodeNumber}`}
-                                fill
-                                sizes="176px"
-                                className="series-detail-episode-still-image"
-                            />
-                        ) : (
-                            <div className="series-detail-episode-still-empty">
-                                <ImageIcon className="h-5 w-5" />
-                            </div>
-                        )}
-                    </div>
-                    <div className="series-detail-episode-body">
-                        <h3 className="series-detail-episode-heading">
-                            <span className="series-detail-episode-number">
-                                E{episode.episodeNumber}
-                            </span>
-                            <span>
-                                {episode.title ??
-                                    `Episode ${episode.episodeNumber}`}
-                            </span>
-                            {episode.airDate !== undefined && (
-                                <span className="series-detail-episode-air-date">
-                                    {formatAirDate(episode.airDate)}
-                                </span>
-                            )}
-                        </h3>
-                        {episode.overview !== undefined && (
-                            <p className="series-detail-episode-overview">
-                                {episode.overview}
-                            </p>
-                        )}
-                        <div className="series-detail-episode-meta">
-                            {episode.runtimeMinutes !== undefined && (
-                                <span>{episode.runtimeMinutes} min</span>
-                            )}
-                            {episode.rating !== undefined && (
-                                <span>★ {episode.rating.toFixed(1)}</span>
+        <div className="series-detail-episode-scroll">
+            <ol className="series-detail-episode-list">
+                {episodes.map((episode) => (
+                    <li
+                        key={`${seasonNumber}-${episode.episodeNumber}`}
+                        className="series-detail-episode-row"
+                    >
+                        <div className="series-detail-episode-still">
+                            {episode.stillImage !== undefined ? (
+                                <Image
+                                    src={episode.stillImage}
+                                    alt={episode.title ?? `Episode ${episode.episodeNumber}`}
+                                    fill
+                                    sizes="176px"
+                                    className="series-detail-episode-still-image"
+                                />
+                            ) : (
+                                <div className="series-detail-episode-still-empty">
+                                    <ImageIcon className="series-detail-episode-placeholder-icon" />
+                                </div>
                             )}
                         </div>
-                    </div>
-                </li>
-            ))}
-        </ol>
+                        <div className="series-detail-episode-body">
+                            <h3 className="series-detail-episode-heading">
+                                <span className="series-detail-episode-number">
+                                    E{episode.episodeNumber}
+                                </span>
+                                <span>
+                                    {episode.title ??
+                                        `Episode ${episode.episodeNumber}`}
+                                </span>
+                                {episode.airDate !== undefined && (
+                                    <span className="series-detail-episode-air-date">
+                                        {formatAirDate(episode.airDate)}
+                                    </span>
+                                )}
+                            </h3>
+                            {episode.overview !== undefined && (
+                                <p className="series-detail-episode-overview">
+                                    {episode.overview}
+                                </p>
+                            )}
+                            <div className="series-detail-episode-meta">
+                                {episode.runtimeMinutes !== undefined && (
+                                    <span>{episode.runtimeMinutes} min</span>
+                                )}
+                                {episode.rating !== undefined && (
+                                    <span>★ {episode.rating.toFixed(1)}</span>
+                                )}
+                            </div>
+                        </div>
+                    </li>
+                ))}
+            </ol>
+        </div>
     );
 }
 
@@ -590,6 +810,8 @@ function JikanAnimeDetail({
         <article className="series-detail">
             <SeriesDetailHeader
                 onBack={back}
+                provider="jikan"
+                providerId={anime.malId?.toString() ?? ""}
                 data={{
                     title: anime.title ?? "Untitled anime",
                     posterImage: poster,
@@ -644,37 +866,39 @@ function JikanEpisodeList({
     }
 
     return (
-        <ol className="series-detail-episode-list">
-            {episodes.map((episode) => (
-                <li
-                    key={episode.number}
-                    className="series-detail-episode-row"
-                >
-                    <div className="series-detail-episode-body">
-                        <h3 className="series-detail-episode-heading">
-                            <span className="series-detail-episode-number">
-                                Ep {episode.number}
-                            </span>
-                            <span>
-                                {episode.title ?? `Episode ${episode.number}`}
-                            </span>
-                            {episode.aired !== undefined && (
-                                <span className="series-detail-episode-air-date">
-                                    {episode.aired}
+        <div className="series-detail-episode-scroll">
+            <ol className="series-detail-episode-list">
+                {episodes.map((episode) => (
+                    <li
+                        key={episode.number}
+                        className="series-detail-episode-row"
+                    >
+                        <div className="series-detail-episode-body">
+                            <h3 className="series-detail-episode-heading">
+                                <span className="series-detail-episode-number">
+                                    Ep {episode.number}
                                 </span>
-                            )}
-                        </h3>
-                        <div className="series-detail-episode-meta">
-                            {episode.score !== undefined && (
-                                <span>★ {episode.score.toFixed(1)}</span>
-                            )}
-                            {episode.filler === true && <span>Filler</span>}
-                            {episode.recap === true && <span>Recap</span>}
+                                <span>
+                                    {episode.title ?? `Episode ${episode.number}`}
+                                </span>
+                                {episode.aired !== undefined && (
+                                    <span className="series-detail-episode-air-date">
+                                        {episode.aired}
+                                    </span>
+                                )}
+                            </h3>
+                            <div className="series-detail-episode-meta">
+                                {episode.score !== undefined && (
+                                    <span>★ {episode.score.toFixed(1)}</span>
+                                )}
+                                {episode.filler === true && <span>Filler</span>}
+                                {episode.recap === true && <span>Recap</span>}
+                            </div>
                         </div>
-                    </div>
-                </li>
-            ))}
-        </ol>
+                    </li>
+                ))}
+            </ol>
+        </div>
     );
 }
 
@@ -694,6 +918,93 @@ function formatAirDate(airDate: string): string {
         month: "short",
         day: "numeric",
     }).format(date);
+}
+
+/* ── Inline SVG icons (kept local — the shared icon set has no play/heart
+   variants and this task may not touch other files). ── */
+
+function PlayIcon({ className }: { className?: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className={className ?? "series-detail-control-icon"}
+            aria-hidden={true}
+        >
+            <path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.1-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14Z" />
+        </svg>
+    );
+}
+
+function HeartIcon({ className }: { className?: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.75}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className ?? "series-detail-list-option-icon"}
+            aria-hidden={true}
+        >
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+        </svg>
+    );
+}
+
+function BookmarkIcon({ className }: { className?: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.75}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className ?? "series-detail-list-option-icon"}
+            aria-hidden={true}
+        >
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" />
+        </svg>
+    );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.25}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className ?? "series-detail-list-option-selected-icon"}
+            aria-hidden={true}
+        >
+            <path d="M20 6 9 17l-5-5" />
+        </svg>
+    );
+}
+
+function MoreVerticalIcon({ className }: { className?: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className={className ?? "series-detail-control-icon"}
+            aria-hidden={true}
+        >
+            <circle cx="12" cy="5" r="1.6" />
+            <circle cx="12" cy="12" r="1.6" />
+            <circle cx="12" cy="19" r="1.6" />
+        </svg>
+    );
 }
 
 export function SeriesDetailError({ message }: { message: string }) {
