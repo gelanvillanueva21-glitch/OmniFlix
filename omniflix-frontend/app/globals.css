@@ -91,4 +91,5 @@ body {
 @import "../components/layouts/movies/movies.css";
 @import "../components/layouts/novels/novels.css";
 @import "../components/layouts/series/series.css";
+@import "../components/layouts/series/SeriesContentStyle.css";
 @import "../components/layouts/profile/profile.css";

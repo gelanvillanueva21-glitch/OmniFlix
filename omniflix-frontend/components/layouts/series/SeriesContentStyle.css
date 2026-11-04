@@ -1,0 +1,174 @@
+/* SeriesContentStyle — series detail page styles.
+   Reuses the OmniFlix tokens already used by ReadContent: #0B0B0F page bg,
+   #111 surfaces, #29292E borders, #8B5CF6 purple accent, #F5F5F5 / #A1A1AA
+   text, var(--font-space-grotesk) headings. Scoped with series-detail-* so
+   nothing collides with series.css or ReadContent.css. */
+
+.series-detail {
+  @apply w-full;
+}
+
+/* ── Back navigation ── */
+.series-detail-back {
+  @apply mb-3 ml-2.5 mt-1 inline-flex h-10 w-10 cursor-pointer items-center justify-center bg-[#111] text-[#F5F5F5];
+}
+.series-detail-back:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px #111111,
+    0 0 0 4px #a78bfa;
+}
+.series-detail-back-icon {
+  @apply h-5 w-5;
+}
+
+/* ── Poster + information row ── */
+.series-detail-row {
+  @apply mx-2.5 mb-6 flex items-start gap-7;
+}
+
+.series-detail-poster-section {
+  @apply flex w-64 flex-shrink-0 flex-col gap-4;
+}
+
+.series-detail-poster-frame {
+  @apply relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-[#29292E] bg-[#111];
+}
+.series-detail-poster {
+  @apply object-cover;
+}
+.series-detail-poster-placeholder {
+  @apply flex h-full w-full items-center justify-center text-[#71717A];
+}
+.series-detail-poster-placeholder-icon {
+  @apply h-10 w-10;
+}
+
+.series-detail-genre-list {
+  @apply flex flex-wrap gap-2;
+}
+.series-detail-genre-tag {
+  @apply rounded-full border border-[#29292E] bg-[#111] px-3 py-1 text-xs text-[#A1A1AA];
+}
+
+/* ── Information column ── */
+.series-detail-info {
+  @apply min-w-0 flex-1;
+}
+.series-detail-metadata {
+  @apply flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#A1A1AA];
+}
+.series-detail-metadata-part {
+  @apply inline-flex items-center;
+}
+.series-detail-metadata-provider {
+  @apply rounded border border-[#29292E] bg-[#111] px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-[#A78BFA];
+}
+.series-detail-metadata-rating {
+  @apply font-semibold text-[#FACC15];
+}
+.series-detail-metadata-separator::after {
+  content: "•";
+  @apply ml-3 text-[#29292E];
+}
+
+.series-detail-title {
+  @apply mt-2 font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-[#F5F5F5] sm:text-3xl;
+}
+
+.series-detail-description {
+  @apply mt-3 text-sm leading-relaxed text-[#A1A1AA];
+}
+
+.series-detail-facts {
+  @apply mt-4 grid max-w-md grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm;
+}
+.series-detail-fact-label {
+  @apply text-[#71717A];
+}
+.series-detail-fact-value {
+  @apply text-[#F5F5F5];
+}
+
+.series-detail-actions {
+  @apply mt-5 flex flex-wrap gap-3;
+}
+.series-detail-action-primary {
+  @apply cursor-not-allowed rounded-lg bg-[#8B5CF6] px-5 py-2 text-sm font-semibold text-white opacity-50;
+}
+.series-detail-action-secondary {
+  @apply cursor-not-allowed rounded-lg border border-[#29292E] bg-[#111] px-5 py-2 text-sm font-semibold text-[#F5F5F5] opacity-50;
+}
+
+/* ── Seasons + episodes ── */
+.series-detail-episodes {
+  @apply mx-2.5;
+}
+.series-detail-episodes-header {
+  @apply mb-3 flex flex-wrap items-center justify-between gap-3;
+}
+.series-detail-episodes-title {
+  @apply font-[family-name:var(--font-space-grotesk)] text-lg font-bold text-[#F5F5F5];
+}
+.series-detail-season-select {
+  @apply min-w-0 max-w-64 flex-1 rounded-lg border border-[#29292E] bg-[#111] px-3 py-2 text-sm text-[#F5F5F5];
+}
+.series-detail-season-select:focus-visible {
+  outline: none;
+  border-color: #8b5cf6;
+}
+
+.series-detail-episode-list {
+  @apply flex flex-col gap-3;
+}
+.series-detail-episode-row {
+  @apply flex gap-4 rounded-xl border border-[#29292E] bg-[#111] p-3;
+}
+.series-detail-episode-still {
+  @apply relative h-20 w-36 flex-shrink-0 overflow-hidden rounded-lg bg-[#0B0B0F] md:h-24 md:w-44;
+}
+.series-detail-episode-still-image {
+  @apply object-cover;
+}
+.series-detail-episode-still-empty {
+  @apply flex h-full w-full items-center justify-center text-[#71717A];
+}
+.series-detail-episode-body {
+  @apply min-w-0 flex-1;
+}
+.series-detail-episode-heading {
+  @apply flex flex-wrap items-baseline gap-x-2 text-sm font-semibold text-[#F5F5F5];
+}
+.series-detail-episode-number {
+  @apply text-[#A78BFA];
+}
+.series-detail-episode-air-date {
+  @apply text-xs font-normal text-[#71717A];
+}
+.series-detail-episode-overview {
+  @apply mt-1 line-clamp-2 text-xs leading-relaxed text-[#A1A1AA];
+}
+.series-detail-episode-meta {
+  @apply mt-1.5 flex flex-wrap gap-x-3 text-xs text-[#71717A];
+}
+
+.series-detail-episode-list-empty {
+  @apply rounded-xl border border-[#29292E] bg-[#111] p-4 text-sm text-[#A1A1AA];
+}
+.series-detail-episodes-note {
+  @apply mt-3 text-xs text-[#71717A];
+}
+
+/* ── Error / invalid-id states ── */
+.series-detail-error {
+  @apply mx-2.5 rounded-xl border border-[#29292E] bg-[#111] p-6 text-center;
+}
+.series-detail-error h1 {
+  @apply font-[family-name:var(--font-space-grotesk)] text-xl font-bold text-[#F5F5F5];
+}
+.series-detail-error p {
+  @apply mt-2 text-sm text-[#A1A1AA];
+}
+.series-detail-error a {
+  @apply mt-4 inline-block text-sm text-[#A78BFA] underline;
+}
