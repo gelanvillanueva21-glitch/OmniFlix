@@ -1,5 +1,5 @@
  import { NextRequest, NextResponse } from "next/server";
-import { getJikanAnimePage } from "@/service/jikan.service";
+import { getJikanAnimePage } from "@/service/jikan/jikan.service";
 import { uniqueMediaItems } from "@/service/provider-client.service";
 import type { MediaItem } from "@/lib/media";
 

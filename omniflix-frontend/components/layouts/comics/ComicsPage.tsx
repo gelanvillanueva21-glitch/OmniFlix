@@ -13,11 +13,11 @@ import {
     ErrorState,
     SectionHeader,
 } from "@/components/SectionHeader";
-import { ExploreContentSkeleton } from "@/components/ExploreContentSkeleton";
+import { ExploreContentSkeleton } from "@/components/loading/ExploreContentSkeleton";
 import {
     LoadingSkeleton,
     MediaRowSkeleton,
-} from "@/components/LoadingSkeleton";
+} from "@/components/loading/LoadingSkeleton";
 import { CatalogResultGrid } from "@/components/CatalogResultGrid";
 import { LoadMoreControl } from "@/components/LoadMoreControl";
 import { SearchResultsSection } from "@/components/SearchResultsSection";
@@ -29,7 +29,7 @@ import {
     useComicsSources,
 } from "@/components/layouts/comics/useComicsCatalog";
 import type { MediaItem } from "@/lib/media";
-import { COMICK_SOURCE_TYPE } from "@/service/suwayomi.service";
+import { COMICK_SOURCE_TYPE } from "@/service/suwayomi/suwayomi.service";
 import useDebounce from '@/lib/debounce';
 
 interface ComicsPageProps {
@@ -95,7 +95,7 @@ function ComicsPageContent({
     };
 
     const activeSource = visibleSources.find(
-        (source) => source.type === sourceType,
+        (source) => source.type === sourceType || source.id === sourceType,
     );
     const catalogQuery = useComicsInfiniteCatalog(
         activeSource?.type ?? null,

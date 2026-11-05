@@ -2,7 +2,7 @@
 
 import { MediaCarousel } from "@/components/MediaCarousel";
 import { SectionHeader } from "@/components/SectionHeader";
-import { MediaRowSkeleton } from "@/components/LoadingSkeleton";
+import { MediaRowSkeleton } from "@/components/loading/LoadingSkeleton";
 import { NOVELS_PAGE_SIZE } from "./novelsQueries";
 import type { MediaItem } from "@/lib/media";
 

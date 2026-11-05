@@ -9,14 +9,15 @@ import { PopularContentList } from "@/components/PopularContentList";
 import { SearchBar } from "@/components/SearchBar";
 import { LoadMoreControl } from "@/components/LoadMoreControl";
 import { SectionHeader, EmptyState, ErrorState } from "@/components/SectionHeader";
-import { LoadingSkeleton } from "@/components/LoadingSkeleton";
-import { ExploreContentSkeleton } from "@/components/ExploreContentSkeleton";
+import { LoadingSkeleton } from "@/components/loading/LoadingSkeleton";
+import { ExploreContentSkeleton } from "@/components/loading/ExploreContentSkeleton";
 import { dedupeById, useDiscoverBrowse, useExploreOverview } from "@/components/layouts/explore/discoverQueries";
 import { SearchResultsSection } from "@/components/SearchResultsSection";
 import { useGlobalSearch } from "@/components/layouts/explore/useGlobalSearch";
 import useDebounce from "@/lib/debounce";
 import type { ExploreData } from "@/lib/explore";
 import { selectRandomFeaturedMedia } from "@/lib/selectRandomFeaturedMedia";
+
 
 const POPULAR_SECTIONS = [
     { key: "comics", title: "Popular Comics" },

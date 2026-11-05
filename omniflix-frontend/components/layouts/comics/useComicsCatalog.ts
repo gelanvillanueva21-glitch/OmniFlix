@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { MediaItem } from "@/lib/media";
-import type { SuwayomiSourceInfo } from "@/service/suwayomi.service";
+import type { SuwayomiSourceInfo } from "@/service/suwayomi/suwayomi.service";
 
 export type ComicsCatalogType = "POPULAR" | "SEARCH";
 

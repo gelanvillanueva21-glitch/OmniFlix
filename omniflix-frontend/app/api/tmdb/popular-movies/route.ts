@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPopularTmdbMovies } from "@/service/tmdb.service";
+import { getPopularTmdbMovies } from "@/service/tmdb/tmdb.service";
 import { uniqueMediaItems } from "@/service/provider-client.service";
 import type { MediaItem } from "@/lib/media";
 

@@ -1,17 +1,6 @@
-import type { MediaItem, SeriesSearchResult } from "@/lib/media";
-import { configuredEnvironmentValue, providerRequest } from "./provider-client.service";
-
-interface TmdbResult {
-    id: number;
-    title?: string;
-    name?: string;
-    overview?: string;
-    poster_path?: string;
-    vote_average?: number;
-    release_date?: string;
-    first_air_date?: string;
-    genre_ids?: number[];
-}
+import type { Genre, MediaItem, SeriesSearchResult } from "@/lib/media";
+import { configuredEnvironmentValue, providerRequest } from "../provider-client.service";
+import type { TmdbResult } from "../types/TmdbFetchPayload";
 
 export const TMDB_TV_GENRES: Record<number, string> = {
     10759: "Action & Adventure",
@@ -41,6 +30,91 @@ interface TmdbResponse {
 export interface TmdbMoviesPage {
     items: MediaItem[];
     totalPages: number;
+}
+
+interface TmdbGenreListResponse {
+    genres?: Array<{ id?: number; name?: string }>;
+}
+
+/**
+ * TMDB keeps movie and TV genres in separate lists. The selected list is also
+ * used to validate IDs and map discover results back to genre names.
+ */
+export async function getTmdbGenres(
+    mediaType: "movies" | "series",
+): Promise<Genre[]> {
+    const providerType = mediaType === "movies" ? "movie" : "tv";
+    const baseUrl =
+        configuredEnvironmentValue("NEXT_PUBLIC_TMDB_API_URL") ||
+        process.env.NEXT_PUBLIC_TMDB_API_URL ||
+        "https://api.themoviedb.org/3";
+    const { headers, apiKey } = resolveTmdbGenreAuth();
+    const searchParams = new URLSearchParams({ language: "en-US" });
+    if (!headers && apiKey) {
+        searchParams.set("api_key", apiKey);
+    }
+
+    const response = await providerRequest<TmdbGenreListResponse>(
+        `${baseUrl.replace(/\/$/, "")}/genre/${providerType}/list?${searchParams}`,
+        { headers },
+    );
+
+    return (response.genres ?? []).flatMap((genre) => {
+        if (
+            typeof genre.id !== "number" ||
+            typeof genre.name !== "string" ||
+            !genre.name.trim()
+        ) {
+            return [];
+        }
+        return [{ id: String(genre.id), label: genre.name }];
+    });
+}
+
+/**
+ * One page of TMDB discover results for an already validated provider genre.
+ * Genre IDs are never shared between the movie and TV catalogs.
+ */
+export async function getTmdbGenrePage(
+    mediaType: "movies" | "series",
+    genreId: string,
+    genres: Genre[],
+    page: number,
+): Promise<TmdbMoviesPage> {
+    const providerType = mediaType === "movies" ? "movie" : "tv";
+    const baseUrl =
+        configuredEnvironmentValue("NEXT_PUBLIC_TMDB_API_URL") ||
+        process.env.NEXT_PUBLIC_TMDB_API_URL ||
+        "https://api.themoviedb.org/3";
+    const { headers, apiKey } = resolveTmdbGenreAuth();
+    const searchParams = new URLSearchParams({
+        with_genres: genreId,
+        language: "en-US",
+        page: String(page),
+    });
+    if (!headers && apiKey) {
+        searchParams.set("api_key", apiKey);
+    }
+
+    const response = await providerRequest<
+        TmdbResponse & { total_pages?: number }
+    >(
+        `${baseUrl.replace(/\/$/, "")}/discover/${providerType}?${searchParams}`,
+        { headers },
+    );
+    const genreNames = new Map(
+        genres.map((genre) => [Number(genre.id), genre.label]),
+    );
+
+    return {
+        items: mapResults(
+            response.results,
+            mediaType,
+            Number.MAX_SAFE_INTEGER,
+            genreNames,
+        ),
+        totalPages: response.total_pages ?? 1,
+    };
 }
 
 /**
@@ -235,6 +309,36 @@ async function getPopularTmdbPage(
     };
 }
 
+interface TmdbGenreAuth {
+    headers: Record<string, string> | undefined;
+    apiKey: string | undefined;
+}
+
+function resolveTmdbGenreAuth(): TmdbGenreAuth {
+    const token =
+        configuredEnvironmentValue(
+            "TMDB_READ_ACCESS_TOKEN",
+            "NEXT_PUBLIC_TOKEN_TMBD",
+        ) || process.env.NEXT_PUBLIC_TOKEN_TMBD;
+    const apiKey =
+        configuredEnvironmentValue(
+            "TMDB_API_KEY",
+            "NEXT_PUBLIC_API_KEY",
+            "NEXT_PUBLIC_TMDB_API_KEY",
+        ) ||
+        process.env.NEXT_PUBLIC_TMDB_API_KEY ||
+        process.env.NEXT_PUBLIC_API_KEY;
+    const headers = token?.split(".").length === 3
+        ? { Authorization: `Bearer ${token}` }
+        : undefined;
+
+    if (!headers && !apiKey) {
+        throw new Error("TMDB credentials are not configured.");
+    }
+
+    return { headers, apiKey };
+}
+
 interface TmdbMedia {
     movies: MediaItem[];
     series: MediaItem[];
@@ -298,20 +402,26 @@ function mapResults(
     results: TmdbResult[] | undefined,
     type: "movies" | "series",
     limit: number,
+    genreNames?: ReadonlyMap<number, string>,
 ): MediaItem[] {
     return (results ?? [])
         .slice(0, limit)
-        .flatMap((result) => mapResult(result, type));
+        .flatMap((result) => mapResult(result, type, genreNames));
 }
 
 function mapResult(
     result: TmdbResult,
     type: "movies" | "series",
+    genreNames?: ReadonlyMap<number, string>,
 ): MediaItem[] {
     const title = result.title ?? result.name;
     if (!title) {
         return [];
     }
+
+    const genres = result.genre_ids
+        ?.map((genreId) => genreNames?.get(genreId))
+        .filter((genre): genre is string => genre !== undefined);
 
     return [{
         id: `tmdb:${type}:${result.id}`,
@@ -325,6 +435,7 @@ function mapResult(
             ? result.vote_average
             : undefined,
         releaseYear: getYear(result.release_date ?? result.first_air_date),
+        genres: genres?.length ? genres : undefined,
     }];
 }
 

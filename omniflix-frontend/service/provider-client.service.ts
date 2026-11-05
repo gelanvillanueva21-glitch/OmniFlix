@@ -52,7 +52,8 @@ export function configuredEnvironmentValue(
 ): string | undefined {
     for (const environmentName of environmentNames) {
         const value = process.env[environmentName]?.trim();
-        if (value) return value;
+        if (value) 
+            return value;
     }
     return undefined;
 }
@@ -63,11 +64,15 @@ export function serverProviderUrl(
     dockerPort: number,
 ): string | undefined {
     const configuredUrl = configuredEnvironmentValue(environmentName);
-    if (!configuredUrl) return undefined;
+    if (!configuredUrl) 
+        return undefined;
 
     try {
         const url = new URL(configuredUrl);
-        if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+        if (
+            url.hostname === "localhost" || 
+            url.hostname === "127.0.0.1"
+        ) {
             url.hostname = dockerServiceName;
             url.port = String(dockerPort);
         }

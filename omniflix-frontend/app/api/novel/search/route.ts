@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchLncrawlNovels } from "@/service/lncrawl.service";
+import { searchLncrawlNovels } from "@/service/lncrawl/lncrawl.service";
 import { uniqueMediaItems } from "@/service/provider-client.service";
 import type { MediaItem } from "@/lib/media";
 

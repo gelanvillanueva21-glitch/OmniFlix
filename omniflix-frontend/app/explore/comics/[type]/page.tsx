@@ -1,5 +1,5 @@
 import { ComicsPage } from "@/components/layouts/comics/ComicsPage";
-import { COMICK_SOURCE_TYPE } from "@/service/suwayomi.service";
+import { COMICK_SOURCE_TYPE } from "@/service/suwayomi/suwayomi.service";
 import { isAdminRequest } from "@/service/server-auth.service";
 import { redirect } from "next/navigation";
 

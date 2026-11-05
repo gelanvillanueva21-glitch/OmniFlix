@@ -1,6 +1,7 @@
 # Novel Reader — Implementation Plan (Future Use)
 
-> Status: **Planning only — not yet implemented.**
+> Status: **Partially implemented — novel detail and paginated chapter
+> metadata are available. Chapter reading remains planned.**
 > Feature goal: click a novel card → see its details and chapter list → click a
 > chapter → read it, with chapters crawled on demand by LNcrawl.
 >
@@ -18,7 +19,7 @@ novel-reader-relevant paths:
 | Purpose         | LNcrawl endpoint                                    | Verified behavior                                                                                                                                                                                                                                                                              |
 | --------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Novel detail    | `GET /api/novel/{novel_id}`                         | Full metadata: `title`, `synopsis` (HTML — must be flattened with `htmlToText`), `authors`, `tags`, `chapter_count`, `volume_count`, `cover_url`, `domain`, `language`, `popularity`                                                                                                           |
-| Chapter list    | `GET /api/novel/{novel_id}/chapters?page=N&limit=M` | Offset/page pagination: `{ total, offset, limit, items: [...] }`. Each chapter: `id` (uuid), `serial` (1-based), `title`, `url`, `is_available` (cached content flag), `volume_id`                                                                                                             |
+| Chapter list    | `GET /api/novel/{novel_id}/chapters?offset=N&limit=M` | Offset/page pagination: `{ total, offset, limit, items: [...] }`. Each chapter: `id` (uuid), `serial` (1-based), `title`, `url`, `is_available` (cached content flag), `volume_id`                                                                                                             |
 | Read a chapter  | `GET /api/chapter/{chapter_id}/read`                | Returns `{ novel, chapter, content, next_id, previous_id, word_count, language }`. `content` is clean HTML paragraphs (`<p>…</p>`). `next_id` / `previous_id` give built-in prev/next navigation. If the chapter is not yet crawled, `chapter.is_available` is `false` and `content` is `null` |
 | On-demand crawl | `GET /api/chapter/{chapter_id}/fetch`               | Creates an async crawl **job** for that chapter. Response is the job object (`status`, `error`, `failed`, `extra.chapter_id` …). Call this when `is_available` is `false`, then poll `/read` until the content appears                                                                         |
 
@@ -80,61 +81,34 @@ This keeps LNcrawl credentials (`LNCRAWL_USERNAME`/`LNCRAWL_PASSWORD` via
 - React Query conventions: debounced keyed queries for search, infinite
   queries for paginated lists (`useNovels`, `useSeriesBrowse` are templates).
 
-### Frontend routes to create (App Router)
+### Frontend routes
 
 ```
-app/explore/novels/[id]/page.tsx        # Novel detail + chapter list
+app/explore/novels/[id]/page.tsx        # Implemented: novel detail + chapter list
 app/explore/novels/[id]/[chapterId]/page.tsx   # Reader page
 ```
 
-Internal API routes to create:
+Internal API routes:
 
 ```
-app/api/novel/[id]/route.ts             # GET novel detail
-app/api/novel/[id]/chapters/route.ts    # GET paged chapter list
+app/api/novel/[id]/route.ts             # Implemented: GET novel detail
+app/api/novel/[id]/chapters/route.ts    # Implemented: GET paged chapter list
 app/api/chapter/[id]/read/route.ts      # GET chapter content (with crawl-on-demand)
 ```
 
 ---
 
-## 3. Proposed service functions (additions to `service/lncrawl.service.ts`)
+## 3. Novel detail and chapter-list services
 
-All reuse `getLncrawlAccessToken` + `providerRequest`. **No existing function
-is modified.**
+`service/lncrawl.fetch.service.ts` provides `fetchNovelDataPayload` and
+`fetchNovelChapterPage`. Both reuse `getLncrawlAccessToken` and
+`providerRequest`, and the service is server-only so provider credentials
+cannot be imported into a client bundle. The chapter-list service requests
+`offset`/`limit` and rejects responses without an `items` array.
 
-```ts
-/** Novel detail — GET /api/novel/{id}. */
-export async function getLncrawlNovel(
-  novelId: string,
-): Promise<LncrawlNovelDetail>;
-
-/** Paged chapter list — GET /api/novel/{id}/chapters?page&limit. */
-export async function getLncrawlChapters(
-  novelId: string,
-  page = 1,
-  limit = 50,
-): Promise<LncrawlChaptersPage>; // { items: LncrawlChapter[]; total; hasNextPage }
-
-/**
- * Chapter content — GET /api/chapter/{id}/read.
- * When `chapter.is_available` is false, kicks off
- * GET /api/chapter/{id}/fetch (crawl job) and polls /read a bounded number of
- * times (e.g. 3 tries, 2s apart) before returning a `pending`/`failed` state.
- * Needs a longer providerRequest timeout than the default (crawl can take
- * tens of seconds on a cold chapter).
- */
-export async function readLncrawlChapter(
-  chapterId: string,
-): Promise<LncrawlChapterRead>;
-// Shape: { content: string | null; state: "ready" | "pending" | "failed";
-//          message?: string; nextId?: string; previousId?: string;
-//          serial: number; title: string; wordCount?: number }
-```
-
-Types: `LncrawlNovelDetail`, `LncrawlChapter`, `LncrawlChaptersPage`,
-`LncrawlChapterRead` — modeled directly on the JSON shapes in §1. Chapter
-`content` is HTML and should be rendered as-is into a sanitized container
-(it arrives paragraph-wrapped); use `htmlToText` only for previews if needed.
+Chapter content, on-demand crawl, and reader state handling remain planned.
+Chapter content is HTML and should be rendered only through a sanitized
+container; use `htmlToText` for previews.
 
 ---
 
@@ -145,7 +119,7 @@ validate inputs → 400 with `{ error }`; provider failure → 502 with
 `{ error: "The novel provider is unavailable right now." }`; log with a
 `[api/novel/…]`-style prefix.
 
-### `GET /api/novel/{id}`
+### `GET /api/novel/{id}` — implemented
 
 ```json
 { "novel": { "id", "title", "description", "coverImage", "authors",
@@ -155,7 +129,19 @@ validate inputs → 400 with `{ error }`; provider failure → 502 with
 (Service flattens LNcrawl's fields into frontend-friendly names, mirroring
 `mapNovelToMediaItem` conventions; `synopsis` HTML → `htmlToText`.)
 
-### `GET /api/novel/{id}/chapters?page=1&limit=50`
+### `GET /api/novel/{id}/chapters?offset=0&limit=100` — implemented
+
+The detail page removes the `lncrawl:` catalog prefix before calling the
+internal routes. These handlers run on the server, where the provider URL and
+credentials are read; the browser receives only normalized novel metadata or
+chapter items.
+
+The current chapter route supports `offset` and a validated `limit` from 1 to
+100, returning `{ items }`. The service sends those values to LNcrawl as
+`offset` and `limit`. Confirm that pagination contract against the deployed
+LNcrawl version if chapter loading does not advance as expected.
+
+### Planned chapter-list response
 
 ```json
 { "items": [ { "id", "serial", "title", "isAvailable" } ],
@@ -165,7 +151,7 @@ validate inputs → 400 with `{ error }`; provider failure → 502 with
 `limit` validated 1–100 (chapters pages are cheap; 2474-chapter novels must
 not be served in one shot). Page out of range → empty `items`, not an error.
 
-### `GET /api/chapter/{id}/read`
+### `GET /api/chapter/{id}/read` — planned
 
 ```json
 // ready
@@ -255,19 +241,19 @@ Risk notes for implementation:
 
 ---
 
-## 7. How to test once implemented
+## 7. Verification checklist
 
 1. `docker compose up -d --build frontend` (route needs the Compose network
    to reach `lncrawl:8181`).
 2. Browser API checks:
    - `http://localhost:5555/api/novel/search?query=Leveling` → pick an id.
    - `http://localhost:5555/api/novel/{id}` → detail JSON.
-   - `http://localhost:5555/api/novel/{id}/chapters?page=1&limit=5` → chapters.
+   - `http://localhost:5555/api/novel/{id}/chapters?offset=0&limit=5` → chapters.
    - `http://localhost:5555/api/chapter/{chapterId}/read` → first read may
      return `pending`, second (after crawl) `ready` with HTML content.
-3. UI pass: search a novel → click card → chapter list loads → open Chapter 1
-   → content renders → "Next chapter" advances. On a broken-source novel,
-   confirm the failure state shows a retry instead of hanging.
+3. Implemented detail UI: search a novel → click card → detail and initial
+   chapter list load. Once the planned reader is implemented, verify chapter
+   content, next/previous navigation, and retry states for broken sources.
 4. Regression: novel search, movies/series/comics search, and the novels
    browse page behave exactly as before (no shared file was modified).
 
@@ -280,7 +266,7 @@ Risk notes for implementation:
 | Frontend page   | `/explore/novels/{id}`                     | `GET /api/novel/{id}` + `GET /api/novel/{id}/chapters`                             |
 | Frontend page   | `/explore/novels/{id}/{chapterId}`         | `GET /api/chapter/{id}/read` (auto `/fetch` on miss)                               |
 | Internal API    | `GET /api/novel/{id}`                      | LNcrawl `GET /api/novel/{novel_id}`                                                |
-| Internal API    | `GET /api/novel/{id}/chapters`             | LNcrawl `GET /api/novel/{novel_id}/chapters?page&limit`                            |
+| Internal API    | `GET /api/novel/{id}/chapters?offset&limit`          | LNcrawl `GET /api/novel/{novel_id}/chapters?offset&limit`                          |
 | Internal API    | `GET /api/chapter/{id}/read`               | LNcrawl `GET /api/chapter/{id}/read` + `GET /api/chapter/{id}/fetch` when uncached |
 | Already shipped | `GET /api/novel/search?query=`             | LNcrawl `GET /api/novels?search=` (all sources)                                    |
 | Already shipped | `GET /api/novel`, `GET /api/novel/popular` | LNcrawl `GET /api/novels?sort=updated                                              | popular` |

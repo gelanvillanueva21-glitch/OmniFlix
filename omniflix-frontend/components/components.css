@@ -1,6 +1,10 @@
 /* Shared component styles. Imported through app/globals.css. */
 
 /* ── MediaCard ── */
+.media-card-link {
+    @apply block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
+}
+
 .media-card-wide {
     @apply relative w-full overflow-hidden rounded-xl border border-[#29292E] bg-[#171719];
 }

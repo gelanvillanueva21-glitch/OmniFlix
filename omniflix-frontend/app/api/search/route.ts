@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchJikanAnime } from "@/service/jikan.service";
-import { searchLncrawlNovels } from "@/service/lncrawl.service";
-import { searchSuwayomiComics } from "@/service/suwayomi.service";
-import { searchTmdbMovies, searchTmdbTv } from "@/service/tmdb.service";
+import { searchJikanAnime } from "@/service/jikan/jikan.service";
+import { searchLncrawlNovels } from "@/service/lncrawl/lncrawl.service";
+import { searchSuwayomiComics } from "@/service/suwayomi/suwayomi.service";
+import { searchTmdbMovies, searchTmdbTv } from "@/service/tmdb/tmdb.service";
 import { uniqueMediaItems } from "@/service/provider-client.service";
 import type { MediaItem } from "@/lib/media";
 

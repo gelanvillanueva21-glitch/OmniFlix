@@ -44,6 +44,69 @@ const MEDIA_TYPE_LABELS: Record<MediaType, string> = {
   series: "Series",
 };
 
+/**
+ * Internal detail-route destination for a media item, derived purely from the
+ * existing `MediaItem.type` and `MediaItem.id`:
+ *
+ *   comics -> /comics/[sourceId]/[id]  (source-aware Suwayomi id)
+ *   movies -> /movies/[id]
+ *   series -> /series/[id]
+ *   novels -> /novels/[id]
+ *
+ * Returns `null` for an unsupported type or a malformed id so callers can
+ * render a non-navigable card instead of linking to an invalid URL.
+ */
+export function mediaHref(media: Pick<MediaItem, "id" | "type">): string | null {
+    if (!media.id) return null;
+    console.log(media.id);
+    switch (media.type) {
+        case "comics": {
+            const jikanMangaParts = media.id.split(":");
+            if (
+                jikanMangaParts.length === 3 &&
+                jikanMangaParts[0] === "jikan" &&
+                jikanMangaParts[1] === "manga" &&
+                /^[1-9]\d*$/.test(jikanMangaParts[2]) &&
+                Number.isSafeInteger(Number(jikanMangaParts[2]))
+            ) {
+                return `/explore/comics/jikan/${encodeURIComponent(jikanMangaParts[2])}`;
+            }
+
+            // Source-aware Suwayomi id: suwayomi:<sourceIdentifier>:<comicId>.
+            // The source identifier stays a string — it is a LongString that can
+            // exceed Number.MAX_SAFE_INTEGER, so it is never parsed as a number.
+            const parts = media.id.split(":");
+            if (
+              parts.length !== 3 || 
+              parts[0] !== "suwayomi"
+            ) return null;
+
+            const [, sourceId, comicId] = parts;
+            if (!/^\d+$/.test(sourceId)) 
+                return null;
+            if (!/^\d+$/.test(comicId)) 
+                return null;
+            if (
+              !Number.isSafeInteger(
+                Number(comicId)
+              ) || Number(
+                comicId
+              ) < 1) {
+                return null;
+            }
+            return `/explore/comics/${sourceId}/${comicId}`;
+        }
+        case "movies":
+            return `/explore/movies/${encodeURIComponent(media.id)}`;
+        case "series":
+            return `/explore/series/${encodeURIComponent(media.id)}`;
+        case "novels":
+            return `/explore/novels/${encodeURIComponent(media.id)}`;
+        default:
+            return null;
+    }
+}
+
 export function mediaTypeLabel(type: MediaType): string {
   return MEDIA_TYPE_LABELS[type];
 }

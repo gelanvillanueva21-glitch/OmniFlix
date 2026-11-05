@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getJikanAnimePage } from "@/service/jikan.service";
-import { getLncrawlNovelsPage } from "@/service/lncrawl.service";
-import { getSuwayomiComicsPage } from "@/service/suwayomi.service";
-import { fetchTmdbMediaPage } from "@/service/tmdb.service";
+import { getJikanAnimePage } from "@/service/jikan/jikan.service";
+import { getLncrawlNovelsPage } from "@/service/lncrawl/lncrawl.service";
+import { getSuwayomiComicsPage } from "@/service/suwayomi/suwayomi.service";
+import { fetchTmdbMediaPage } from "@/service/tmdb/tmdb.service";
 import { uniqueMediaItems } from "@/service/provider-client.service";
 import type { MediaItem } from "@/lib/media";
 
