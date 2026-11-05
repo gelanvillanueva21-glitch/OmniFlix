@@ -29,7 +29,7 @@ export default async function ComicsDetailPage({ params }: ComicsDetailPageProps
 async function ComicsDetailContent({ sourceAwareId }: { sourceAwareId: string }) {
     let payload;
     try {
-        payload = await fetchSuwayomiComicPayload(sourceAwareId);
+        payload = await getCachedSuwayomiComicPayload(sourceAwareId);
     } catch (error) {
         return (
             <ComicsDetailError
@@ -49,6 +49,11 @@ async function ComicsDetailContent({ sourceAwareId }: { sourceAwareId: string })
             sourceName={payload.sourceName}
         />
     );
+}
+
+async function getCachedSuwayomiComicPayload(sourceAwareId: string) {
+    "use cache";
+    return fetchSuwayomiComicPayload(sourceAwareId);
 }
 
 function isSafePositiveInteger(raw: string): boolean {

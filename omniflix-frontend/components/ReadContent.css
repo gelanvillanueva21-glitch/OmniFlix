@@ -436,6 +436,33 @@
     }
 }
 
+/* ── Recommendations ── */
+.readContentRecommendations {
+    margin: 2rem 10px 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.readContentRecommendationsTitle {
+    margin: 0;
+    font-family: var(--font-space-grotesk), sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #F5F5F5;
+}
+
+@media (max-width: 640px) {
+    .readContentRecommendations {
+        margin: 1.5rem 0.5rem 1rem;
+    }
+
+    .readContentRecommendationsTitle {
+        font-size: 0.9375rem;
+    }
+}
+
 /* ── Comic Detail Error State ── */
 .comic-detail-error {
     display: flex;

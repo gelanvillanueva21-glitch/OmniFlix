@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, ImageIcon } from "@/components/icons/icons";
+import { MediaCarousel } from "@/components/MediaCarousel";
+import type { MediaItem } from "@/lib/media";
 
 /**
  * Provider-neutral detail item. Comics map their `SuwayomiComicPayload`
@@ -42,6 +44,15 @@ export interface ReadContentProps {
     readonly loadMoreChapters?: (
         offset: number,
     ) => Promise<readonly ReadContentChapter[]>;
+    /**
+     * Provider-neutral recommendations for the opened item, resolved by the
+     * parent layout component (genre matches, or the provider's popular
+     * fallback). The section is omitted entirely when the list is empty, so
+     * no empty carousel is ever rendered.
+     */
+    readonly recommendations?: readonly MediaItem[];
+    /** Heading shown above the recommendation carousel. */
+    readonly recommendationsLabel?: string;
 }
 
 /** Provider-specific values `ReadContent` needs to render one detail view. */
@@ -124,6 +135,8 @@ export function ReadContent({
     chapters,
     sourceName,
     loadMoreChapters,
+    recommendations,
+    recommendationsLabel,
 }: ReadContentProps) {
 
     const router = useRouter();
@@ -366,6 +379,26 @@ export function ReadContent({
                     )}
                 </div>
             </div>
+
+            {/* Recommendations sit below every chapter-related block. The
+                parent supplies both the items and the heading; an empty list
+                renders nothing at all. */}
+            {recommendations !== undefined &&
+                recommendations.length > 0 &&
+                recommendationsLabel !== undefined && (
+                <section
+                    aria-label={recommendationsLabel}
+                    className="readContentRecommendations"
+                >
+                    <h2 className="readContentRecommendationsTitle">
+                        {recommendationsLabel}
+                    </h2>
+                    <MediaCarousel
+                        items={[...recommendations]}
+                        label={recommendationsLabel}
+                    />
+                </section>
+            )}
         </article>
     )
 }

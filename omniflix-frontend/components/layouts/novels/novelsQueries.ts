@@ -94,10 +94,11 @@ async function fetchPopularNovels(): Promise<MediaItem[]> {
 }
 
 /** Popularity-ranked novels from the provider, served by /api/novel/popular. */
-export function usePopularNovels() {
+export function usePopularNovels(isEnabled = true) {
   return useQuery({
     queryKey: ["novels", "popular"],
     queryFn: fetchPopularNovels,
+    enabled: isEnabled,
     staleTime: 5 * 60 * 1000,
   });
 }

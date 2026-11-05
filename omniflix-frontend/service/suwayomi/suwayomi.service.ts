@@ -278,7 +278,7 @@ function collectAllSuwayomiGenreOptions(
     const genreGroupIndex = filters.findIndex(
         (filter) =>
             filter.__typename === "GroupFilter" &&
-            filter.name.trim().toLowerCase() === "genre",
+            isGenreFilterName(filter.name),
     );
     if (genreGroupIndex >= 0) {
         return collectSuwayomiGenreOptions(filters[genreGroupIndex], [
@@ -288,7 +288,7 @@ function collectAllSuwayomiGenreOptions(
 
     const directGenreIndex = filters.findIndex(
         (filter) =>
-            filter.name.trim().toLowerCase() === "genre" &&
+            isGenreFilterName(filter.name) &&
             filter.__typename === "SelectFilter",
     );
     return directGenreIndex >= 0
@@ -296,6 +296,11 @@ function collectAllSuwayomiGenreOptions(
             directGenreIndex,
         ])
         : [];
+}
+
+function isGenreFilterName(name: string): boolean {
+    const normalizedName = name.trim().toLowerCase();
+    return normalizedName === "genre" || normalizedName === "genres";
 }
 
 function collectSuwayomiGenreOptions(
