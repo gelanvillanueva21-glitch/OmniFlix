@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,91 @@ import { ArrowLeftIcon, ImageIcon } from "@/components/icons/icons";
 import { usePopularAnime, usePopularSeries } from "./seriesQueries";
 import type { TmdbSeriesFetchPayload } from "@/service/types/TmdbFetchPayload";
 import type { JikanAnimeFetchPayload } from "@/service/types/JikanFetchPayload";
+import type { MediaItem } from "@/lib/media";
+import { MediaCarousel } from "@/components/MediaCarousel";
+
+const MAX_RECOMMENDATION_GENRES = 2;
+/** Popular fallback size; mirrors the novels/comics flows. */
+const RECOMMENDATION_FALLBACK_LIMIT = 12;
+
+/**
+ * Genre ids carried by the detail payload, for up to two of the title's own
+ * genres. Display names are never sent to the API — the provider's numeric
+ * genre id is what `/api/explore/genre` expects.
+ */
+function extractGenreIds(
+    payload: TmdbSeriesFetchPayload | JikanAnimeFetchPayload,
+    provider: SeriesProvider,
+): string[] {
+    if (provider === "tmdb") {
+        return ((payload as TmdbSeriesFetchPayload).series.genres ?? [])
+            .map((entry) => entry.id)
+            .filter((id): id is number => id !== undefined && id !== 0)
+            .map((id) => String(id))
+            .slice(0, MAX_RECOMMENDATION_GENRES);
+    }
+
+    const anime = (payload as JikanAnimeFetchPayload).anime;
+    const entries = [
+        ...(anime.genres ?? []),
+        ...(anime.themes ?? []),
+        ...(anime.demographics ?? []),
+    ];
+    const ids: string[] = [];
+    for (const entry of entries) {
+        if (typeof entry.malId === "number" && Number.isFinite(entry.malId)) {
+            ids.push(String(entry.malId));
+        }
+        if (ids.length >= MAX_RECOMMENDATION_GENRES) {
+            break;
+        }
+    }
+    return ids;
+}
+
+/**
+ * One page of a provider genre, served by the existing `/api/explore/genre`
+ * route — the `server-only` fetch services are never imported here.
+ */
+async function fetchSeriesGenrePage(
+    provider: SeriesProvider,
+    genreId: string,
+): Promise<MediaItem[]> {
+    const search = new URLSearchParams({
+        provider,
+        mediaType: provider === "tmdb" ? "series" : "anime",
+        genre: genreId,
+        page: "1",
+    });
+    const response = await fetch(`/api/explore/genre?${search.toString()}`);
+    if (!response.ok) {
+        throw new Error(
+            provider === "tmdb"
+                ? "The series genre results are unavailable right now."
+                : "The anime genre results are unavailable right now.",
+        );
+    }
+    const payload = (await response.json()) as { items: MediaItem[] };
+    return payload.items;
+}
+
+/**
+ * Merge helper shared with the Comics flow: drops exact-id duplicates and the
+ * currently opened item, so no one recommends itself.
+ */
+function dedupeRecommendations(
+    items: readonly MediaItem[],
+    currentId: string,
+): MediaItem[] {
+    const unique = new Map<string, MediaItem>();
+    for (const item of items) {
+        if (item.id === currentId || unique.has(item.id)) {
+            continue;
+        }
+        unique.set(item.id, item);
+    }
+    return [...unique.values()];
+}
 
 /**
  * Detail view for a single series, TMDB or Jikan. The route page
@@ -37,8 +122,105 @@ export function SeriesReadContent({ seriesId }: SeriesReadContentProps) {
     // entirely independent of the detail payload.
     const popularSeriesQuery = usePopularSeries();
     const popularAnimeQuery = usePopularAnime();
-    const popularSeries = popularSeriesQuery.data?.items ?? [];
-    const popularAnime = popularAnimeQuery.data?.items ?? [];
+    const popularSeries = useMemo(
+        () => popularSeriesQuery.data?.items ?? [],
+        [popularSeriesQuery.data],
+    );
+    const popularAnime = useMemo(
+        () => popularAnimeQuery.data?.items ?? [],
+        [popularAnimeQuery.data],
+    );
+
+    // Current id built exactly as the payload mappers do, so dedupe can drop
+    // the opened title from any candidate list.
+    const currentId =
+        provider === "tmdb"
+            ? `tmdb:series:${parsed?.providerId ?? ""}`
+            : provider === "jikan"
+              ? `jikan:${parsed?.providerId ?? ""}`
+              : null;
+
+    // Genre ids come from the detail payload; nothing fires before it lands.
+    const genreIds = useMemo(
+        () =>
+            detailQuery.data && provider !== null && parsed !== null
+                ? extractGenreIds(detailQuery.data, provider)
+                : [],
+        [detailQuery.data, provider, parsed],
+    );
+
+    // One page per genre, fetched in parallel through the genre route.
+    const genreRecommendationsQuery = useQuery({
+        queryKey: [
+            "series",
+            "recommendations",
+            provider,
+            parsed?.providerId,
+            genreIds,
+        ],
+        queryFn: () =>
+            Promise.all(
+                genreIds.map((genreId) =>
+                    fetchSeriesGenrePage(provider as SeriesProvider, genreId),
+                ),
+            ),
+        enabled:
+            detailQuery.data !== undefined &&
+            provider !== null &&
+            genreIds.length > 0,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const genreRecommendations = useMemo(
+        () =>
+            currentId === null
+                ? []
+                : dedupeRecommendations(
+                      genreRecommendationsQuery.data?.flat() ?? [],
+                      currentId,
+                  ),
+        [genreRecommendationsQuery.data, currentId],
+    );
+    const hasRecommendations = genreRecommendations.length > 0;
+
+    // Popular fallback only after the genre attempt has settled and yielded
+    // nothing. The sidebar's usePopularSeries/usePopularAnime queries already
+    // run for the right-hand list, so the fallback simply reuses their data —
+    // no extra request fires before the genre query resolves.
+    const shouldUsePopularFallback =
+        detailQuery.data !== undefined &&
+        provider !== null &&
+        genreRecommendationsQuery.isFetched &&
+        (genreRecommendationsQuery.isError || !hasRecommendations);
+
+    const recommendations = useMemo(() => {
+        if (hasRecommendations) {
+            return genreRecommendations;
+        }
+        if (currentId === null || !shouldUsePopularFallback) {
+            return [];
+        }
+        const popularItems =
+            provider === "tmdb" ? popularSeries : popularAnime;
+        return dedupeRecommendations(
+            popularItems.slice(0, RECOMMENDATION_FALLBACK_LIMIT),
+            currentId,
+        );
+    }, [
+        hasRecommendations,
+        genreRecommendations,
+        currentId,
+        shouldUsePopularFallback,
+        provider,
+        popularSeries,
+        popularAnime,
+    ]);
+
+    const recommendationsLabel = hasRecommendations
+        ? "You Might Also Like"
+        : provider === "tmdb"
+          ? "Popular Series"
+          : "Popular Anime";
 
     return (
         <ExploreLayout
@@ -85,11 +267,15 @@ export function SeriesReadContent({ seriesId }: SeriesReadContentProps) {
                 <TmdbSeriesDetail
                     payload={detailQuery.data as TmdbSeriesFetchPayload}
                     onBack={back}
+                    recommendations={recommendations}
+                    recommendationsLabel={recommendationsLabel}
                 />
             ) : (
                 <JikanAnimeDetail
                     payload={detailQuery.data as JikanAnimeFetchPayload}
                     onBack={back}
+                    recommendations={recommendations}
+                    recommendationsLabel={recommendationsLabel}
                 />
             )}
         </ExploreLayout>
@@ -605,9 +791,13 @@ function useBackNavigation() {
 
 function TmdbSeriesDetail({
     payload,
+    recommendations,
+    recommendationsLabel,
 }: {
     payload: TmdbSeriesFetchPayload;
     onBack: () => void;
+    recommendations?: readonly MediaItem[];
+    recommendationsLabel?: string;
 }) {
     const back = useBackNavigation();
 
@@ -709,6 +899,23 @@ function TmdbSeriesDetail({
                     seasonNumber={selectedSeason}
                 />
             </section>
+
+            {recommendations !== undefined &&
+                recommendations.length > 0 &&
+                recommendationsLabel !== undefined && (
+                <section
+                    aria-label={recommendationsLabel}
+                    className="readContentRecommendations"
+                >
+                    <h2 className="readContentRecommendationsTitle">
+                        {recommendationsLabel}
+                    </h2>
+                    <MediaCarousel
+                        items={[...recommendations]}
+                        label={recommendationsLabel}
+                    />
+                </section>
+            )}
         </article>
     );
 }
@@ -790,9 +997,13 @@ function TmdbEpisodeList({
 
 function JikanAnimeDetail({
     payload,
+    recommendations,
+    recommendationsLabel,
 }: {
     payload: JikanAnimeFetchPayload;
     onBack: () => void;
+    recommendations?: readonly MediaItem[];
+    recommendationsLabel?: string;
 }) {
     const back = useBackNavigation();
     const anime = payload.anime;
@@ -848,6 +1059,23 @@ function JikanAnimeDetail({
 
                 <JikanEpisodeList episodes={payload.episodes} />
             </section>
+
+            {recommendations !== undefined &&
+                recommendations.length > 0 &&
+                recommendationsLabel !== undefined && (
+                <section
+                    aria-label={recommendationsLabel}
+                    className="readContentRecommendations"
+                >
+                    <h2 className="readContentRecommendationsTitle">
+                        {recommendationsLabel}
+                    </h2>
+                    <MediaCarousel
+                        items={[...recommendations]}
+                        label={recommendationsLabel}
+                    />
+                </section>
+            )}
         </article>
     );
 }
