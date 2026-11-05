@@ -37,7 +37,7 @@ export interface LncrawlNovelsPage {
     hasNextPage: boolean;
 }
 
-const LNCRAWL_GENRE_PAGE_SIZE = 20;
+const LNCRAWL_RECOMMENDATION_LIMIT = 8;
 
 export async function getLncrawlNovels(
     limit = 12,
@@ -155,14 +155,11 @@ export async function getLncrawlGenreTags(): Promise<Genre[]> {
         .sort((first, second) => first.label.localeCompare(second.label));
 }
 
-/**
- * LNCrawl's `tags` query parameter requires novels to match every supplied
- * provider tag. This endpoint uses offset/limit rather than page numbers.
- */
-export async function getLncrawlNovelsByTag(
-    tag: string,
-    page: number,
-): Promise<LncrawlNovelsPage> {
+/** Similarity-ranked recommendations from LNCrawl for one novel. */
+export async function getRecommendedLncrawlNovels(
+    novelId: string,
+    limit = LNCRAWL_RECOMMENDATION_LIMIT,
+): Promise<MediaItem[]> {
     const baseUrl = serverProviderUrl(
         "NEXT_PUBLIC_LNCRAWL_API_URL",
         "lncrawl",
@@ -173,23 +170,21 @@ export async function getLncrawlNovelsByTag(
     }
 
     const accessToken = await getLncrawlAccessToken(baseUrl);
-    const offset = (page - 1) * LNCRAWL_GENRE_PAGE_SIZE;
-    const searchParams = new URLSearchParams({
-        limit: String(LNCRAWL_GENRE_PAGE_SIZE),
-        offset: String(offset),
-        sort: "updated",
-    });
-    searchParams.append("tags", tag);
+    const searchParams = new URLSearchParams({ limit: String(limit) });
+    const response = await providerRequest<unknown>(
+        `${baseUrl}/api/novel/${encodeURIComponent(novelId)}/recommended?${searchParams}`,
+        { headers: { Authorization: "Bearer " + accessToken } },
+    );
+    if (!Array.isArray(response)) {
+        throw new Error(
+            "LNCrawl recommendations response did not contain a novel list.",
+        );
+    }
 
-    const response = await providerRequest<
-        LncrawlListResponse | LncrawlNovel[]
-    >(`${baseUrl}/api/novels?${searchParams}`, {
-        headers: { Authorization: "Bearer " + accessToken },
-    });
-    const novels = Array.isArray(response)
-        ? response
-        : response.items ?? response.novels ?? [];
-    const items = novels.flatMap((novel) => {
+    return response.flatMap((novel: unknown) => {
+        if (!isLncrawlNovel(novel)) {
+            return [];
+        }
         const title = novel.title ?? novel.name;
         const identifier = novel.id;
         if (!title || identifier === undefined) {
@@ -197,19 +192,6 @@ export async function getLncrawlNovelsByTag(
         }
         return [mapNovelToMediaItem(novel, title, identifier)];
     });
-    const total = Array.isArray(response)
-        ? novels.length
-        : response.total ?? novels.length;
-
-    return {
-        items,
-        total,
-        hasNextPage: Array.isArray(response)
-            ? novels.length >= LNCRAWL_GENRE_PAGE_SIZE
-            : response.total !== undefined
-                ? offset + novels.length < response.total
-                : novels.length >= LNCRAWL_GENRE_PAGE_SIZE,
-    };
 }
 
 /**
@@ -374,6 +356,58 @@ function mapNovelToMediaItem(
         releaseYear: releaseYear,
         rating: novel.popularity,
     };
+}
+
+function isLncrawlNovel(novel: unknown): novel is LncrawlNovel {
+    if (
+        typeof novel !== "object" ||
+        novel === null ||
+        Array.isArray(novel)
+    ) {
+        return false;
+    }
+
+    const record = novel as Record<string, unknown>;
+    const hasIdentifier =
+        typeof record.id === "string" || typeof record.id === "number";
+    const hasTitle =
+        (record.title === undefined || typeof record.title === "string") &&
+        (record.name === undefined || typeof record.name === "string") &&
+        (typeof record.title === "string" || typeof record.name === "string");
+
+    return (
+        hasIdentifier &&
+        hasTitle &&
+        isOptionalString(record.description) &&
+        isOptionalString(record.synopsis) &&
+        isOptionalString(record.thumbnail) &&
+        isOptionalString(record.cover) &&
+        isOptionalString(record.cover_url) &&
+        isOptionalStringOrNumber(record.updatedAt) &&
+        isOptionalStringOrNumber(record.updated_at) &&
+        isOptionalStringArray(record.tags) &&
+        isOptionalNumber(record.popularity)
+    );
+}
+
+function isOptionalString(value: unknown): boolean {
+    return value === undefined || typeof value === "string";
+}
+
+function isOptionalStringOrNumber(value: unknown): boolean {
+    return value === undefined || typeof value === "string" || typeof value === "number";
+}
+
+function isOptionalStringArray(value: unknown): boolean {
+    return (
+        value === undefined ||
+        (Array.isArray(value) &&
+            value.every((tag: unknown) => typeof tag === "string"))
+    );
+}
+
+function isOptionalNumber(value: unknown): boolean {
+    return value === undefined || typeof value === "number";
 }
 
 function getYear(date: string | undefined): number | undefined {

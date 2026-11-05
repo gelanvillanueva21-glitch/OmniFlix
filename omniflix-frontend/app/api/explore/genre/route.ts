@@ -7,8 +7,7 @@ import {
 import type { MediaItem } from "@/lib/media";
 import { getJikanGenrePage, getJikanGenres } from "@/service/jikan/jikan.service";
 import {
-    getLncrawlGenreTags,
-    getLncrawlNovelsByTag,
+    getRecommendedLncrawlNovels,
 } from "@/service/lncrawl/lncrawl.service";
 import {
     COMICK_SOURCE_TYPE,
@@ -28,8 +27,10 @@ export async function GET(request: NextRequest) {
     const provider = params.get("provider");
     const mediaType = params.get("mediaType");
     const genreId = params.get("genre");
+    const novelId = params.get("novelId");
     const sourceType = params.get("sourceType");
     const page = Number(params.get("page") ?? "1");
+    const recommendationLimit = Number(params.get("limit") ?? "8");
 
     if (!isGenreProvider(provider)) {
         return NextResponse.json(
@@ -43,9 +44,17 @@ export async function GET(request: NextRequest) {
             { status: 400 },
         );
     }
-    if (!genreId?.trim()) {
+    if (
+        provider === "lncrawl"
+            ? !isValidNovelId(novelId)
+            : !genreId?.trim()
+    ) {
         return NextResponse.json(
-            { error: "A genre identifier is required." },
+            {
+                error: provider === "lncrawl"
+                    ? "A valid novel id is required."
+                    : "A genre identifier is required.",
+            },
             { status: 400 },
         );
     }
@@ -58,6 +67,17 @@ export async function GET(request: NextRequest) {
     if (provider === "tmdb" && page > TMDB_MAX_PAGE) {
         return NextResponse.json(
             { error: `TMDB pages cannot exceed ${TMDB_MAX_PAGE}.` },
+            { status: 400 },
+        );
+    }
+    if (
+        provider === "lncrawl" &&
+        (!Number.isInteger(recommendationLimit) ||
+            recommendationLimit < 1 ||
+            recommendationLimit > 20)
+    ) {
+        return NextResponse.json(
+            { error: "Limit must be an integer between 1 and 20." },
             { status: 400 },
         );
     }
@@ -77,6 +97,9 @@ export async function GET(request: NextRequest) {
         let supported = true;
 
         if (provider === "tmdb") {
+            if (!genreId?.trim()) {
+                return invalidGenreResponse();
+            }
             if (mediaType !== "movies" && mediaType !== "series") {
                 return NextResponse.json(
                     { error: "The media type is not supported by this provider." },
@@ -96,6 +119,9 @@ export async function GET(request: NextRequest) {
             items = result.items;
             hasNextPage = page < Math.min(result.totalPages, TMDB_MAX_PAGE);
         } else if (provider === "jikan") {
+            if (!genreId?.trim()) {
+                return invalidGenreResponse();
+            }
             if (mediaType !== "anime" && mediaType !== "manga") {
                 return NextResponse.json(
                     { error: "The media type is not supported by this provider." },
@@ -110,14 +136,21 @@ export async function GET(request: NextRequest) {
             items = result.items;
             hasNextPage = result.hasNextPage && page < MAX_PAGE;
         } else if (provider === "lncrawl") {
-            const tags = await getLncrawlGenreTags();
-            if (!tags.some((tag) => tag.id === genreId)) {
+            if (!novelId) {
+                return NextResponse.json(
+                    { error: "A valid novel id is required." },
+                    { status: 400 },
+                );
+            }
+            items = await getRecommendedLncrawlNovels(
+                novelId,
+                recommendationLimit,
+            );
+            hasNextPage = false;
+        } else {
+            if (!genreId?.trim()) {
                 return invalidGenreResponse();
             }
-            const result = await getLncrawlNovelsByTag(genreId, page);
-            items = result.items;
-            hasNextPage = result.hasNextPage && page < MAX_PAGE;
-        } else {
             const sources = await getSuwayomiSources();
             const source = sources.find(
                 (candidate) =>
@@ -179,5 +212,16 @@ function invalidGenreResponse() {
     return NextResponse.json(
         { error: "The requested genre is not available for this provider." },
         { status: 400 },
+    );
+}
+
+function isValidNovelId(novelId: string | null): novelId is string {
+    return (
+        novelId !== null &&
+        novelId.length > 0 &&
+        novelId.length <= 200 &&
+        novelId.trim() === novelId &&
+        !novelId.includes("/") &&
+        !novelId.includes("\\")
     );
 }

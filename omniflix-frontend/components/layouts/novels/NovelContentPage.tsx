@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ReadContent, ReadContentChapter } from "@/components/ReadContent";
 import type { MediaItem } from "@/lib/media";
-import type { GenreContentResponse } from "@/lib/genre";
 import type {
     LncrawlChapterBatchPayload,
     LncrawlChapterInfo,
@@ -21,8 +20,8 @@ interface NovelContentPageProps {
 }
 
 const NOVEL_CHAPTER_PAGE_SIZE = 100;
-const MAX_RECOMMENDATION_TAGS = 2;
 const RECOMMENDATION_FALLBACK_LIMIT = 12;
+const NOVEL_RECOMMENDATION_LIMIT = 8;
 
 /**
  * Initial LNCrawl payload: metadata plus only the FIRST chapter batch. Later
@@ -62,109 +61,54 @@ export function NovelContentPage({ novelId }: NovelContentPageProps) {
     const novel = useNovels();
     const popularNovels = novel.data?.pages.flatMap((page) => page.items) ?? [];
 
-    // The novel detail payload drives the recommendation matching; kept in a
-    // variable so hooks below stay unconditional despite the early returns.
-    const novelGenres = useMemo(
-        () => novelQuery.data?.novel.genres ?? [],
-        [novelQuery.data],
-    );
     const novelIdForRecommendations = novelQuery.data?.novel.id ?? null;
 
-    // Available LNCrawl tags, served by the existing `/api/explore/genres`.
-    // Only resolved when the novel actually carries genre labels to match.
-    const genreTagsQuery = useQuery({
-        queryKey: ["novels", "genre-tags"],
+    const recommendedNovelsQuery = useQuery({
+        queryKey: ["novels", "recommendations", novelIdForRecommendations],
         queryFn: async () => {
-            const response = await fetch("/api/explore/genres?provider=lncrawl&mediaType=novels");
-            if (!response.ok) {
-                throw new Error("The novel tag list is unavailable right now.");
+            if (!novelIdForRecommendations) {
+                throw new Error("No novel selected.");
             }
-            return (await response.json()) as { genres: Array<{ id: string; label: string }> };
+            const search = new URLSearchParams({
+                provider: "lncrawl",
+                mediaType: "novels",
+                novelId: novelIdForRecommendations,
+                limit: String(NOVEL_RECOMMENDATION_LIMIT),
+            });
+            const response = await fetch(`/api/explore/genre?${search.toString()}`);
+            if (!response.ok) {
+                throw new Error("The novel recommendations are unavailable right now.");
+            }
+            const payload = (await response.json()) as { items: MediaItem[] };
+            return payload.items;
         },
-        enabled: novelGenres.length > 0,
+        enabled: novelIdForRecommendations !== null,
         staleTime: 5 * 60 * 1000,
     });
 
-    // Up to two novel tags that exist in the provider's tag list. Tags are
-    // matched case-insensitively by label; the tag id is what the genre route
-    // receives — display labels are never sent.
-    const matchedTagIds = useMemo(() => {
-        const tags = genreTagsQuery.data?.genres;
-        if (!tags) {
-            return [];
-        }
-        const labelToId = new Map(
-            tags.map((tag) => [tag.label.toLowerCase(), tag.id]),
-        );
-        return novelGenres
-            .map((label) => labelToId.get(label.toLowerCase()))
-            .filter((tagId): tagId is string => tagId !== undefined)
-            .slice(0, MAX_RECOMMENDATION_TAGS);
-    }, [genreTagsQuery.data, novelGenres]);
-
-    // One page per matched tag, fetched through the existing `/api/explore/genre`.
-    const genreRecommendationsQuery = useQuery({
-        queryKey: ["novels", "recommendations", matchedTagIds],
-        queryFn: async () => {
-            const pages = await Promise.all(
-                matchedTagIds.map(async (tagId) => {
-                    const search = new URLSearchParams({
-                        provider: "lncrawl",
-                        mediaType: "novels",
-                        genre: tagId,
-                        page: "1",
-                    });
-                    const response = await fetch(`/api/explore/genre?${search.toString()}`);
-                    if (!response.ok) {
-                        throw new Error(
-                            "The novel tag results are unavailable right now.",
-                        );
-                    }
-                    const payload = (await response.json()) as GenreContentResponse;
-                    return payload.items;
-                }),
-            );
-            return pages.flat();
-        },
-        enabled: matchedTagIds.length > 0,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const genreRecommendations = useMemo(() => {
+    const recommendedNovels = useMemo(() => {
         const currentId = novelIdForRecommendations;
         if (currentId === null) {
             return [];
         }
         return dedupeRecommendations(
-            genreRecommendationsQuery.data ?? [],
+            recommendedNovelsQuery.data ?? [],
             currentId,
         );
-    }, [genreRecommendationsQuery.data, novelIdForRecommendations]);
+    }, [recommendedNovelsQuery.data, novelIdForRecommendations]);
 
-    const hasGenreRecommendations = genreRecommendations.length > 0;
+    const hasRecommendations = recommendedNovels.length > 0;
     const shouldFetchPopularFallback =
         novelQuery.data !== undefined &&
-        (
-            novelGenres.length === 0 ||
-            (genreTagsQuery.isFetched && matchedTagIds.length === 0) ||
-            (
-                matchedTagIds.length > 0 &&
-                (
-                    genreRecommendationsQuery.isError ||
-                    (genreRecommendationsQuery.isSuccess && !hasGenreRecommendations)
-                )
-            )
-        );
+        recommendedNovelsQuery.isFetched &&
+        (recommendedNovelsQuery.isError || !hasRecommendations);
 
-    // Fetch the popularity-ranked fallback only when tag recommendations
-    // cannot provide any usable items. Existing callers keep the default.
     const popularNovelsQuery = usePopularNovels(shouldFetchPopularFallback);
 
-    // Tag recommendations win only when usable items remain after filtering.
     const recommendations = useMemo(() => {
         const currentId = novelIdForRecommendations;
-        if (hasGenreRecommendations) {
-            return genreRecommendations;
+        if (hasRecommendations) {
+            return recommendedNovels;
         }
         if (currentId === null || !shouldFetchPopularFallback) {
             return [];
@@ -177,14 +121,14 @@ export function NovelContentPage({ novelId }: NovelContentPageProps) {
             currentId,
         );
     }, [
-        genreRecommendations,
-        hasGenreRecommendations,
+        recommendedNovels,
+        hasRecommendations,
         popularNovelsQuery.data,
         novelIdForRecommendations,
         shouldFetchPopularFallback,
     ]);
 
-    const recommendationsLabel = hasGenreRecommendations
+    const recommendationsLabel = hasRecommendations
         ? "You Might Also Like"
         : "Popular Novels";
 
@@ -312,9 +256,16 @@ function dedupeRecommendations(
     items: readonly MediaItem[],
     currentId: string,
 ): MediaItem[] {
+    const normalizedCurrentId = currentId.startsWith("lncrawl:")
+        ? currentId
+        : `lncrawl:${currentId}`;
     const unique = new Map<string, MediaItem>();
     for (const item of items) {
-        if (item.id === currentId || unique.has(item.id)) {
+        if (
+            item.id === currentId ||
+            item.id === normalizedCurrentId ||
+            unique.has(item.id)
+        ) {
             continue;
         }
         unique.set(item.id, item);
