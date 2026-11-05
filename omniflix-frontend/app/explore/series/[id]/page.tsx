@@ -1,7 +1,7 @@
 
 
 import { Suspense } from "react";
-import { SeriesDetailError, SeriesReadContent } from "@/components/layouts/series/SeriesReadContent";
+import { SeriesReadContent } from "@/components/layouts/series/SeriesReadContent";
 import { DetailSkeleton } from "@/components/loading/ContentDetailLoad";
 
 interface SeriesDetailPageProps {
@@ -29,7 +29,7 @@ async function SeriesDetailParams({ params }: SeriesDetailPageProps) {
     const { id } = await params;
 
     if (!id.trim()) {
-        return <SeriesDetailError message="Invalid series address." />;
+        return <SeriesReadContent seriesId={undefined} />;
     }
 
     return <SeriesReadContent seriesId={id} />;

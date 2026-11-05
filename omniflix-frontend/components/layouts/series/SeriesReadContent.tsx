@@ -1,64 +1,260 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getEntertainmentCollection } from "@/service/profile.service";
-import { ExploreLayout } from "../explore/ExploreLayout";
+import { WatchReadContent } from "@/components/WatchReadContent";
+import type {
+    SeriesListState,
+    WatchReadDetailState,
+} from "@/components/WatchReadContent";
 import { PopularContentList } from "@/components/PopularContentList";
-import { DetailSkeleton } from "@/components/loading/ContentDetailLoad";
-import { ArrowLeftIcon, ImageIcon } from "@/components/icons/icons";
 import { usePopularAnime, usePopularSeries } from "./seriesQueries";
-import type { TmdbSeriesFetchPayload } from "@/service/types/TmdbFetchPayload";
 import type { JikanAnimeFetchPayload } from "@/service/types/JikanFetchPayload";
+import type { TmdbSeriesFetchPayload } from "@/service/types/TmdbFetchPayload";
 import type { MediaItem } from "@/lib/media";
-import { MediaCarousel } from "@/components/MediaCarousel";
 
 const MAX_RECOMMENDATION_GENRES = 2;
-/** Popular fallback size; mirrors the novels/comics flows. */
 const RECOMMENDATION_FALLBACK_LIMIT = 12;
 
-/**
- * Genre ids carried by the detail payload, for up to two of the title's own
- * genres. Display names are never sent to the API — the provider's numeric
- * genre id is what `/api/explore/genre` expects.
- */
-function extractGenreIds(
-    payload: TmdbSeriesFetchPayload | JikanAnimeFetchPayload,
-    provider: SeriesProvider,
-): string[] {
-    if (provider === "tmdb") {
-        return ((payload as TmdbSeriesFetchPayload).series.genres ?? [])
-            .map((entry) => entry.id)
-            .filter((id): id is number => id !== undefined && id !== 0)
-            .map((id) => String(id))
+interface SeriesReadContentProps {
+    /** Raw prefixed card id, e.g. `tmdb:series:1396`, `tmdb-1396`, `jikan:1`, `jikan-1`. */
+    readonly seriesId?: string;
+}
+
+type SeriesProvider = "tmdb" | "jikan";
+
+interface ParsedSeriesId {
+    readonly provider: SeriesProvider;
+    readonly providerId: string;
+}
+
+type FetchedSeriesDetail =
+    | {
+          readonly provider: "tmdb";
+          readonly providerId: string;
+          readonly payload: TmdbSeriesFetchPayload;
+      }
+    | {
+          readonly provider: "jikan";
+          readonly providerId: string;
+          readonly payload: JikanAnimeFetchPayload;
+      };
+
+export function SeriesReadContent({ seriesId }: SeriesReadContentProps) {
+    const parsed = parseSeriesId(seriesId);
+    const detailQuery = useQuery({
+        queryKey: ["series", "detail", parsed?.provider, parsed?.providerId],
+        queryFn: () => {
+            if (parsed === null) {
+                throw new Error("No valid series was selected.");
+            }
+            return fetchSeriesDetailPayload(parsed);
+        },
+        enabled: parsed !== null,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const popularSeriesQuery = usePopularSeries();
+    const popularAnimeQuery = usePopularAnime();
+    const popularSeries = useMemo(
+        () => popularSeriesQuery.data?.items ?? [],
+        [popularSeriesQuery.data],
+    );
+    const popularAnime = useMemo(
+        () => popularAnimeQuery.data?.items ?? [],
+        [popularAnimeQuery.data],
+    );
+
+    const fetchedDetail = detailQuery.data;
+    const currentId =
+        fetchedDetail?.provider === "tmdb"
+            ? `tmdb:series:${fetchedDetail.providerId}`
+            : fetchedDetail?.provider === "jikan"
+              ? `jikan:${fetchedDetail.providerId}`
+              : null;
+
+    const genreIds = useMemo(
+        () =>
+            fetchedDetail === undefined
+                ? []
+                : extractGenreIds(fetchedDetail),
+        [fetchedDetail],
+    );
+
+    const genreRecommendationsQuery = useQuery({
+        queryKey: [
+            "series",
+            "recommendations",
+            fetchedDetail?.provider,
+            fetchedDetail?.providerId,
+            genreIds,
+        ],
+        queryFn: () => {
+            if (fetchedDetail === undefined) {
+                throw new Error("Series details are not available.");
+            }
+            return Promise.all(
+                genreIds.map((genreId) =>
+                    fetchSeriesGenrePage(fetchedDetail.provider, genreId),
+                ),
+            );
+        },
+        enabled: fetchedDetail !== undefined && genreIds.length > 0,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const genreRecommendations = useMemo(
+        () =>
+            currentId === null
+                ? []
+                : dedupeRecommendations(
+                      genreRecommendationsQuery.data?.flat() ?? [],
+                      currentId,
+                  ),
+        [genreRecommendationsQuery.data, currentId],
+    );
+    const hasRecommendations = genreRecommendations.length > 0;
+    const shouldUsePopularFallback =
+        fetchedDetail !== undefined &&
+        (genreIds.length === 0 || genreRecommendationsQuery.isFetched) &&
+        (genreRecommendationsQuery.isError || !hasRecommendations);
+
+    const recommendations = useMemo(() => {
+        if (hasRecommendations) {
+            return genreRecommendations;
+        }
+        if (currentId === null || !shouldUsePopularFallback) {
+            return [];
+        }
+        const popularItems =
+            fetchedDetail?.provider === "tmdb" ? popularSeries : popularAnime;
+        return dedupeRecommendations(
+            popularItems.slice(0, RECOMMENDATION_FALLBACK_LIMIT),
+            currentId,
+        );
+    }, [
+        hasRecommendations,
+        genreRecommendations,
+        currentId,
+        shouldUsePopularFallback,
+        fetchedDetail?.provider,
+        popularSeries,
+        popularAnime,
+    ]);
+
+    const recommendationsLabel = hasRecommendations
+        ? "You Might Also Like"
+        : fetchedDetail?.provider === "jikan"
+          ? "Popular Anime"
+          : "Popular Series";
+
+    const listState = useSeriesListState(
+        fetchedDetail?.provider ?? null,
+        fetchedDetail?.providerId ?? null,
+    );
+
+    const detailState: WatchReadDetailState =
+        parsed === null
+            ? { status: "invalid", contentType: "series" }
+            : detailQuery.isPending
+              ? { status: "pending", contentType: "series" }
+              : detailQuery.isError
+                ? {
+                      status: "error",
+                      contentType: "series",
+                      message:
+                          detailQuery.error instanceof Error
+                              ? detailQuery.error.message
+                              : "Series details could not be loaded.",
+                  }
+                : fetchedDetail?.provider === "tmdb"
+                  ? {
+                        status: "ready",
+                        contentType: "series",
+                        provider: "tmdb",
+                        payload: fetchedDetail.payload,
+                        lists: listState,
+                    }
+                  : fetchedDetail?.provider === "jikan"
+                    ? {
+                          status: "ready",
+                          contentType: "series",
+                          provider: "jikan",
+                          payload: fetchedDetail.payload,
+                          lists: listState,
+                      }
+                    : { status: "pending", contentType: "series" };
+
+    const popular = (
+        <>
+            <PopularContentList
+                title="Popular Series"
+                items={popularSeries}
+                error={
+                    popularSeriesQuery.error instanceof Error
+                        ? "TMDB could not be loaded."
+                        : undefined
+                }
+            />
+            <PopularContentList
+                title="Popular Anime"
+                items={popularAnime}
+                error={
+                    popularAnimeQuery.error instanceof Error
+                        ? "Jikan could not be loaded."
+                        : undefined
+                }
+            />
+        </>
+    );
+
+    return (
+        <WatchReadContent
+            detailState={detailState}
+            recommendations={recommendations}
+            recommendationsLabel={recommendationsLabel}
+            popular={popular}
+        />
+    );
+}
+
+function extractGenreIds(detail: FetchedSeriesDetail): string[] {
+    if (detail.provider === "tmdb") {
+        return (detail.payload.series.genres ?? [])
+            .map((genre) => genre.id)
+            .filter(
+                (genreId): genreId is number =>
+                    genreId !== undefined &&
+                    Number.isSafeInteger(genreId) &&
+                    genreId > 0,
+            )
+            .map(String)
             .slice(0, MAX_RECOMMENDATION_GENRES);
     }
 
-    const anime = (payload as JikanAnimeFetchPayload).anime;
     const entries = [
-        ...(anime.genres ?? []),
-        ...(anime.themes ?? []),
-        ...(anime.demographics ?? []),
+        ...(detail.payload.anime.genres ?? []),
+        ...(detail.payload.anime.themes ?? []),
+        ...(detail.payload.anime.demographics ?? []),
     ];
-    const ids: string[] = [];
+    const genreIds: string[] = [];
     for (const entry of entries) {
-        if (typeof entry.malId === "number" && Number.isFinite(entry.malId)) {
-            ids.push(String(entry.malId));
+        const genreId = entry.malId;
+        if (
+            typeof genreId === "number" &&
+            Number.isSafeInteger(genreId) &&
+            genreId > 0
+        ) {
+            genreIds.push(String(genreId));
         }
-        if (ids.length >= MAX_RECOMMENDATION_GENRES) {
+        if (genreIds.length >= MAX_RECOMMENDATION_GENRES) {
             break;
         }
     }
-    return ids;
+    return genreIds;
 }
 
-/**
- * One page of a provider genre, served by the existing `/api/explore/genre`
- * route — the `server-only` fetch services are never imported here.
- */
 async function fetchSeriesGenrePage(
     provider: SeriesProvider,
     genreId: string,
@@ -77,14 +273,18 @@ async function fetchSeriesGenrePage(
                 : "The anime genre results are unavailable right now.",
         );
     }
-    const payload = (await response.json()) as { items: MediaItem[] };
-    return payload.items;
+    const payload: unknown = await response.json();
+    if (
+        typeof payload !== "object" ||
+        payload === null ||
+        !("items" in payload) ||
+        !Array.isArray(payload.items)
+    ) {
+        throw new Error("Series recommendations returned an invalid response.");
+    }
+    return payload.items as MediaItem[];
 }
 
-/**
- * Merge helper shared with the Comics flow: drops exact-id duplicates and the
- * currently opened item, so no one recommends itself.
- */
 function dedupeRecommendations(
     items: readonly MediaItem[],
     currentId: string,
@@ -99,222 +299,11 @@ function dedupeRecommendations(
     return [...unique.values()];
 }
 
-/**
- * Detail view for a single series, TMDB or Jikan. The route page
- * (app/explore/series/[id]/page.tsx) passes the raw prefixed card id
- * through; the provider and numeric id are resolved here so the detail API
- * routes only ever receive bare numeric ids.
- */
-export function SeriesReadContent({ seriesId }: SeriesReadContentProps) {
-    const parsed = parseSeriesId(seriesId);
-    const detailQuery = useQuery({
-        queryKey: ["series", "detail", parsed?.provider, parsed?.providerId],
-        queryFn: () => fetchSeriesDetailPayload(parsed as ParsedSeriesId),
-        enabled: parsed !== null,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const provider = parsed?.provider ?? null;
-    const back = useBackNavigation();
-
-    // Sidebar mirrors the catalog page's series sidebar — both provider
-    // lists, without the search bar — via the existing browse queries,
-    // entirely independent of the detail payload.
-    const popularSeriesQuery = usePopularSeries();
-    const popularAnimeQuery = usePopularAnime();
-    const popularSeries = useMemo(
-        () => popularSeriesQuery.data?.items ?? [],
-        [popularSeriesQuery.data],
-    );
-    const popularAnime = useMemo(
-        () => popularAnimeQuery.data?.items ?? [],
-        [popularAnimeQuery.data],
-    );
-
-    // Current id built exactly as the payload mappers do, so dedupe can drop
-    // the opened title from any candidate list.
-    const currentId =
-        provider === "tmdb"
-            ? `tmdb:series:${parsed?.providerId ?? ""}`
-            : provider === "jikan"
-              ? `jikan:${parsed?.providerId ?? ""}`
-              : null;
-
-    // Genre ids come from the detail payload; nothing fires before it lands.
-    const genreIds = useMemo(
-        () =>
-            detailQuery.data && provider !== null && parsed !== null
-                ? extractGenreIds(detailQuery.data, provider)
-                : [],
-        [detailQuery.data, provider, parsed],
-    );
-
-    // One page per genre, fetched in parallel through the genre route.
-    const genreRecommendationsQuery = useQuery({
-        queryKey: [
-            "series",
-            "recommendations",
-            provider,
-            parsed?.providerId,
-            genreIds,
-        ],
-        queryFn: () =>
-            Promise.all(
-                genreIds.map((genreId) =>
-                    fetchSeriesGenrePage(provider as SeriesProvider, genreId),
-                ),
-            ),
-        enabled:
-            detailQuery.data !== undefined &&
-            provider !== null &&
-            genreIds.length > 0,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const genreRecommendations = useMemo(
-        () =>
-            currentId === null
-                ? []
-                : dedupeRecommendations(
-                      genreRecommendationsQuery.data?.flat() ?? [],
-                      currentId,
-                  ),
-        [genreRecommendationsQuery.data, currentId],
-    );
-    const hasRecommendations = genreRecommendations.length > 0;
-
-    // Popular fallback only after the genre attempt has settled and yielded
-    // nothing. The sidebar's usePopularSeries/usePopularAnime queries already
-    // run for the right-hand list, so the fallback simply reuses their data —
-    // no extra request fires before the genre query resolves.
-    const shouldUsePopularFallback =
-        detailQuery.data !== undefined &&
-        provider !== null &&
-        genreRecommendationsQuery.isFetched &&
-        (genreRecommendationsQuery.isError || !hasRecommendations);
-
-    const recommendations = useMemo(() => {
-        if (hasRecommendations) {
-            return genreRecommendations;
-        }
-        if (currentId === null || !shouldUsePopularFallback) {
-            return [];
-        }
-        const popularItems =
-            provider === "tmdb" ? popularSeries : popularAnime;
-        return dedupeRecommendations(
-            popularItems.slice(0, RECOMMENDATION_FALLBACK_LIMIT),
-            currentId,
-        );
-    }, [
-        hasRecommendations,
-        genreRecommendations,
-        currentId,
-        shouldUsePopularFallback,
-        provider,
-        popularSeries,
-        popularAnime,
-    ]);
-
-    const recommendationsLabel = hasRecommendations
-        ? "You Might Also Like"
-        : provider === "tmdb"
-          ? "Popular Series"
-          : "Popular Anime";
-
-    return (
-        <ExploreLayout
-            popular={
-                <>
-                    <PopularContentList
-                        title="Popular Series"
-                        items={popularSeries}
-                        error={
-                            popularSeriesQuery.error instanceof Error
-                                ? "TMDB could not be loaded."
-                                : undefined
-                        }
-                    />
-                    <PopularContentList
-                        title="Popular Anime"
-                        items={popularAnime}
-                        error={
-                            popularAnimeQuery.error instanceof Error
-                                ? "Jikan could not be loaded."
-                                : undefined
-                        }
-                    />
-                </>
-            }
-        >
-            {parsed === null ? (
-                <SeriesDetailError
-                    message="This series address is malformed or unsupported."
-                />
-            ) : detailQuery.isPending ? (
-                <div className="series-detail-loading">
-                    <DetailSkeleton />
-                </div>
-            ) : detailQuery.isError ? (
-                <SeriesDetailError
-                    message={
-                        detailQuery.error instanceof Error
-                            ? detailQuery.error.message
-                            : "Series details could not be loaded."
-                    }
-                />
-            ) : provider === "tmdb" ? (
-                <TmdbSeriesDetail
-                    payload={detailQuery.data as TmdbSeriesFetchPayload}
-                    onBack={back}
-                    recommendations={recommendations}
-                    recommendationsLabel={recommendationsLabel}
-                />
-            ) : (
-                <JikanAnimeDetail
-                    payload={detailQuery.data as JikanAnimeFetchPayload}
-                    onBack={back}
-                    recommendations={recommendations}
-                    recommendationsLabel={recommendationsLabel}
-                />
-            )}
-        </ExploreLayout>
-    );
-}
-
-interface SeriesReadContentProps {
-    /** Raw prefixed card id, e.g. `tmdb:series:1396`, `tmdb-1396`, `jikan:1`, `jikan-1`. */
-    readonly seriesId?: string;
-}
-
-
-type SeriesProvider = "tmdb" | "jikan";
-
-interface ParsedSeriesId {
-    readonly provider: SeriesProvider;
-    /** Bare numeric provider id, validated before any request is made. */
-    readonly providerId: string;
-}
-
-/**
- * Resolves the provider from the existing card-id prefixes:
- *
- *   TMDB   — `tmdb:series:{id}` (browse) and `tmdb-{id}` (search)
- *   Jikan  — `jikan:{malId}` (browse) and `jikan-{malId}` (search)
- *
- * The route segment may arrive percent-encoded (the browser URL holds
- * `tmdb%3Aseries%3A1400`, `jikan%3A52991`), so the raw value is decoded
- * first and the same regexes then handle both the encoded and decoded forms.
- * Anything else (bare numbers, comics/novel ids, typos) is rejected as null
- * so the page renders its invalid-id state instead of firing a bad request.
- */
 function parseSeriesId(rawSeriesId: string | undefined): ParsedSeriesId | null {
     if (rawSeriesId === undefined) {
         return null;
     }
 
-    // `%3A` (colon) survives in the dynamic segment when the id was placed
-    // in the URL encoded; restore the separators before matching.
     let seriesId = rawSeriesId;
     if (seriesId.includes("%")) {
         try {
@@ -324,15 +313,19 @@ function parseSeriesId(rawSeriesId: string | undefined): ParsedSeriesId | null {
         }
     }
 
-    // `tmdb:series:{id}` carries a scope segment; `jikan:{malId}` does not.
     const colonMatch = /^(tmdb|jikan)(?::([^:]+))?:(\d+)$/.exec(seriesId);
     if (colonMatch) {
-        const [, providerPrefix, scope, id] = colonMatch;
-        // TMDB ids are only series ids; `tmdb:movie:...` belongs elsewhere.
-        if (providerPrefix === "tmdb" && scope !== "series") {
+        const [, providerPrefix, scope, providerId] = colonMatch;
+        if (
+            (providerPrefix === "tmdb" && scope !== "series") ||
+            (providerPrefix === "jikan" && scope !== undefined)
+        ) {
             return null;
         }
-        return { provider: providerPrefix as SeriesProvider, providerId: id };
+        return {
+            provider: providerPrefix as SeriesProvider,
+            providerId,
+        };
     }
 
     const dashMatch = /^(tmdb|jikan)-(\d+)$/.exec(seriesId);
@@ -346,18 +339,13 @@ function parseSeriesId(rawSeriesId: string | undefined): ParsedSeriesId | null {
     return null;
 }
 
-/**
- * Client fetch of the detail payload through the server-side API routes —
- * the `server-only` fetch services are never imported here.
- */
 async function fetchSeriesDetailPayload(
     parsed: ParsedSeriesId,
-): Promise<TmdbSeriesFetchPayload | JikanAnimeFetchPayload> {
+): Promise<FetchedSeriesDetail> {
     const url =
         parsed.provider === "tmdb"
             ? `/api/tmdb/series/${encodeURIComponent(parsed.providerId)}`
             : `/api/jikan/anime/${encodeURIComponent(parsed.providerId)}`;
-
     const response = await fetch(url, {
         headers: { Accept: "application/json" },
         cache: "no-store",
@@ -371,11 +359,23 @@ async function fetchSeriesDetailPayload(
     }
 
     if (!response.ok) {
-        const message = getApiErrorMessage(payload);
-        throw new Error(message ?? "Series details could not be loaded.");
+        throw new Error(
+            getApiErrorMessage(payload) ?? "Series details could not be loaded.",
+        );
     }
 
-    return payload as TmdbSeriesFetchPayload | JikanAnimeFetchPayload;
+    if (parsed.provider === "tmdb") {
+        return {
+            provider: "tmdb",
+            providerId: parsed.providerId,
+            payload: payload as TmdbSeriesFetchPayload,
+        };
+    }
+    return {
+        provider: "jikan",
+        providerId: parsed.providerId,
+        payload: payload as JikanAnimeFetchPayload,
+    };
 }
 
 function getApiErrorMessage(payload: unknown): string | undefined {
@@ -390,857 +390,43 @@ function getApiErrorMessage(payload: unknown): string | undefined {
     return undefined;
 }
 
-
-interface DetailHeaderData {
-    readonly title: string;
-    readonly posterImage?: string;
-    readonly providerLabel: string;
-    readonly rating?: number;
-    readonly firstYear?: string;
-    readonly status?: string;
-    readonly episodeCount?: number;
-    readonly genres: string[];
-    readonly description?: string;
-}
-
-/**
- * Poster + information block shared by both providers so they present
- * identically while each maps its own payload into `DetailHeaderData`.
- */
-/**
- * Collapsible description. The collapsed height is expressed in line heights
- * (not a character cut) so the underlying text is never truncated — only the
- * visible box is clamped and a `See more` control appears when the content
- * actually overflows.
- */
-function SeriesDescription({ text }: { text: string }) {
-    const [expanded, setExpanded] = useState(false);
-    const [overflows, setOverflows] = useState(false);     const textRef = useRef<HTMLParagraphElement | null>(null);
-
-    // Measure overflow only while collapsed: while expanded the paragraph's
-    // scrollHeight equals its clientHeight, so re-measuring would erase the
-    // toggle and trap the description open. Re-runs on `text` changes and on
-    // collapse so the clamp re-evaluates after a provider switch.
-    useEffect(() => {
-        const element = textRef.current;
-        if (element === null || expanded) {
-            return;
-        }
-        const nowOverflows = element.scrollHeight > element.clientHeight + 1;
-        setOverflows((current) =>
-            current === nowOverflows ? current : nowOverflows,
-        );
-    }, [expanded, text]);
-
-    return (
-        <div className="series-detail-description-container">
-            <p
-                ref={textRef}
-                className={`series-detail-description${expanded ? " series-detail-description-expanded" : ""}`}
-            >
-                {text}
-            </p>
-            {overflows && (
-                <button
-                    type="button"
-                    aria-expanded={expanded}
-                    onClick={() => setExpanded((current) => !current)}
-                    className="series-detail-description-toggle"
-                >
-                    {expanded ? "See less" : "See more"}
-                </button>
-            )}
-        </div>
-    );
-}
-
-/** Which OmniFlix lists this title already belongs to (per provider+id). */
-interface SeriesListState {
-    readonly favorite: boolean;
-    readonly watchlist: boolean;
-}
-
-/**
- * Reads the signed-in profile's FAVORITE and WATCHLIST collections through the
- * existing read-only entertainment API and reports membership for this exact
- * provider + id. There is no write endpoint for entertainment lists yet, so
- * the entries are shown read-only with an explanatory tooltip rather than
- * pretending a toggle exists.
- */
 function useSeriesListState(
-    provider: SeriesProvider,
-    providerId: string,
-): { lists: SeriesListState; loading: boolean } {
+    provider: SeriesProvider | null,
+    providerId: string | null,
+): SeriesListState {
     const favoriteQuery = useQuery({
         queryKey: ["entertainment", "collection", "FAVORITE"],
         queryFn: () => getEntertainmentCollection("FAVORITE"),
+        enabled: provider !== null && providerId !== null,
         staleTime: 60 * 1000,
     });
     const watchlistQuery = useQuery({
         queryKey: ["entertainment", "collection", "WATCHLIST"],
         queryFn: () => getEntertainmentCollection("WATCHLIST"),
+        enabled: provider !== null && providerId !== null,
         staleTime: 60 * 1000,
     });
 
-    const matches = (items: { externalId: string; apiSource: string }[]) =>
-        items.some(
-            (item) =>
-                item.externalId === providerId &&
-                item.apiSource.toUpperCase() === provider.toUpperCase(),
+    function includesTitle(
+        items: { externalId: string; apiSource: string }[] | undefined,
+    ): boolean {
+        return (
+            provider !== null &&
+            providerId !== null &&
+            (items ?? []).some(
+                (item) =>
+                    item.externalId === providerId &&
+                    item.apiSource.toUpperCase() === provider.toUpperCase(),
+            )
         );
+    }
 
     return {
-        lists: {
-            favorite: matches(favoriteQuery.data ?? []),
-            watchlist: matches(watchlistQuery.data ?? []),
-        },
+        favorite: includesTitle(favoriteQuery.data),
+        watchlist: includesTitle(watchlistQuery.data),
         loading:
-            (favoriteQuery.isPending || watchlistQuery.isPending) &&
-            favoriteQuery.isError === null &&
-            watchlistQuery.isError === null,
+            provider !== null &&
+            providerId !== null &&
+            (favoriteQuery.isPending || watchlistQuery.isPending),
     };
-}
-
-/**
- * Action row for the series header: an honest `Play` placeholder (TMDB/Jikan
- * payloads carry episode metadata only — there is no video stream to play, so
- * the button stays disabled with an explanation) and a secondary `More`
- * popover listing Favorite / Watchlist membership.
- */
-function SeriesDetailActions({
-    provider,
-    providerId,
-}: {
-    provider: SeriesProvider;
-    providerId: string;
-}) {
-    const { lists, loading } = useSeriesListState(provider, providerId);
-    const [moreOpen, setMoreOpen] = useState(false);
-    const wrapperRef = useRef<HTMLDivElement | null>(null);
-    const popoverId = useId();
-
-    // Dismiss the popover on any outside click or Escape.
-    useEffect(() => {
-        if (!moreOpen) {
-            return;
-        }
-
-        function handlePointerDown(event: PointerEvent) {
-            if (
-                wrapperRef.current !== null &&
-                !wrapperRef.current.contains(event.target as Node)
-            ) {
-                setMoreOpen(false);
-            }
-        }
-
-        function handleKeyDown(event: KeyboardEvent) {
-            if (event.key === "Escape") {
-                setMoreOpen(false);
-            }
-        }
-
-        document.addEventListener("pointerdown", handlePointerDown);
-        document.addEventListener("keydown", handleKeyDown);
-        return () => {
-            document.removeEventListener("pointerdown", handlePointerDown);
-            document.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [moreOpen]);
-
-    const listOptions = [
-        {
-            key: "FAVORITE" as const,
-            label: "Favorite",
-            icon: HeartIcon,
-            selected: lists.favorite,
-        },
-        {
-            key: "WATCHLIST" as const,
-            label: "Watchlist",
-            icon: BookmarkIcon,
-            selected: lists.watchlist,
-        },
-    ];
-
-    return (
-        <div className="series-detail-actions">
-            <button
-                type="button"
-                disabled
-                className="series-detail-play-button"
-                title="Episode playback is not available yet — OmniFlix does not host video streams."
-            >
-                <PlayIcon className="series-detail-control-icon" />
-                Play
-            </button>
-
-            <div
-                ref={wrapperRef}
-                className="series-detail-more-wrapper"
-            >
-                <button
-                    type="button"
-                    className="series-detail-more-button"
-                    aria-haspopup="menu"
-                    aria-expanded={moreOpen}
-                    aria-controls={moreOpen ? popoverId : undefined}
-                    aria-label="More actions"
-                    onClick={() => setMoreOpen((current) => !current)}
-                >
-                    <MoreVerticalIcon className="series-detail-control-icon" />
-                </button>
-
-                {moreOpen && (
-                    <div
-                        id={popoverId}
-                        role="menu"
-                        aria-label="List options"
-                        className="series-detail-more-popover"
-                    >
-                        {loading ? (
-                            <p className="series-detail-list-status">
-                                Checking your lists…
-                            </p>
-                        ) : (
-                            listOptions.map((option) => (
-                                <button
-                                    key={option.key}
-                                    type="button"
-                                    role="menuitem"
-                                    disabled
-                                    className={`series-detail-list-option${option.selected ? " series-detail-list-option-selected" : ""}`}
-                                    title={
-                                        option.selected
-                                            ? `Already in your ${option.label.toLowerCase()} list.`
-                                            : "Saving to lists is not available yet."
-                                    }
-                                    onClick={() => setMoreOpen(false)}
-                                >
-                                    <option.icon className="series-detail-list-option-icon" />
-                                    <span className="series-detail-list-option-label">
-                                        {option.label}
-                                    </span>
-                                    {option.selected && (
-                                        <CheckIcon className="series-detail-list-option-selected-icon" />
-                                    )}
-                                </button>
-                            ))
-                        )}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function SeriesDetailHeader({
-    data,
-    onBack,
-    provider,
-    providerId,
-}: {
-    data: DetailHeaderData;
-    onBack: () => void;
-    provider: SeriesProvider;
-    providerId: string;
-}) {
-    const [posterFailed, setPosterFailed] = useState(false);
-    const showPoster = data.posterImage !== undefined && !posterFailed;
-
-    const metadataParts = [
-        <span key="provider" className="series-detail-metadata-provider">
-            {data.providerLabel}
-        </span>,
-        data.rating !== undefined ? (
-            <span key="rating" className="series-detail-metadata-rating">
-                ★ {data.rating.toFixed(1)}
-            </span>
-        ) : null,
-        data.firstYear,
-        data.status,
-        data.episodeCount !== undefined
-            ? `${data.episodeCount} ${data.episodeCount === 1 ? "episode" : "episodes"}`
-            : null,
-    ].filter((part) => part !== null);
-
-    return (
-        <>
-            <button
-                type="button"
-                aria-label="Go back"
-                className="series-detail-back"
-                onClick={onBack}
-            >
-                <ArrowLeftIcon className="series-detail-back-icon" />
-            </button>
-
-            <div className="series-detail-row">
-                <div className="series-detail-poster-section">
-                    <div className="series-detail-poster-frame">
-                        {showPoster ? (
-                            <Image
-                                src={data.posterImage as string}
-                                alt={`Poster of ${data.title}`}
-                                fill
-                                sizes="(max-width: 768px) 40vw, 260px"
-                                className="series-detail-poster"
-                                onError={() => setPosterFailed(true)}
-                            />
-                        ) : (
-                            <div className="series-detail-poster-placeholder">
-                                <ImageIcon className="series-detail-poster-placeholder-icon" />
-                            </div>
-                        )}
-                    </div>
-                    {data.genres.length > 0 && (
-                        <ul
-                            className="series-detail-genre-list"
-                            aria-label="Genres"
-                        >
-                            {data.genres.map((genre) => (
-                                <li
-                                    key={genre}
-                                    className="series-detail-genre-tag"
-                                >
-                                    {genre}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-
-                <div className="series-detail-info">
-                    <p className="series-detail-metadata">
-                        {metadataParts.map((part, index) => (
-                            <span
-                                key={index}
-                                className={`series-detail-metadata-part${index > 0 ? " series-detail-metadata-separator" : ""
-                                    }`}
-                            >
-                                {part}
-                            </span>
-                        ))}
-                    </p>
-
-                    <h1 className="series-detail-title">{data.title}</h1>
-
-                    <SeriesDescription
-                        text={
-                            data.description ?? "No description available."
-                        }
-                    />
-
-                    {(data.firstYear !== undefined ||
-                        data.status !== undefined ||
-                        data.episodeCount !== undefined) && (
-                            <dl className="series-detail-facts">
-                                {data.firstYear !== undefined && (
-                                    <SeriesFact
-                                        label="First aired"
-                                        value={data.firstYear}
-                                    />
-                                )}
-                                {data.status !== undefined && (
-                                    <SeriesFact label="Status" value={data.status} />
-                                )}
-                                {data.episodeCount !== undefined && (
-                                    <SeriesFact
-                                        label="Episodes"
-                                        value={String(data.episodeCount)}
-                                    />
-                                )}
-                            </dl>
-                        )}
-
-                    <SeriesDetailActions
-                        provider={provider}
-                        providerId={providerId}
-                    />
-                </div>
-            </div>
-        </>
-    );
-}
-
-function SeriesFact({ label, value }: { label: string; value: string }) {
-    return (
-        <>
-            <dt className="series-detail-fact-label">{label}</dt>
-            <dd className="series-detail-fact-value">{value}</dd>
-        </>
-    );
-}
-
-/**
- * Back navigation shared by the detail views. Browser history is preferred;
- * when the page was opened directly the Explore series catalog is used.
- */
-function useBackNavigation() {
-    const router = useRouter();
-    return () => {
-        if (typeof window !== "undefined" && window.history.length > 1) {
-            router.back();
-        } else {
-            router.push("/explore/series");
-        }
-    };
-}
-
-
-
-function TmdbSeriesDetail({
-    payload,
-    recommendations,
-    recommendationsLabel,
-}: {
-    payload: TmdbSeriesFetchPayload;
-    onBack: () => void;
-    recommendations?: readonly MediaItem[];
-    recommendationsLabel?: string;
-}) {
-    const back = useBackNavigation();
-
-    const seasonsWithEpisodes = payload.seasons.filter(
-        (season) => season.episodes.length > 0,
-    );
-    // Season 1 over specials (season 0) when both exist.
-    const defaultSeasonNumber =
-        seasonsWithEpisodes.find((season) => season.seasonNumber > 0)
-            ?.seasonNumber ?? seasonsWithEpisodes[0]?.seasonNumber ?? 0;
-    const [preferredSeason, setPreferredSeason] = useState(defaultSeasonNumber);
-    // Fall back to the first populated season when the stored selection is
-    // not part of the payload (e.g. the only loaded season failed) — derived
-    // directly, no effect needed.
-    const selectedSeason = seasonsWithEpisodes.some(
-        (season) => season.seasonNumber === preferredSeason,
-    )
-        ? preferredSeason
-        : seasonsWithEpisodes[0]?.seasonNumber ?? 0;
-
-    const series = payload.series;
-
-    const currentSeason = payload.seasons.find(
-        (season) => season.seasonNumber === selectedSeason,
-    );
-
-    const title = series.name ?? series.original_name ?? "Untitled series";
-    const rating =
-        typeof series.vote_average === "number" && series.vote_average > 0
-            ? series.vote_average
-            : undefined;
-
-    return (
-        <article className="series-detail">
-            <SeriesDetailHeader
-                onBack={back}
-                provider="tmdb"
-                providerId={payload.series.id?.toString() ?? ""}
-                data={{
-                    title,
-                    posterImage: series.poster_path
-                        ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
-                        : undefined,
-                    providerLabel: "TMDB",
-                    rating,
-                    firstYear: series.first_air_date?.slice(0, 4),
-                    status: payload.status,
-                    episodeCount: series.number_of_episodes ?? undefined,
-                    genres: (series.genres ?? [])
-                        .map((genre) => genre.name)
-                        .filter((name): name is string => name !== undefined),
-                    description: series.overview ?? undefined,
-                }}
-            />
-
-            <section
-                className="series-detail-episodes"
-                aria-label="Episodes"
-            >
-                <div className="series-detail-episodes-header">
-                    <h2 className="series-detail-episodes-title">
-                        {currentSeason?.name ?? "Episodes"}
-                    </h2>
-                    {seasonsWithEpisodes.length > 1 && (
-                        <select
-                            className="series-detail-season-select"
-                            aria-label="Select season"
-                            value={selectedSeason}
-                            onChange={(event) =>
-                                setPreferredSeason(Number(event.target.value))
-                            }
-                        >
-                            {seasonsWithEpisodes.map((season) => (
-                                <option
-                                    key={season.seasonNumber}
-                                    value={season.seasonNumber}
-                                >
-                                    {season.name ??
-                                        (season.seasonNumber === 0
-                                            ? "Specials"
-                                            : `Season ${season.seasonNumber}`)}
-                                    {" · "}
-                                    {season.episodeCount} episodes
-                                </option>
-                            ))}
-                        </select>
-                    )}
-                </div>
-
-                {payload.failedSeasons.length > 0 && (
-                    <p className="series-detail-episodes-note" role="status">
-                        Season{payload.failedSeasons.length === 1 ? "" : "s"}{" "}
-                        {payload.failedSeasons.join(", ")} could not be loaded.
-                    </p>
-                )}
-
-                <TmdbEpisodeList
-                    episodes={currentSeason?.episodes ?? []}
-                    seasonNumber={selectedSeason}
-                />
-            </section>
-
-            {recommendations !== undefined &&
-                recommendations.length > 0 &&
-                recommendationsLabel !== undefined && (
-                <section
-                    aria-label={recommendationsLabel}
-                    className="readContentRecommendations"
-                >
-                    <h2 className="readContentRecommendationsTitle">
-                        {recommendationsLabel}
-                    </h2>
-                    <MediaCarousel
-                        items={[...recommendations]}
-                        label={recommendationsLabel}
-                    />
-                </section>
-            )}
-        </article>
-    );
-}
-
-function TmdbEpisodeList({
-    episodes,
-    seasonNumber,
-}: {
-    episodes: TmdbSeriesFetchPayload["seasons"][number]["episodes"];
-    seasonNumber: number;
-}) {
-    if (episodes.length === 0) {
-        return (
-            <p className="series-detail-episode-list-empty">
-                No episodes available for this season yet.
-            </p>
-        );
-    }
-
-    return (
-        <div className="series-detail-episode-scroll">
-            <ol className="series-detail-episode-list">
-                {episodes.map((episode) => (
-                    <li
-                        key={`${seasonNumber}-${episode.episodeNumber}`}
-                        className="series-detail-episode-row"
-                    >
-                        <div className="series-detail-episode-still">
-                            {episode.stillImage !== undefined ? (
-                                <Image
-                                    src={episode.stillImage}
-                                    alt={episode.title ?? `Episode ${episode.episodeNumber}`}
-                                    fill
-                                    sizes="176px"
-                                    className="series-detail-episode-still-image"
-                                />
-                            ) : (
-                                <div className="series-detail-episode-still-empty">
-                                    <ImageIcon className="series-detail-episode-placeholder-icon" />
-                                </div>
-                            )}
-                        </div>
-                        <div className="series-detail-episode-body">
-                            <h3 className="series-detail-episode-heading">
-                                <span className="series-detail-episode-number">
-                                    E{episode.episodeNumber}
-                                </span>
-                                <span>
-                                    {episode.title ??
-                                        `Episode ${episode.episodeNumber}`}
-                                </span>
-                                {episode.airDate !== undefined && (
-                                    <span className="series-detail-episode-air-date">
-                                        {formatAirDate(episode.airDate)}
-                                    </span>
-                                )}
-                            </h3>
-                            {episode.overview !== undefined && (
-                                <p className="series-detail-episode-overview">
-                                    {episode.overview}
-                                </p>
-                            )}
-                            <div className="series-detail-episode-meta">
-                                {episode.runtimeMinutes !== undefined && (
-                                    <span>{episode.runtimeMinutes} min</span>
-                                )}
-                                {episode.rating !== undefined && (
-                                    <span>★ {episode.rating.toFixed(1)}</span>
-                                )}
-                            </div>
-                        </div>
-                    </li>
-                ))}
-            </ol>
-        </div>
-    );
-}
-
-
-function JikanAnimeDetail({
-    payload,
-    recommendations,
-    recommendationsLabel,
-}: {
-    payload: JikanAnimeFetchPayload;
-    onBack: () => void;
-    recommendations?: readonly MediaItem[];
-    recommendationsLabel?: string;
-}) {
-    const back = useBackNavigation();
-    const anime = payload.anime;
-    const poster = anime.imageUrl ?? undefined;
-
-    const genres = [
-        ...(anime.genres ?? []),
-        ...(anime.themes ?? []),
-        ...(anime.demographics ?? []),
-    ]
-        .map((entry) => entry.name)
-        .filter((name): name is string => name !== undefined);
-
-    return (
-        <article className="series-detail">
-            <SeriesDetailHeader
-                onBack={back}
-                provider="jikan"
-                providerId={anime.malId?.toString() ?? ""}
-                data={{
-                    title: anime.title ?? "Untitled anime",
-                    posterImage: poster,
-                    providerLabel: "Jikan",
-                    rating:
-                        typeof anime.score === "number" && anime.score > 0
-                            ? anime.score
-                            : undefined,
-                    firstYear:
-                        anime.year !== null && anime.year !== undefined
-                            ? String(anime.year)
-                            : anime.aired?.from?.slice(0, 4),
-                    status: payload.status,
-                    episodeCount: anime.episodes ?? undefined,
-                    genres,
-                    description: anime.synopsis ?? undefined,
-                }}
-            />
-
-            <section
-                className="series-detail-episodes"
-                aria-label="Episodes"
-            >
-                <div className="series-detail-episodes-header">
-                    <h2 className="series-detail-episodes-title">Episodes</h2>
-                </div>
-
-                {payload.episodesTruncated && (
-                    <p className="series-detail-episodes-note" role="status">
-                        The episode list was too long to load in full — older
-                        episodes may be missing.
-                    </p>
-                )}
-
-                <JikanEpisodeList episodes={payload.episodes} />
-            </section>
-
-            {recommendations !== undefined &&
-                recommendations.length > 0 &&
-                recommendationsLabel !== undefined && (
-                <section
-                    aria-label={recommendationsLabel}
-                    className="readContentRecommendations"
-                >
-                    <h2 className="readContentRecommendationsTitle">
-                        {recommendationsLabel}
-                    </h2>
-                    <MediaCarousel
-                        items={[...recommendations]}
-                        label={recommendationsLabel}
-                    />
-                </section>
-            )}
-        </article>
-    );
-}
-
-function JikanEpisodeList({
-    episodes,
-}: {
-    episodes: JikanAnimeFetchPayload["episodes"];
-}) {
-    if (episodes.length === 0) {
-        return (
-            <p className="series-detail-episode-list-empty">
-                No episode information is available for this anime yet.
-            </p>
-        );
-    }
-
-    return (
-        <div className="series-detail-episode-scroll">
-            <ol className="series-detail-episode-list">
-                {episodes.map((episode) => (
-                    <li
-                        key={episode.number}
-                        className="series-detail-episode-row"
-                    >
-                        <div className="series-detail-episode-body">
-                            <h3 className="series-detail-episode-heading">
-                                <span className="series-detail-episode-number">
-                                    Ep {episode.number}
-                                </span>
-                                <span>
-                                    {episode.title ?? `Episode ${episode.number}`}
-                                </span>
-                                {episode.aired !== undefined && (
-                                    <span className="series-detail-episode-air-date">
-                                        {episode.aired}
-                                    </span>
-                                )}
-                            </h3>
-                            <div className="series-detail-episode-meta">
-                                {episode.score !== undefined && (
-                                    <span>★ {episode.score.toFixed(1)}</span>
-                                )}
-                                {episode.filler === true && <span>Filler</span>}
-                                {episode.recap === true && <span>Recap</span>}
-                            </div>
-                        </div>
-                    </li>
-                ))}
-            </ol>
-        </div>
-    );
-}
-
-
-/**
- * Deterministic date rendering (fixed locale + UTC) so server-rendered and
- * client HTML always match — the same hydration rule `ReadContent` follows.
- */
-function formatAirDate(airDate: string): string {
-    const date = new Date(airDate);
-    if (Number.isNaN(date.getTime())) {
-        return airDate;
-    }
-    return new Intl.DateTimeFormat("en-US", {
-        timeZone: "UTC",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-    }).format(date);
-}
-
-/* ── Inline SVG icons (kept local — the shared icon set has no play/heart
-   variants and this task may not touch other files). ── */
-
-function PlayIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className={className ?? "series-detail-control-icon"}
-            aria-hidden={true}
-        >
-            <path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.1-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14Z" />
-        </svg>
-    );
-}
-
-function HeartIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.75}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className ?? "series-detail-list-option-icon"}
-            aria-hidden={true}
-        >
-            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-        </svg>
-    );
-}
-
-function BookmarkIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.75}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className ?? "series-detail-list-option-icon"}
-            aria-hidden={true}
-        >
-            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" />
-        </svg>
-    );
-}
-
-function CheckIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2.25}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className ?? "series-detail-list-option-selected-icon"}
-            aria-hidden={true}
-        >
-            <path d="M20 6 9 17l-5-5" />
-        </svg>
-    );
-}
-
-function MoreVerticalIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className={className ?? "series-detail-control-icon"}
-            aria-hidden={true}
-        >
-            <circle cx="12" cy="5" r="1.6" />
-            <circle cx="12" cy="12" r="1.6" />
-            <circle cx="12" cy="19" r="1.6" />
-        </svg>
-    );
-}
-
-export function SeriesDetailError({ message }: { message: string }) {
-    return (
-        <section className="series-detail-error">
-            <h1>Series unavailable</h1>
-            <p>{message}</p>
-            <Link href="/explore/series">Back to Series</Link>
-        </section>
-    );
 }

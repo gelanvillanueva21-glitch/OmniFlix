@@ -187,3 +187,67 @@ export interface TmdbSeriesFetchPayload {
   /** Provider status, e.g. "Returning Series" / "Ended". */
   status?: string;
 }
+// ---------------------------------------------------------------------------
+// TMDB MOVIE DETAIL — GET /movie/{movie_id}
+// ---------------------------------------------------------------------------
+
+/**
+ * Full movie details as returned by GET /movie/{movie_id}. All fields optional
+ * so a partial TMDB response never breaks the consumer — the same tolerance
+ * `TmdbSeriesDetail` applies.
+ */
+export interface TmdbMovieDetail {
+  id?: number;
+  title?: string | null;
+  original_title?: string | null;
+  overview?: string | null;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+  genres?: TmdbNamedEntry[];
+  release_date?: string | null;
+  runtime?: number | null;
+  vote_average?: number | null;
+  vote_count?: number | null;
+  tagline?: string | null;
+  /** Provider status, e.g. "Released" / "Rumored" / "Post Production". */
+  status?: string | null;
+  production_companies?: TmdbNamedEntry[];
+  homepage?: string | null;
+  imdb_id?: string | null;
+  original_language?: string | null;
+  budget?: number | null;
+  revenue?: number | null;
+}
+
+export type TmdbMovieDetailResponse = TmdbMovieDetail;
+
+/**
+ * Normalized movie payload the UI consumes: `snake_case` provider fields are
+ * mapped to camelCase, image paths are absolutized against the TMDB image
+ * host, and only usable values (non-empty names, positive ratings) survive.
+ */
+export interface TmdbMovieFetchPayload {
+  id: number;
+  title?: string;
+  originalTitle?: string;
+  overview?: string;
+  /** Absolute poster URL (`w500`), present only when TMDB supplied a path. */
+  posterImage?: string;
+  /** Absolute backdrop URL (`w1280`), present only when TMDB supplied a path. */
+  backdropImage?: string;
+  /** Genre display names only — ids are dropped here. */
+  genres: string[];
+  /** TMDB movie genre ids, used to request provider-valid recommendations. */
+  genreIds: number[];
+  releaseDate?: string;
+  /** Year extracted from `release_date`, for compact "2024" rendering. */
+  releaseYear?: number;
+  runtimeMinutes?: number;
+  /** `vote_average`, only when greater than zero. */
+  rating?: number;
+  voteCount?: number;
+  tagline?: string;
+  status?: string;
+  /** Production company display names only — ids are dropped here. */
+  productionCompanies: string[];
+}

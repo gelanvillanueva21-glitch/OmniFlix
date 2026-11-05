@@ -1,10 +1,25 @@
+import { Suspense } from "react";
+import { MovieReadContent } from "@/components/layouts/movies/MovieReadContent";
+import { DetailSkeleton } from "@/components/loading/ContentDetailLoad";
 
-
-export default function MovieContent() {
-    return (
-        <h1>
-            HELLO WORLD AS WELL!
-        </h1>
-    )
+interface MovieDetailPageProps {
+    params: Promise<{ id: string }>;
 }
 
+export default function MovieDetailPage({ params }: MovieDetailPageProps) {
+    return (
+        <Suspense fallback={<DetailSkeleton />}>
+            <MovieDetailParams params={params} />
+        </Suspense>
+    );
+}
+
+async function MovieDetailParams({ params }: MovieDetailPageProps) {
+    const { id } = await params;
+
+    if (!id.trim()) {
+        return <MovieReadContent movieId={undefined} />;
+    }
+
+    return <MovieReadContent movieId={id} />;
+}

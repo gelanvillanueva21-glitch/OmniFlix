@@ -18,6 +18,7 @@ import {
 import { getTmdbGenrePage, getTmdbGenres } from "@/service/tmdb/tmdb.service";
 import { isAdminRequest } from "@/service/server-auth.service";
 import { uniqueMediaItems } from "@/service/provider-client.service";
+import { fetchMovieByGenre } from "@/service/tmdb/fetchMovieByGenre.service";
 
 const MAX_PAGE = 1000;
 const TMDB_MAX_PAGE = 500;
@@ -110,14 +111,22 @@ export async function GET(request: NextRequest) {
             if (!genres.some((genre) => genre.id === genreId)) {
                 return invalidGenreResponse();
             }
-            const result = await getTmdbGenrePage(
-                mediaType,
-                genreId,
-                genres,
-                page,
-            );
-            items = result.items;
-            hasNextPage = page < Math.min(result.totalPages, TMDB_MAX_PAGE);
+            if (mediaType === "movies") {
+                const result = await fetchMovieByGenre(genreId, page);
+                items = result.items;
+                hasNextPage =
+                    result.hasNextPage && page < TMDB_MAX_PAGE;
+            } else {
+                const result = await getTmdbGenrePage(
+                    mediaType,
+                    genreId,
+                    genres,
+                    page,
+                );
+                items = result.items;
+                hasNextPage =
+                    page < Math.min(result.totalPages, TMDB_MAX_PAGE);
+            }
         } else if (provider === "jikan") {
             if (!genreId?.trim()) {
                 return invalidGenreResponse();
