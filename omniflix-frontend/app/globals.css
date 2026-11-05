@@ -1,4 +1,15 @@
 @import "tailwindcss";
+@import "../components/components.css";
+@import "../components/ReadContent.css";
+@import "../components/layouts/landing/landing.css";
+@import "../components/layouts/auth/auth.css";
+@import "../components/layouts/explore/explore.css";
+@import "../components/layouts/comics/comics.css";
+@import "../components/layouts/movies/movies.css";
+@import "../components/layouts/novels/novels.css";
+@import "../components/layouts/series/series.css";
+@import "../components/layouts/series/SeriesContentStyle.css";
+@import "../components/layouts/profile/profile.css";
 
 /* Root application shell (app/layout.tsx) */
 .app-root {
@@ -81,15 +92,3 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .skeleton-shimmer::after { animation: none; }
 }
-
-@import "../components/components.css";
-@import "../components/ReadContent.css";
-@import "../components/layouts/landing/landing.css";
-@import "../components/layouts/auth/auth.css";
-@import "../components/layouts/explore/explore.css";
-@import "../components/layouts/comics/comics.css";
-@import "../components/layouts/movies/movies.css";
-@import "../components/layouts/novels/novels.css";
-@import "../components/layouts/series/series.css";
-@import "../components/layouts/series/SeriesContentStyle.css";
-@import "../components/layouts/profile/profile.css";
