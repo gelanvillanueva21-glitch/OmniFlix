@@ -12,10 +12,9 @@ import type {
 export const ENTERTAINMENT_LIST_TYPES: readonly EntertainmentListType[] = [
     "FAVORITE",
     "WATCHLIST",
+    "READLIST",
     "COMPLETED",
     "ON_HOLD",
-    "PLAN_TO_WATCH",
-    "PLAN_TO_READ",
     "DROPPED",
 ];
 
@@ -77,9 +76,6 @@ export function mapHistoryToMediaItems(items: UserHistoryItem[]): MediaItem[] {
 function mediaTypeFromEntertainmentType(type: EntertainmentType): MediaItem["type"] {
     switch (type) {
         case "COMIC":
-        case "MANGA":
-        case "MANHWA":
-        case "MANHUA":
             return "comics";
         case "NOVEL":
             return "novels";

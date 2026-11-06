@@ -16,6 +16,7 @@ from app.repository.user_repository import UserRepository
 from app.repository.profile_repository import ProfileRepository
 from app.schema.user_schema import UserResponse
 from app.service.auth_service import AuthService
+from app.service.profile_service import ProfileService
 from app.utils.security import create_access_token, decode_token
 
 # ── Typed aliases for dependency injection ────────────────────────
@@ -36,7 +37,20 @@ def get_auth_service(
     return AuthService(user_repository, prof_repository, settings)
 
 
+
 AuthServiceDeps = Annotated[AuthService, Depends(get_auth_service)]
+
+
+def get_profile_service(
+    db: DbSessionDeps,
+    settings: SettingsDeps,
+) -> ProfileService:
+    """Build a ProfileService wired to the current request's DB session."""
+    profile_repository = ProfileRepository(db)
+    return ProfileService(profile_repository, settings)
+
+
+ProfileServiceDeps = Annotated[ProfileService, Depends(get_profile_service)]
 
 
 # ── Authentication dependency ───────────────────────────────────

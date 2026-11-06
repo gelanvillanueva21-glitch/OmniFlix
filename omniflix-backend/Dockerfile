@@ -5,6 +5,10 @@ FROM python:3.12-slim
 # Create a dedicated group and non-root user for better security.
 RUN groupadd --system app && useradd --system --gid app --create-home app
 
+# Give the non-root application user a dedicated persistent-upload mount point.
+RUN mkdir -p /var/lib/omniflix/profile_pictures \
+    && chown -R app:app /var/lib/omniflix
+
 # Set the working directory inside the container.
 WORKDIR /app
 
@@ -29,5 +33,4 @@ EXPOSE 8888
 # --host 0.0.0.0 allows connections from outside the container.
 # --port 8888 tells the server which port to listen on.
 CMD ["fastapi", "dev", "app/main.py", "--host", "0.0.0.0", "--port", "8888"]
-
 

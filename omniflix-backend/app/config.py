@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,6 +22,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ALGORITHM: str = "HS256"
     CORS_ALLOWED_ORIGINS: str = "http://localhost:5555,http://127.0.0.1:5555"
+    PROFILE_UPLOAD_DIR: Path = Path("uploads/profile_pictures")
 
     @property
     def parsed_cors_origins(self) -> list[str]:
@@ -40,4 +42,3 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return a cached Settings singleton (created once, reused everywhere)."""
     return Settings()
-

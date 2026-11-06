@@ -5,6 +5,9 @@ import { searchSuwayomiComics } from "@/service/suwayomi/suwayomi.service";
 import { searchTmdbMovies, searchTmdbTv } from "@/service/tmdb/tmdb.service";
 import { uniqueMediaItems } from "@/service/provider-client.service";
 import type { MediaItem } from "@/lib/media";
+import { ApiError } from "@/service/client.service";
+import { prisma } from "@/service/prisma.service";
+import { getProfile } from "@/service/profile.auth.service";
 
 const MAX_QUERY_LENGTH = 100;
 const PER_PROVIDER_LIMIT = 8;
@@ -105,3 +108,232 @@ const PROVIDER_NAMES = [
     "series",
     "anime",
 ] as const;
+
+type SearchHistoryRequest = {
+    title: string;
+    /** Required only when `isGlobal` is false — feature-page searches always know their category. */
+    type?: "COMIC" | "NOVEL" | "SERIES" | "MOVIE";
+    isGlobal?: boolean;
+};
+
+const VALID_SEARCH_TYPES: ReadonlySet<string> = new Set([
+    "COMIC",
+    "NOVEL",
+    "SERIES",
+    "MOVIE",
+]);
+
+/**
+ * Records a search term on the authenticated user's profile so it can be
+ * replayed later from their search history. Accepts only the fields the
+ * `SearchHistory` model actually stores; anything else is rejected before it
+ * reaches Prisma so unvalidated client data never hits the database.
+ */
+export async function POST(request: NextRequest) {
+    let body: unknown;
+    try {
+        body = await request.json();
+    } catch {
+        return NextResponse.json(
+            { error: "Request body must be valid JSON." },
+            { status: 400 },
+        );
+    }
+
+    const data = body as Partial<SearchHistoryRequest> | null;
+    const title = typeof data?.title === "string" ? data.title.trim() : "";
+    const type = data?.type;
+    const isGlobal = data?.isGlobal ?? false;
+
+    if (!title) {
+        return NextResponse.json(
+            { error: "A search title is required." },
+            { status: 400 },
+        );
+    }
+    if (title.length > MAX_QUERY_LENGTH) {
+        return NextResponse.json(
+            { error: `Search title must be at most ${MAX_QUERY_LENGTH} characters.` },
+            { status: 400 },
+        );
+    }
+    if (typeof isGlobal !== "boolean") {
+        return NextResponse.json(
+            { error: "isGlobal must be a boolean." },
+            { status: 400 },
+        );
+    }
+    // Feature-page searches (isGlobal === false) always originate from one of
+    // the four categories, so the type must be supplied. Global searches are
+    // category-agnostic and must not send one.
+    if (isGlobal) {
+        if (type !== undefined) {
+            return NextResponse.json(
+                { error: "Global searches must not include a type." },
+                { status: 400 },
+            );
+        }
+    } else if (typeof type !== "string" || !VALID_SEARCH_TYPES.has(type)) {
+        return NextResponse.json(
+            { error: "Search type must be one of COMIC, NOVEL, SERIES or MOVIE for feature searches." },
+            { status: 400 },
+        );
+    }
+
+    try {
+        const profile = await getProfile({
+            headers: { Cookie: request.headers.get("cookie") ?? "" },
+        });
+
+        // Feature searches store their category; global searches leave the
+        // enum unset (the column stays NULL in the database).
+        const searchHistory = await prisma.searchHistory.create({
+            data: isGlobal
+                ? {
+                      title,
+                      type: undefined,
+                      isGlobal,
+                      searchedOwner: { connect: { id: profile.id } },
+                  }
+                : {
+                      title,
+                      type: type as SearchHistoryRequest["type"],
+                      isGlobal,
+                      searchedOwner: { connect: { id: profile.id } },
+                  },
+            select: {
+                id: true,
+                title: true,
+                type: true,
+                isGlobal: true,
+                createdAt: true,
+            },
+        });
+
+        return NextResponse.json({ searchHistory }, { status: 201 });
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return NextResponse.json(
+                {
+                    error:
+                        error.status === 404
+                            ? "Profile not found."
+                            : error.status === 401
+                              ? "Authentication failed."
+                              : "Profile service unavailable.",
+                },
+                { status: error.status },
+            );
+        }
+        console.error("[api/search] failed to record search history:", error);
+        return NextResponse.json(
+            { error: "Could not save the search history." },
+            { status: 503 },
+        );
+    }
+}
+
+
+type DeleteSearchHistoryRequest = {
+    id?: string | number;
+    all?: boolean;
+}
+
+/**
+ * Deletes saved search history for the authenticated user's profile — either
+ * a single entry by id, or every entry at once when `all` is true.
+ */
+export async function DELETE(request: NextRequest) {
+    let body: unknown;
+    try {
+        body = await request.json();
+    } catch {
+        return NextResponse.json(
+            { error: "Request body must be valid JSON." },
+            { status: 400 }
+        );
+    }
+
+    const data = body as Partial<DeleteSearchHistoryRequest> | null;
+    const { id, all } = data ?? {};
+
+    if (all !== undefined && typeof all !== "boolean") {
+        return NextResponse.json(
+            { error: "'all' must be a boolean." },
+            { status: 400 }
+        );
+    }
+    if (id !== undefined) {
+        const numericId = typeof id === "number" ? id : Number(String(id));
+        if (
+            (typeof id !== "string" && typeof id !== "number") ||
+            !Number.isInteger(numericId) ||
+            numericId < 1
+        ) {
+            return NextResponse.json(
+                { error: "'id' must be a positive integer." },
+                { status: 400 }
+            );
+        }
+    }
+    if (id === undefined && all !== true) {
+        return NextResponse.json(
+            { error: "Either 'id' or 'all' must be provided." },
+            { status: 400 }
+        );
+    }
+
+    try {
+        const profile = await getProfile({
+            headers: { Cookie: request.headers.get("cookie") ?? "" },
+        });
+
+        if (all) {
+            const deleted = await prisma.searchHistory.deleteMany({
+                where: {
+                    profileId: profile.id,
+                },
+            });
+            return NextResponse.json({
+                message: `Deleted ${deleted.count} search histor${deleted.count === 1 ? "y" : "ies"}.`,
+            });
+        }
+
+        const deleted = await prisma.searchHistory.deleteMany({
+            where: {
+                id: Number(id),
+                profileId: profile.id,
+            },
+        });
+        if (deleted.count === 0) {
+            return NextResponse.json(
+                { error: "Search history entry not found." },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json(
+            { message: "Search history deleted successfully." }
+        );
+    }
+    catch (error) {
+        if (error instanceof ApiError) {
+            return NextResponse.json(
+                {
+                    error:
+                        error.status === 404
+                            ? "Profile not found."
+                            : error.status === 401
+                              ? "Authentication failed."
+                              : "Profile service unavailable.",
+                },
+                { status: error.status }
+            );
+        }
+        console.error("[api/search] failed to delete search history:", error);
+        return NextResponse.json(
+            { error: "Could not delete the search history." },
+            { status: 503 }
+        );
+    }
+}

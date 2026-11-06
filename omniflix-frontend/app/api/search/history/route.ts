@@ -1,20 +1,18 @@
 import { ApiError } from "@/service/client.service";
 import { prisma } from "@/service/prisma.service";
-import { getCurrentUser } from "@/service/user.service";
+import { getProfile } from "@/service/profile.auth.service";
 import { cookies } from "next/headers";
 
 
 export async function GET() {
     const cookieHeader = (await cookies()).toString();
     try {
-        const user = await getCurrentUser({
+        const profile = await getProfile({
             headers: cookieHeader ? { Cookie: cookieHeader } : undefined
         });
         const searchHistory = await prisma.searchHistory.findMany({
             where: {
-                searchedOwner: {
-                    userId: user.id
-                }
+                profileId: profile.id
             },
             orderBy: {
                 createdAt: "desc"
@@ -23,7 +21,6 @@ export async function GET() {
             select: {
                 id: true,
                 title: true,
-                genre: true,
                 type: true,
                 isGlobal: true,
                 createdAt: true
@@ -37,7 +34,14 @@ export async function GET() {
     } catch (error) {
         if (error instanceof ApiError)
             return Response.json(
-                { message: "Authentication failed" },
+                {
+                    message:
+                        error.status === 404
+                            ? "Profile not found"
+                            : error.status === 401
+                              ? "Authentication failed"
+                              : "Profile service unavailable"
+                },
                 { status: error.status }
             );
         return Response.json(
@@ -46,4 +50,3 @@ export async function GET() {
         );
     }
 }
-
