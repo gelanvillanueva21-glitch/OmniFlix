@@ -172,6 +172,7 @@ class ProfileService:
     def _profile_model_to_response(profile_model: Profile) -> ProfileResponse:
         """Map a ProfileModel instance to the public ProfileResponse schema."""
         return ProfileResponse(
+            id=profile_model.id,
             user_id=profile_model.userId,
             display_name=profile_model.displayName,
             profile_picture_url=profile_model.profileUrlPicture,

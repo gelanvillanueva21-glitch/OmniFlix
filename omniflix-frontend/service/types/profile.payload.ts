@@ -1,9 +1,6 @@
 
 export type EntertainmentType =
     | "COMIC"
-    | "MANGA"
-    | "MANHWA"
-    | "MANHUA"
     | "NOVEL"
     | "SERIES"
     | "MOVIE";

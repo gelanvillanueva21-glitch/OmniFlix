@@ -5,9 +5,9 @@ import { searchSuwayomiComics } from "@/service/suwayomi/suwayomi.service";
 import { searchTmdbMovies, searchTmdbTv } from "@/service/tmdb/tmdb.service";
 import { uniqueMediaItems } from "@/service/provider-client.service";
 import type { MediaItem } from "@/lib/media";
-import { getCurrentUser } from "@/service/user.service";
 import { ApiError } from "@/service/client.service";
 import { prisma } from "@/service/prisma.service";
+import { getProfile } from "@/service/profile.auth.service";
 
 const MAX_QUERY_LENGTH = 100;
 const PER_PROVIDER_LIMIT = 8;
@@ -181,26 +181,9 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        // getCurrentUser performs a server-side fetch, so the incoming
-        // request's Cookie header must be forwarded explicitly — it is not
-        // propagated automatically like it is in the browser.
-        const user = await getCurrentUser({
+        const profile = await getProfile({
             headers: { Cookie: request.headers.get("cookie") ?? "" },
         });
-        const profile = await prisma.profile.findUnique({
-            where: {
-                userId: user.id,
-            },
-            select: {
-                id: true,
-            },
-        });
-        if (!profile) {
-            return NextResponse.json(
-                { error: "Profile not found." },
-                { status: 404 },
-            );
-        }
 
         // Feature searches store their category; global searches leave the
         // enum unset (the column stays NULL in the database).
@@ -210,13 +193,13 @@ export async function POST(request: NextRequest) {
                       title,
                       type: undefined,
                       isGlobal,
-                      searchedOwner: { connect: { id: profile.id } },
+                      searchedOwner: { connect: { userId: profile.user_id } },
                   }
                 : {
                       title,
                       type: type as SearchHistoryRequest["type"],
                       isGlobal,
-                      searchedOwner: { connect: { id: profile.id } },
+                      searchedOwner: { connect: { userId: profile.user_id } },
                   },
             select: {
                 id: true,
@@ -229,11 +212,16 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ searchHistory }, { status: 201 });
     } catch (error) {
-        // Failed authentication surfaces as an ApiError from the auth service;
-        // report it as unauthorized rather than a generic failure.
         if (error instanceof ApiError) {
             return NextResponse.json(
-                { error: "Authentication failed." },
+                {
+                    error:
+                        error.status === 404
+                            ? "Profile not found."
+                            : error.status === 401
+                              ? "Authentication failed."
+                              : "Profile service unavailable.",
+                },
                 { status: error.status },
             );
         }
@@ -296,29 +284,15 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-        const user = await getCurrentUser({
+        const profile = await getProfile({
             headers: { Cookie: request.headers.get("cookie") ?? "" },
         });
-        const profile = await prisma.profile.findUnique({
-            where: {
-                userId: user.id,
-            },
-            select: {
-                id: true,
-            },
-        });
-        if (!profile) {
-            return NextResponse.json(
-                { error: "Profile not found." },
-                { status: 404 }
-            );
-        }
 
         if (all) {
             const deleted = await prisma.searchHistory.deleteMany({
                 where: {
                     searchedOwner: {
-                        userId: profile.id,
+                        userId: profile.user_id,
                     },
                 },
             });
@@ -331,7 +305,7 @@ export async function DELETE(request: NextRequest) {
             where: {
                 id: Number(id),
                 searchedOwner: {
-                    userId: profile.id,
+                    userId: profile.user_id,
                 },
             },
         });
@@ -347,11 +321,16 @@ export async function DELETE(request: NextRequest) {
         );
     }
     catch (error) {
-        // Failed authentication surfaces as an ApiError from the auth service;
-        // report it as unauthorized rather than a generic failure.
         if (error instanceof ApiError) {
             return NextResponse.json(
-                { error: "Authentication failed." },
+                {
+                    error:
+                        error.status === 404
+                            ? "Profile not found."
+                            : error.status === 401
+                              ? "Authentication failed."
+                              : "Profile service unavailable.",
+                },
                 { status: error.status }
             );
         }
@@ -362,4 +341,3 @@ export async function DELETE(request: NextRequest) {
         );
     }
 }
-

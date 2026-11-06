@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class ProfileResponse(BaseModel):
     """Schema returned to the client for a user's profile."""
-
+    id: int
     user_id: int
     display_name: str | None = None
     profile_picture_url: str | None = None
