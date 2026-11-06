@@ -14,10 +14,9 @@ import type { EntertainmentListType } from "@/service/types/profile.payload";
 const COLLECTIONS: readonly { key: EntertainmentListType; label: string }[] = [
     { key: "FAVORITE", label: "Favorites" },
     { key: "WATCHLIST", label: "Watchlist" },
+    { key: "READLIST", label: "Readlist" },
     { key: "COMPLETED", label: "Completed" },
     { key: "ON_HOLD", label: "On Hold" },
-    { key: "PLAN_TO_WATCH", label: "Plan to Watch" },
-    { key: "PLAN_TO_READ", label: "Plan to Read" },
     { key: "DROPPED", label: "Dropped" },
 ];
 

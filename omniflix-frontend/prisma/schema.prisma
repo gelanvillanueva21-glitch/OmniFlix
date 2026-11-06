@@ -21,9 +21,6 @@ enum Role {
 
 enum EntertainmentType {
     COMIC
-    MANGA
-    MANHWA
-    MANHUA
     NOVEL
     SERIES
     MOVIE
@@ -32,10 +29,9 @@ enum EntertainmentType {
 enum EntertainmentListType {
     FAVORITE
     WATCHLIST
+    READLIST
     COMPLETED
     ON_HOLD
-    PLAN_TO_WATCH
-    PLAN_TO_READ
     DROPPED
 }
 
@@ -92,9 +88,8 @@ model Activity {
 model SearchHistory {
     id        Int               @id @default(autoincrement())
     profileId Int
-    title     String?
-    genre     String?
-    type      EntertainmentType
+    title     String
+    type      EntertainmentType?
     isGlobal  Boolean           @default(false)
     createdAt DateTime          @default(now())
 

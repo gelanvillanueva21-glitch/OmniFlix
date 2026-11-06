@@ -7,10 +7,9 @@ import { cookies } from "next/headers";
 const VALID_PURPOSES = new Set<EntertainmentListType>([
     "FAVORITE",
     "WATCHLIST",
+    "READLIST",
     "COMPLETED",
     "ON_HOLD",
-    "PLAN_TO_WATCH",
-    "PLAN_TO_READ",
     "DROPPED",
 ]);
 

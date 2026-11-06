@@ -12,10 +12,9 @@ export type EntertainmentType =
 export type EntertainmentListType =
     | "FAVORITE"
     | "WATCHLIST"
+    | "READLIST"
     | "COMPLETED"
     | "ON_HOLD"
-    | "PLAN_TO_WATCH"
-    | "PLAN_TO_READ"
     | "DROPPED";
 
 
