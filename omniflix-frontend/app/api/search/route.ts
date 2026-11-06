@@ -193,13 +193,13 @@ export async function POST(request: NextRequest) {
                       title,
                       type: undefined,
                       isGlobal,
-                      searchedOwner: { connect: { userId: profile.user_id } },
+                      searchedOwner: { connect: { id: profile.id } },
                   }
                 : {
                       title,
                       type: type as SearchHistoryRequest["type"],
                       isGlobal,
-                      searchedOwner: { connect: { userId: profile.user_id } },
+                      searchedOwner: { connect: { id: profile.id } },
                   },
             select: {
                 id: true,
@@ -291,9 +291,7 @@ export async function DELETE(request: NextRequest) {
         if (all) {
             const deleted = await prisma.searchHistory.deleteMany({
                 where: {
-                    searchedOwner: {
-                        userId: profile.user_id,
-                    },
+                    profileId: profile.id,
                 },
             });
             return NextResponse.json({
@@ -304,9 +302,7 @@ export async function DELETE(request: NextRequest) {
         const deleted = await prisma.searchHistory.deleteMany({
             where: {
                 id: Number(id),
-                searchedOwner: {
-                    userId: profile.user_id,
-                },
+                profileId: profile.id,
             },
         });
         if (deleted.count === 0) {

@@ -33,9 +33,7 @@ export async function GET(request: Request) {
         })
         const entertainment = await prisma.entertainment.findMany({
             where: {
-                profileOwner: {
-                    profileId: profile.id
-                },
+                profileId: profile.id,
                 purpose: purpose as EntertainmentListType,
             },
             orderBy: {
@@ -200,4 +198,3 @@ export async function DELETE(request: Request) {
         );
     }
 }
-
