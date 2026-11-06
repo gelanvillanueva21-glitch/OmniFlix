@@ -54,6 +54,8 @@ docker compose version
 
 Create all volume directories on the host before starting Docker to prevent root ownership permission errors:
 
+Profile pictures are stored in the Compose-managed `profile_uploads` volume and do not require a host directory.
+
 ```bash
 # Create persistent data directories
 mkdir -p ./suwayomi-data ./kavita-config ./novels-data

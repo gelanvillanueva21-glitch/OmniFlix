@@ -63,6 +63,7 @@ services:
     build: ./omniflix-backend
     volumes:
       - ./omniflix-backend:/app
+      - profile_uploads:/var/lib/omniflix/profile_pictures
 
     # Restarts the backend automatically unless explicitly stopped.
     restart: unless-stopped
@@ -82,6 +83,7 @@ services:
       # 5432                 = PostgreSQL's internal container port.
       # omniflix_db          = database name.
       DATABASE_URL: "postgresql+asyncpg://omniflix_user:${DATABASE_PASSWORD}@db:5432/omniflix_db"
+      PROFILE_UPLOAD_DIR: "/var/lib/omniflix/profile_pictures"
 
     # Exposes the FastAPI service on host port 8888.
     # The application inside the container must listen on port 8888.
@@ -159,3 +161,5 @@ services:
 volumes:
   # Stores PostgreSQL data independently of the container lifecycle.
   postgres_data:
+  # Stores profile pictures independently of the backend container lifecycle.
+  profile_uploads:
