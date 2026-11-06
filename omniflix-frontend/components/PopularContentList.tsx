@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ImageIcon } from "@/components/icons/icons";
-import { mediaTypeLabel, type MediaItem } from "@/lib/media";
+import { mediaHref, mediaTypeLabel, type MediaItem } from "@/lib/media";
 import { ErrorState } from "./SectionHeader";
+import Link from "next/link";
 
 interface PopularContentListProps {
     readonly title: string;
@@ -55,8 +56,9 @@ function PopularListItem({
 }) {
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = item.coverImage !== undefined && !imageFailed;
+    const href = mediaHref(item);
 
-    return (
+    const popularItem = (
         <li className="popular-list-item">
             <span
                 aria-hidden="true"
@@ -77,17 +79,34 @@ function PopularListItem({
                 ) : (
                     <div className="popular-list-thumbnail-placeholder">
                         <ImageIcon className="popular-list-thumbnail-placeholder-icon" />
+                
                     </div>
+                
                 )}
+                
             </div>
+                
             <div className="popular-list-item-caption">
                 <p className="popular-list-item-title" title={item.title}>
-                    {item.title}
+                        {item.title}
                 </p>
                 <p className="popular-list-item-type">
-                    {mediaTypeLabel(item.type)}
+                        {mediaTypeLabel(item.type)}
                 </p>
             </div>
         </li>
+    )
+
+    if (href === null)
+        return (
+            <>
+                {popularItem}
+            </>
+        )
+
+    return (
+        <Link href={href}>
+            {popularItem}
+        </Link>
     );
 }
