@@ -13,6 +13,7 @@ import {
     CameraIcon,
 } from "@/components/icons/icons";
 import { ProfileAuthResponse } from "@/service/types/profile.auth.payload";
+import { MediaCarousel } from "@/components/MediaCarousel";
 
 /** Matches the backend picture upload validation (5 MB). */
 const MAX_PROFILE_PICTURE_BYTES = 5 * 1024 * 1024;
@@ -228,17 +229,11 @@ export function ProfileSidebar({
                                 />
                             </div>
                         ) : (
-                            <ul className="profile-history-list">
-                                {displayActivity.slice(0, 5).map((item) => (
-                                    <li
-                                        key={item.id}
-                                        className="profile-history-list-item"
-                                        title={item.title}
-                                    >
-                                        {item.title}
-                                    </li>
-                                ))}
-                            </ul>
+                            
+                            <MediaCarousel
+                                items={displayActivity.slice(0, 5)}
+                                label="Recent Activity"
+                            />
                         )}
                     </div>
 
@@ -404,17 +399,10 @@ export function ProfileSidebar({
                             />
                         </div>
                     ) : (
-                        <ul className="profile-history-list">
-                            {displayActivity.slice(0, 5).map((item) => (
-                                <li
-                                    key={item.id}
-                                    className="profile-history-list-item"
-                                    title={item.title}
-                                >
-                                    {item.title}
-                                </li>
-                            ))}
-                        </ul>
+                        <MediaCarousel
+                            items={displayActivity.slice(0, 5)}
+                            label="Recent Activity"
+                        />
                     )}
                 </div>
 

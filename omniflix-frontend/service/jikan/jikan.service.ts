@@ -185,7 +185,8 @@ export async function searchJikanAnime(
                 type: "series" as const,
                 description: anime.synopsis?.trim() || "No description available.",
                 coverImage,
-                source: "Anime",
+                source: "jikan",
+                sourceLabel: "Anime",
                 rating,
                 year,
                 releaseYear: year,
@@ -211,6 +212,8 @@ function mapAnimeToMediaItems(anime: JikanAnime): MediaItem[] {
         id: `jikan:${anime.malId}`,
         title: anime.title,
         type: "series",
+        source: "jikan",
+        sourceLabel: "Series",
         coverImage: anime.imageUrl,
         rating: anime.score ?? undefined,
         releaseYear: getYear(anime.startDate),
@@ -238,6 +241,8 @@ function mapJikanGenreItem(
             : `jikan:${malId}`,
         title,
         type: mediaType === "manga" ? "comics" : "series",
+        source: "jikan",
+        sourceLabel: mediaType === "manga" ? "Jikan Manga" : "Anime",
         description: item.synopsis?.trim() || undefined,
         coverImage:
             item.images?.webp?.large_image_url ||
@@ -250,7 +255,6 @@ function mapJikanGenreItem(
                 ? Number(item.score.toFixed(1))
                 : undefined,
         releaseYear: year,
-        source: mediaType === "manga" ? "Jikan Manga" : "Anime",
     }];
 }
 

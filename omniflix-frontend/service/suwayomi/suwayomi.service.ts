@@ -547,6 +547,8 @@ function mapMangaToMediaItems(
             id: `suwayomi:${sourceIdentifier}:${manga.id}`,
             title: manga.title,
             type: "comics" as const,
+            source: "suwayomi",
+            sourceLabel: "Comics",
             coverImage: manga.thumbnailUrl
                 ? `/api/provider-image?provider=suwayomi&path=${encodeURIComponent(manga.thumbnailUrl)}`
                 : undefined,

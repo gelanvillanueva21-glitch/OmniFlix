@@ -81,6 +81,8 @@ function mapResultToMediaItem(result: TmdbResult): MediaItem[] {
       id: `tmdb:movies:${result.id}`,
       title,
       type: "movies",
+      source: "tmdb",
+      sourceLabel: "Movies",
       coverImage: result.poster_path
         ? `https://image.tmdb.org/t/p/w500${result.poster_path}`
         : undefined,

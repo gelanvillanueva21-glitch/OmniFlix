@@ -108,12 +108,13 @@ export async function fetchJikanMangaDetail(
         id: `jikan:manga:${malId}`,
         title,
         type: "comics",
+        source: "jikan",
+        sourceLabel: "Jikan Manga",
         coverImage: manga.imageUrl ?? manga.images?.large ?? undefined,
         description: manga.synopsis?.trim() || undefined,
         genres: genres.length ? genres : undefined,
         rating: score,
         releaseYear,
-        source: "Jikan Manga",
     };
 }
 

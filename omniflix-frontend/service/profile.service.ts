@@ -1,5 +1,5 @@
 import { NextApiRequest, type ApiResponse } from "./client.service";
-import type { MediaItem } from "@/lib/media";
+import { mediaTypeLabel, type MediaItem } from "@/lib/media";
 import type {
     EntertainmentListType,
     EntertainmentType,
@@ -54,6 +54,8 @@ export function groupEntertainmentItems(
             id: `${item.apiSource}:${item.externalId}`,
             title: item.externalId,
             type,
+            source: item.apiSource,
+            sourceLabel: mediaTypeLabel(type),
         });
         grouped[item.purpose][type] = category;
     }
@@ -66,6 +68,8 @@ export function mapHistoryToMediaItems(items: UserHistoryItem[]): MediaItem[] {
         id: `${item.apiSource}:${item.externalId}`,
         title: item.externalId,
         type: mediaTypeFromEntertainmentType(item.type),
+        source: item.apiSource,
+        sourceLabel: mediaTypeLabel(mediaTypeFromEntertainmentType(item.type)),
     }));
 }
 

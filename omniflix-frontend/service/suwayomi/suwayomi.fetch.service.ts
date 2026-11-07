@@ -110,6 +110,8 @@ export async function fetchSuwayomiComicPayload(
       id: sourceAwareId,
       title: comic.title,
       type: "comics" as const,
+      source: "suwayomi",
+      sourceLabel: comic.source?.name ?? "Comics",
       coverImage: comic.thumbnailUrl
         ? `/api/provider-image?provider=suwayomi&path=${encodeURIComponent(comic.thumbnailUrl)}`
         : undefined,

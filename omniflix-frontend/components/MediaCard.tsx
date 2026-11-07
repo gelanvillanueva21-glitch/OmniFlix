@@ -4,7 +4,21 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { StarIcon, ImageIcon } from "@/components/icons/icons";
-import { mediaHref, mediaTypeLabel, type MediaItem } from "@/lib/media";
+import {
+    mediaHref,
+    mediaTypeLabel,
+    type MediaItem,
+    type MediaType,
+} from "@/lib/media";
+import { saveActivityGuestData } from "@/service/guest.service";
+import type { EntertainmentType } from "@/service/types/profile.payload";
+
+const entertainmentTypeByMediaType: Record<MediaType, EntertainmentType> = {
+    comics: "COMIC",
+    novels: "NOVEL",
+    movies: "MOVIE",
+    series: "SERIES",
+};
 
 interface MediaCardProps {
     readonly media: MediaItem;
@@ -30,13 +44,25 @@ export function MediaCard({
 
     const href = mediaHref(media);
 
-    const sourceLabel = media.source
-        ? (media.source.toLowerCase() === "tmdb"
+    function handleClick() {
+        saveActivityGuestData({
+            externalId: media.id,
+            apiSource: media.source.toLowerCase(),
+            entertainmentType: entertainmentTypeByMediaType[media.type],
+        });
+    }
+
+    const sourceLabel =
+        media.sourceLabel ??
+        (media.source.toLowerCase() === "tmdb"
             ? "TMDB"
-            : media.source.toLowerCase() === "jikan" || media.source.toLowerCase() === "anime"
-            ? "Anime"
-            : media.source)
-        : mediaTypeLabel(media.type);
+            : media.source.toLowerCase() === "jikan"
+                ? "Anime"
+                : media.source.toLowerCase() === "lncrawl"
+                    ? mediaTypeLabel("novels")
+                    : media.source.toLowerCase() === "suwayomi"
+                        ? mediaTypeLabel("comics")
+                        : media.source);
 
     const metadataParts = [
         sourceLabel,
@@ -131,7 +157,11 @@ export function MediaCard({
     // One wrapping link covers the entire card: real link semantics, keyboard
     // focusable, and no nested interactive elements (the card body has none).
     return (
-        <Link href={href} className="media-card-link">
+        <Link
+            href={href}
+            className="media-card-link"
+            onClick={handleClick}
+        >
             {cardBody}
         </Link>
     );

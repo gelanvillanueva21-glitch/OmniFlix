@@ -348,6 +348,8 @@ function mapNovelToMediaItem(
         id: `lncrawl:${identifier}`,
         title,
         type: "novels",
+        source: "lncrawl",
+        sourceLabel: "Novels",
         coverImage: novel.thumbnail ?? novel.cover ?? novel.cover_url,
         // LNcrawl synopses arrive as HTML (often wrapped per-paragraph in
         // <p><html><body>…); normalize to plain text before caching/serving.

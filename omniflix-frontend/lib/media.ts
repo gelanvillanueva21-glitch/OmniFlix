@@ -8,7 +8,7 @@ export interface SeriesSearchResult extends MediaItem {
   type: MediaType;
   description?: string;
   coverImage?: string;
-  source?: string;
+  sourceLabel?: string;
   rating?: number;
   year?: number;
   releaseYear?: number;
@@ -28,8 +28,10 @@ export interface MediaItem {
   /** Only render when the data source is trusted. */
   rating?: number;
   releaseYear?: number;
-  /** Provider or origin label, e.g. "TMDB" or "Anime". */
-  source?: string;
+  /** Required provider identity used when resolving metadata and activity. */
+  source: string;
+  /** Optional human-readable label; defaults to a provider label in the UI. */
+  sourceLabel?: string;
 }
 
 export interface Genre {
@@ -121,6 +123,7 @@ export function mediaTypeLabel(type: MediaType): string {
  *           id: `al-${entry.id}`,
  *           title: entry.title.english ?? entry.title.romaji,
  *           type: "comics",
+ *           source: "anilist",
  *           coverImage: entry.coverImage?.large,
  *           description: entry.description,
  *           genres: entry.genres,
