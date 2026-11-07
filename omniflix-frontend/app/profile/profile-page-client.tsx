@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ProfileSidebar } from "@/components/layouts/profile/ProfileSidebar";
 import { ProfileContent } from "@/components/layouts/profile/ProfileContent";
 import { ProfileSkeleton } from "@/components/layouts/profile/ProfileSkeleton";
@@ -18,18 +18,19 @@ import {
 import {
     getActivityHistory,
     getEntertainmentCollection,
-    getProfile,
     getSearchHistory,
-    groupEntertainmentItems,
     mapHistoryToMediaItems,
 } from "@/service/profile.service";
 import type { MediaItem } from "@/lib/media";
 import type { EntertainmentListType } from "@/service/types/profile.payload";
+import { getProfile, updateDisplayName, updateProfilePicture } from "@/service/profile.auth.service";
+import type { ProfileAuthResponse } from "@/service/types/profile.auth.payload";
 
 const validSourceRoutes = ["/explore", "/comics", "/novels", "/movies", "/series"];
 
 export default function ProfilePageClient() {
     const { user, isAuthenticated, isLoading, logout } = useAuth();
+    const queryClient = useQueryClient();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [mobileView, setMobileView] = useState<"profile" | "library">("profile");
@@ -100,13 +101,38 @@ export default function ProfilePageClient() {
         void logout().then(() => router.push("/"));
     }
 
+    /**
+     * Persists profile edits and keeps the existing ["profile", "info"]
+     * query cache in sync with the snake_case ProfileAuthResponse. Returns
+     * null on failure so the sidebar can keep its editing state intact.
+     */
+    async function handleUpdateProfile(
+        displayName: string | null,
+        picture: File | null,
+    ): Promise<ProfileAuthResponse | null> {
+        try {
+            if (displayName !== null) {
+                const updatedProfile = await updateDisplayName(displayName);
+                queryClient.setQueryData(["profile", "info"], updatedProfile);
+            }
+
+            if (picture !== null) {
+                const updatedProfile = await updateProfilePicture(picture);
+                queryClient.setQueryData(["profile", "info"], updatedProfile);
+            }
+
+            return queryClient.getQueryData<ProfileAuthResponse>(["profile", "info"]) ?? null;
+        } catch {
+            return null;
+        }
+    }
+
     function handleGoBack() {
         setIsTabletDrawerOpen(false);
         router.push(returnRoute);
     }
 
     const isGuest = !isAuthenticated || user === null;
-    const collections = groupEntertainmentItems(collectionQuery.data ?? []);
     const guestHistory: MediaItem[] = [];
     const recentActivity = mapHistoryToMediaItems(activityQuery.data ?? []);
     const collectionError = getQueryErrorMessage(collectionQuery.error);
@@ -132,6 +158,7 @@ export default function ProfilePageClient() {
             isActivityLoading={activityQuery.isLoading}
             activityError={activityError}
             onRetryActivity={() => void activityQuery.refetch()}
+            onUpdateProfile={isGuest ? undefined : handleUpdateProfile}
         />
     );
 
@@ -140,7 +167,7 @@ export default function ProfilePageClient() {
     ) : (
         <ProfileContent
             isGuest={false}
-            collections={collections}
+            collectionRecords={collectionQuery.data ?? []}
             guestHistory={guestHistory}
             selectedCollection={selectedCollection}
             onCollectionChange={setSelectedCollection}
@@ -183,7 +210,7 @@ export default function ProfilePageClient() {
                         <div className="profile-library-scroll">
                             <ProfileContent
                                 isGuest={false}
-                                collections={collections}
+                                collectionRecords={collectionQuery.data ?? []}
                                 guestHistory={guestHistory}
                                 selectedCollection={selectedCollection}
                                 onCollectionChange={setSelectedCollection}
@@ -225,7 +252,7 @@ export default function ProfilePageClient() {
                                 <p className="profile-tablet-hero-name">
                                     {isGuest
                                         ? "Guest"
-                                        : profileQuery.data?.displayName ?? user?.username}
+                                        : profileQuery.data?.display_name}
                                 </p>
                             </div>
                         </header>

@@ -1,15 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { SidebarLogo } from "@/components/SidebarLogo";
 import { EmptyState, ErrorState } from "@/components/SectionHeader";
 import type { MediaItem } from "@/lib/media";
-import type { ProfileResponse } from "@/service/types/profile.payload";
 import {
     UserIcon,
     LogOutIcon,
+    PencilIcon,
+    CameraIcon,
 } from "@/components/icons/icons";
+import { ProfileAuthResponse } from "@/service/types/profile.auth.payload";
+
+/** Matches the backend picture upload validation (5 MB). */
+const MAX_PROFILE_PICTURE_BYTES = 5 * 1024 * 1024;
+/** Matches the backend display name validation (50 characters). */
+const MAX_DISPLAY_NAME_LENGTH = 50;
+/** Image formats accepted by the backend picture upload. */
+const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/jpg,image/png,image/gif,image/webp";
 
 interface ProfileSidebarProps {
     readonly onSignOut: () => void;
@@ -19,11 +29,19 @@ interface ProfileSidebarProps {
     readonly onOpenLibrary?: () => void;
     readonly onNavigate?: () => void;
     readonly showLogo?: boolean;
-    readonly profile?: ProfileResponse | null;
+    readonly profile?: ProfileAuthResponse | null;
     readonly recentActivity?: MediaItem[];
     readonly isActivityLoading?: boolean;
     readonly activityError?: string;
     readonly onRetryActivity?: () => void;
+    /**
+     * Persists profile edits. Returns the updated profile on success or an
+     * error message on failure so the sidebar can keep editing state intact.
+     */
+    readonly onUpdateProfile?: (
+        displayName: string | null,
+        picture: File | null,
+    ) => Promise<ProfileAuthResponse | null>;
 }
 
 /**
@@ -43,8 +61,115 @@ export function ProfileSidebar({
     isActivityLoading = false,
     activityError,
     onRetryActivity,
+    onUpdateProfile,
 }: ProfileSidebarProps) {
     const { user, isAuthenticated, isLoading } = useAuth();
+    const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [editError, setEditError] = useState<string | null>(null);
+    const [displayNameDraft, setDisplayNameDraft] = useState("");
+    const [pictureDraft, setPictureDraft] = useState<File | null>(null);
+    const [picturePreviewUrl, setPicturePreviewUrl] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const savedDisplayName = profile?.display_name ?? user?.username ?? "";
+    const savedPictureUrl = profile?.profile_picture_url ?? null;
+    const previewUrl = picturePreviewUrl ?? savedPictureUrl;
+
+    useEffect(() => {
+        return () => {
+            if (picturePreviewUrl) {
+                URL.revokeObjectURL(picturePreviewUrl);
+            }
+        };
+    }, [picturePreviewUrl]);
+
+    function enterEditMode() {
+        setDisplayNameDraft(savedDisplayName);
+        setPictureDraft(null);
+        setPicturePreviewUrl(null);
+        setEditError(null);
+        setIsEditing(true);
+    }
+
+    function cancelEditing() {
+        setIsEditing(false);
+    }
+
+    function handlePictureSelection(
+        event: React.ChangeEvent<HTMLInputElement>,
+    ) {
+        const selectedFile = event.target.files?.[0] ?? null;
+        // Allow re-selecting the same file after a failed attempt.
+        event.target.value = "";
+
+        if (!selectedFile) {
+            return;
+        }
+
+        if (!ACCEPTED_IMAGE_TYPES.split(",").includes(selectedFile.type)) {
+            setEditError("Unsupported image format. Use JPG, PNG, GIF or WEBP.");
+            return;
+        }
+
+        if (selectedFile.size > MAX_PROFILE_PICTURE_BYTES) {
+            setEditError("Image is too large. Maximum size is 5 MB.");
+            return;
+        }
+
+        if (picturePreviewUrl) {
+            URL.revokeObjectURL(picturePreviewUrl);
+        }
+        setEditError(null);
+        setPictureDraft(selectedFile);
+        setPicturePreviewUrl(URL.createObjectURL(selectedFile));
+    }
+
+    async function handleSaveChanges() {
+        if (!onUpdateProfile) {
+            setIsEditing(false);
+            return;
+        }
+
+        const trimmedName = displayNameDraft.trim();
+        const nameChanged = trimmedName !== savedDisplayName;
+        const pictureChanged = pictureDraft !== null;
+
+        if (!trimmedName) {
+            setEditError("Display name cannot be empty.");
+            return;
+        }
+
+        if (trimmedName.length > MAX_DISPLAY_NAME_LENGTH) {
+            setEditError(`Display name must be at most ${MAX_DISPLAY_NAME_LENGTH} characters.`);
+            return;
+        }
+
+        if (!nameChanged && !pictureChanged) {
+            setIsEditing(false);
+            return;
+        }
+
+        setIsSaving(true);
+        setEditError(null);
+
+        const updatedProfile = await onUpdateProfile(
+            nameChanged ? trimmedName : null,
+            pictureChanged ? pictureDraft : null,
+        );
+
+        if (picturePreviewUrl) {
+            URL.revokeObjectURL(picturePreviewUrl);
+        }
+        setIsSaving(false);
+
+        if (updatedProfile === null) {
+            setEditError("Could not save your changes. Please try again.");
+            return;
+        }
+
+        setIsEditing(false);
+    }
 
     if (isLoading) {
         return (
@@ -147,18 +272,110 @@ export function ProfileSidebar({
             )}
 
             <div className="explore-sidebar-loading">
-                {/* Avatar + name (UserResponse has no profile picture or display
-                    name yet — fallback: username + default avatar icon) */}
-                <div className="profile-sidebar-identity">
-                    <span className="profile-sidebar-avatar">
-                        <UserIcon className="profile-sidebar-avatar-icon" />
-                    </span>
-                    <div className="profile-sidebar-name-slot">
-                        <p className="profile-sidebar-name">
-                            {profile?.displayName ?? user.username}
-                        </p>
+                {isEditing ? (
+                    /* ── Edit mode: avatar upload + display name input ── */
+                    <div className="profile-sidebar-identity">
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            aria-label="Change profile picture"
+                            className="profile-sidebar-avatar-button"
+                            disabled={isSaving}
+                        >
+                            {previewUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                    src={previewUrl}
+                                    alt="Profile picture preview"
+                                    className="profile-sidebar-avatar-image"
+                                />
+                            ) : (
+                                <UserIcon className="profile-sidebar-avatar-icon" />
+                            )}
+                            <span className="profile-sidebar-avatar-overlay">
+                                <CameraIcon className="profile-sidebar-avatar-overlay-icon" />
+                            </span>
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept={ACCEPTED_IMAGE_TYPES}
+                            onChange={handlePictureSelection}
+                            className="profile-sidebar-file-input"
+                            aria-hidden="true"
+                            tabIndex={-1}
+                        />
+
+                        <div className="profile-sidebar-edit-controls">
+                            <input
+                                type="text"
+                                value={displayNameDraft}
+                                onChange={(event) =>
+                                    setDisplayNameDraft(event.target.value)
+                                }
+                                maxLength={MAX_DISPLAY_NAME_LENGTH}
+                                placeholder="Display name"
+                                aria-label="Display name"
+                                disabled={isSaving}
+                                className="profile-sidebar-name-input"
+                            />
+                            {editError && (
+                                <p className="profile-sidebar-edit-error" role="alert">
+                                    {editError}
+                                </p>
+                            )}
+                            <div className="profile-sidebar-edit-actions">
+                                <button
+                                    type="button"
+                                    onClick={() => void handleSaveChanges()}
+                                    disabled={isSaving}
+                                    className="profile-sidebar-save-button"
+                                >
+                                    {isSaving ? "Saving..." : "Save Changes"}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={cancelEditing}
+                                    disabled={isSaving}
+                                    className="profile-sidebar-cancel-button"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    /* ── Default state: saved picture + name + edit button ── */
+                    <div className="profile-sidebar-identity">
+                        <span className="profile-sidebar-avatar">
+                            {savedPictureUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                    src={savedPictureUrl}
+                                    alt=""
+                                    className="profile-sidebar-avatar-image"
+                                />
+                            ) : (
+                                <UserIcon className="profile-sidebar-avatar-icon" />
+                            )}
+                        </span>
+                        <div className="profile-sidebar-name-slot">
+                            <p className="profile-sidebar-name">
+                                {savedDisplayName}
+                            </p>
+                        </div>
+                        {onUpdateProfile && (
+                            <button
+                                type="button"
+                                onClick={enterEditMode}
+                                aria-label="Edit profile"
+                                className="profile-sidebar-edit-button"
+                            >
+                                <PencilIcon className="profile-sidebar-edit-button-icon" />
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 <div className="profile-history-box">
                     <p className="profile-history-heading">
