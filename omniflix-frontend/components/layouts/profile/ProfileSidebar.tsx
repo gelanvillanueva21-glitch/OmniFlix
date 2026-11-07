@@ -31,6 +31,8 @@ interface ProfileSidebarProps {
     readonly showLogo?: boolean;
     readonly profile?: ProfileAuthResponse | null;
     readonly recentActivity?: MediaItem[];
+    /** Guest history from localStorage — shown when recentActivity is empty. */
+    readonly guestHistory?: MediaItem[];
     readonly isActivityLoading?: boolean;
     readonly activityError?: string;
     readonly onRetryActivity?: () => void;
@@ -58,6 +60,7 @@ export function ProfileSidebar({
     showLogo = true,
     profile,
     recentActivity = [],
+    guestHistory = [],
     isActivityLoading = false,
     activityError,
     onRetryActivity,
@@ -75,6 +78,9 @@ export function ProfileSidebar({
     const savedDisplayName = profile?.display_name ?? user?.username ?? "";
     const savedPictureUrl = profile?.profile_picture_url ?? null;
     const previewUrl = picturePreviewUrl ?? savedPictureUrl;
+
+    /** Guests render the localStorage-backed history; users render the API one. */
+    const displayActivity = recentActivity.length === 0 ? guestHistory : recentActivity;
 
     useEffect(() => {
         return () => {
@@ -214,7 +220,7 @@ export function ProfileSidebar({
                         <p className="profile-history-heading">
                             History
                         </p>
-                        {recentActivity.length === 0 ? (
+                        {displayActivity.length === 0 ? (
                             <div className="profile-history-empty">
                                 <EmptyState
                                     title="No recent activity yet"
@@ -223,7 +229,7 @@ export function ProfileSidebar({
                             </div>
                         ) : (
                             <ul className="profile-history-list">
-                                {recentActivity.slice(0, 5).map((item) => (
+                                {displayActivity.slice(0, 5).map((item) => (
                                     <li
                                         key={item.id}
                                         className="profile-history-list-item"
@@ -390,7 +396,7 @@ export function ProfileSidebar({
                             message={activityError}
                             onRetry={onRetryActivity}
                         />
-                    ) : recentActivity.length === 0 ? (
+                    ) : displayActivity.length === 0 ? (
                         <div className="profile-history-loading">
                             <EmptyState
                                 title="No recent activity yet"
@@ -399,7 +405,7 @@ export function ProfileSidebar({
                         </div>
                     ) : (
                         <ul className="profile-history-list">
-                            {recentActivity.slice(0, 5).map((item) => (
+                            {displayActivity.slice(0, 5).map((item) => (
                                 <li
                                     key={item.id}
                                     className="profile-history-list-item"
