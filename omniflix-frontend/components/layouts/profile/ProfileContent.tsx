@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { MediaCarousel } from "@/components/MediaCarousel";
 import {
     SectionHeader,
@@ -8,7 +9,14 @@ import {
     ErrorState,
 } from "@/components/SectionHeader";
 import type { MediaItem } from "@/lib/media";
-import type { EntertainmentListType } from "@/service/types/profile.payload";
+import {
+    entertainmentIdentityKey,
+    fetchEntertainmentMetadata,
+} from "@/service/entertainment-metadata.service";
+import type {
+    EntertainmentListType,
+    UserEntertainmentItem,
+} from "@/service/types/profile.payload";
 
 /** The seven collections, matching EntertainmentListType in the Prisma schema. */
 const COLLECTIONS: readonly { key: EntertainmentListType; label: string }[] = [
@@ -28,6 +36,122 @@ const MEDIA_CATEGORY_LABELS: Record<MediaItem["type"], string> = {
     novels: "Novels",
 };
 
+/** MediaItem.type for one stored record. */
+function mediaTypeFromEntertainmentType(
+    type: UserEntertainmentItem["entertainmentType"],
+): MediaItem["type"] {
+    switch (type) {
+        case "COMIC":
+            return "comics";
+        case "NOVEL":
+            return "novels";
+        case "MOVIE":
+            return "movies";
+        case "SERIES":
+            return "series";
+    }
+}
+
+/** Max detail requests resolved in parallel per batch. */
+const METADATA_FETCH_CONCURRENCY = 4;
+
+interface CollectionMetadataState {
+    /** Successfully fetched items, grouped by media category. */
+    readonly itemsByCategory: Partial<Record<MediaItem["type"], MediaItem[]>>;
+    /** Record identities whose provider fetch failed, keyed by full identity. */
+    readonly failedIdentityKeys: Set<string>;
+    readonly isFetching: boolean;
+}
+
+/**
+ * Resolves every raw collection record of one purpose into real provider
+ * metadata. One react-query cache entry per distinct set of record identities,
+ * so switching tabs back and forth reuses the cache instead of refetching.
+ * Each identity is fetched once even when duplicated across records; provider
+ * failures degrade only their own item, never the whole collection.
+ */
+function useCollectionMetadata(
+    records: UserEntertainmentItem[] | undefined,
+    isEnabled: boolean,
+): CollectionMetadataState {
+    const identityKey = useMemo(
+        () =>
+            (records ?? [])
+                .map(entertainmentIdentityKey)
+                .sort()
+                .join(";"),
+        [records],
+    );
+
+    const query = useQuery({
+        queryKey: ["profile", "collections", "metadata", identityKey],
+        queryFn: async () => {
+            const recordsByKey = new Map<string, UserEntertainmentItem>();
+            for (const record of records ?? []) {
+                recordsByKey.set(entertainmentIdentityKey(record), record);
+            }
+
+            const identities = [...recordsByKey.entries()];
+            const resolved = new Map<
+                string,
+                MediaItem | null
+            >();
+
+            // Bounded concurrency: resolve identities in fixed-size batches
+            // so a large collection never fires every request at once.
+            for (
+                let offset = 0;
+                offset < identities.length;
+                offset += METADATA_FETCH_CONCURRENCY
+            ) {
+                const batch = identities.slice(
+                    offset,
+                    offset + METADATA_FETCH_CONCURRENCY,
+                );
+                const settled = await Promise.allSettled(
+                    batch.map(([, record]) =>
+                        fetchEntertainmentMetadata(record),
+                    ),
+                );
+                settled.forEach((outcome, batchIndex) => {
+                    const [identityKey] = batch[batchIndex];
+                    resolved.set(
+                        identityKey,
+                        outcome.status === "fulfilled" ? outcome.value : null,
+                    );
+                });
+            }
+
+            const itemsByCategory: Partial<
+                Record<MediaItem["type"], MediaItem[]>
+            > = {};
+            const failedIdentityKeys = new Set<string>();
+            for (const [identity, record] of recordsByKey) {
+                const metadata = resolved.get(identity);
+                if (metadata === undefined || metadata === null) {
+                    failedIdentityKeys.add(identity);
+                    continue;
+                }
+                const category = mediaTypeFromEntertainmentType(
+                    record.entertainmentType,
+                );
+                const categoryItems = itemsByCategory[category] ?? [];
+                categoryItems.push(metadata);
+                itemsByCategory[category] = categoryItems;
+            }
+            return { itemsByCategory, failedIdentityKeys };
+        },
+        enabled: isEnabled && (records?.length ?? 0) > 0,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    return {
+        itemsByCategory: query.data?.itemsByCategory ?? {},
+        failedIdentityKeys: query.data?.failedIdentityKeys ?? new Set(),
+        isFetching: query.isFetching,
+    };
+}
+
 const CATEGORY_KEYS: readonly MediaItem["type"][] = [
     "comics",
     "movies",
@@ -38,11 +162,8 @@ const CATEGORY_KEYS: readonly MediaItem["type"][] = [
 interface ProfileContentProps {
     /** True when rendering the guest experience (History only). */
     readonly isGuest: boolean;
-    /** Authenticated collections per purpose, grouped by media category. */
-    readonly collections?: Record<
-        EntertainmentListType,
-        Partial<Record<MediaItem["type"], MediaItem[]>>
-    >;
+    /** Raw stored records for the selected collection, with provider identity. */
+    readonly collectionRecords?: UserEntertainmentItem[];
     /** Guest browsing history. Empty until guest-history storage exists. */
     readonly guestHistory: MediaItem[];
     readonly selectedCollection?: EntertainmentListType;
@@ -79,7 +200,7 @@ function MediaCategoryRow({
  */
 export function ProfileContent({
     isGuest,
-    collections,
+    collectionRecords,
     guestHistory,
     selectedCollection: selectedCollectionProp,
     onCollectionChange,
@@ -101,7 +222,8 @@ export function ProfileContent({
         COLLECTIONS.find((c) => c.key === selectedCollection)?.label ??
         selectedCollection;
 
-    const selectedItems = collections?.[selectedCollection] ?? {};
+    const metadata = useCollectionMetadata(collectionRecords, !isGuest);
+    const failedCount = metadata.failedIdentityKeys.size;
 
     return (
         <div>
@@ -146,6 +268,12 @@ export function ProfileContent({
                             onRetry={onRetryCollection}
                         />
                     )}
+                    {failedCount > 0 && !collectionError && (
+                        <p className="profile-collections-status" role="status">
+                            {failedCount} item{failedCount === 1 ? "" : "s"} could
+                            not be loaded.
+                        </p>
+                    )}
                     {CATEGORY_KEYS.map((category) => (
                         <section
                             key={category}
@@ -158,7 +286,7 @@ export function ProfileContent({
                                 title={`${MEDIA_CATEGORY_LABELS[category]} — ${collectionLabel}`}
                             />
                             <MediaCategoryRow
-                                items={selectedItems[category] ?? []}
+                                items={metadata.itemsByCategory[category] ?? []}
                                 label={MEDIA_CATEGORY_LABELS[category]}
                                 collectionLabel={collectionLabel}
                             />

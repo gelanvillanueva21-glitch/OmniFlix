@@ -18,10 +18,6 @@ export const ENTERTAINMENT_LIST_TYPES: readonly EntertainmentListType[] = [
     "DROPPED",
 ];
 
-export function getProfile(): Promise<ProfileResponse | null> {
-    return getApiData<ProfileResponse | null>("profile");
-}
-
 export function getEntertainmentCollection(
     purpose: EntertainmentListType,
 ): Promise<UserEntertainmentItem[]> {

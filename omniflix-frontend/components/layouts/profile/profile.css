@@ -228,7 +228,11 @@
 }
 
 .profile-sidebar-avatar {
-    @apply flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/15 text-[#A78BFA];
+    @apply flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/15 text-[#A78BFA] overflow-hidden;
+}
+
+.profile-sidebar-avatar-image {
+    @apply h-full w-full object-cover;
 }
 
 .profile-sidebar-avatar-icon {
@@ -236,15 +240,68 @@
 }
 
 .profile-sidebar-name-slot {
-    @apply min-w-0;
+    @apply min-w-0 flex items-center gap-2;
 }
 
 .profile-sidebar-name {
-    @apply truncate text-lg font-semibold text-[#F5F5F5];
+    @apply truncate text-base font-semibold text-[#F5F5F5];
+}
+
+.profile-sidebar-edit-button {
+    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-transparent text-[#A1A1AA] transition-colors hover:bg-[#242429] hover:text-[#A78BFA] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.profile-sidebar-edit-button-icon {
+    @apply h-4 w-4;
+}
+
+/* ── Profile editing state ── */
+.profile-sidebar-edit-controls {
+    @apply flex min-w-0 flex-1 flex-col gap-2;
+}
+
+.profile-sidebar-name-input {
+    @apply h-10 w-full min-w-0 rounded-lg border border-[#29292E] bg-[#111111] px-3 text-sm text-[#F5F5F5] placeholder:text-[#A1A1AA] transition-colors focus:border-[#8B5CF6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/60 disabled:opacity-60;
+}
+
+.profile-sidebar-avatar-button {
+    @apply relative flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#8B5CF6]/15 text-[#A78BFA] transition-colors hover:bg-[#8B5CF6]/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.profile-sidebar-avatar-overlay {
+    @apply absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100;
+}
+
+.profile-sidebar-avatar-overlay-icon {
+    @apply h-4 w-4;
+}
+
+.profile-sidebar-save-button {
+    @apply flex h-10 items-center justify-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.profile-sidebar-cancel-button {
+    @apply flex h-10 items-center justify-center rounded-lg bg-[#242429] px-4 text-sm font-medium text-[#A1A1AA] transition-colors hover:bg-[#2E2E33] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] disabled:opacity-60;
+}
+
+.profile-sidebar-edit-actions {
+    @apply mt-1 flex gap-2;
+}
+
+.profile-sidebar-edit-actions > * {
+    @apply flex-1;
+}
+
+.profile-sidebar-edit-error {
+    @apply text-xs text-[#F87171];
+}
+
+.profile-sidebar-file-input {
+    @apply hidden;
 }
 
 .profile-sidebar-library-button {
-    @apply flex min-h-12 items-center justify-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] lg:hidden;
+    @apply flex min-h-12 items-center justify-center rounded-lg bg-[#8B5CF6] px-4 text-sm font-medium text-white transition-colors hover:bg-[#7C3AED] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] min-[650px]:hidden;
 }
 
 .profile-sidebar-action {
@@ -433,7 +490,7 @@
 }
 
 .profile-sidebar-library-button-shim {
-    @apply h-12 w-full rounded-lg lg:hidden;
+    @apply h-12 w-full rounded-lg min-[650px]:hidden;
 }
 
 /* ── ChangePasswordWindow ── */
