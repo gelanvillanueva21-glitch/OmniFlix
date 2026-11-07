@@ -21,10 +21,10 @@ import {
     getSearchHistory,
     mapHistoryToMediaItems,
 } from "@/service/profile.service";
-import type { MediaItem } from "@/lib/media";
 import type { EntertainmentListType } from "@/service/types/profile.payload";
 import { getProfile, updateDisplayName, updateProfilePicture } from "@/service/profile.auth.service";
 import type { ProfileAuthResponse } from "@/service/types/profile.auth.payload";
+import { fetchGuestActivityMediaItems } from "@/service/guest.service";
 
 const validSourceRoutes = ["/explore", "/comics", "/novels", "/movies", "/series"];
 
@@ -62,6 +62,13 @@ export default function ProfilePageClient() {
             document.body.style.overflow = previousOverflow;
         };
     }, [isTabletDrawerOpen]);
+
+    const guestHistoryQuery = useQuery({
+        queryKey: ["profile", "guest-activity"],
+        queryFn: fetchGuestActivityMediaItems,
+        enabled: !isLoading && (!isAuthenticated || user === null),
+        retry: false,
+    });
 
     const queryEnabled = !isLoading && isAuthenticated && user !== null;
     const profileQuery = useQuery({
@@ -133,7 +140,7 @@ export default function ProfilePageClient() {
     }
 
     const isGuest = !isAuthenticated || user === null;
-    const guestHistory: MediaItem[] = [];
+    const guestHistory = isGuest ? (guestHistoryQuery.data ?? []) : [];
     const recentActivity = mapHistoryToMediaItems(activityQuery.data ?? []);
     const collectionError = getQueryErrorMessage(collectionQuery.error);
     const activityError = getQueryErrorMessage(activityQuery.error);
@@ -155,7 +162,8 @@ export default function ProfilePageClient() {
             showLogo={isTabletDrawerOpen ? false : true}
             profile={profileQuery.data}
             recentActivity={recentActivity}
-            isActivityLoading={activityQuery.isLoading}
+            guestHistory={guestHistory}
+            isActivityLoading={isGuest ? guestHistoryQuery.isLoading : activityQuery.isLoading}
             activityError={activityError}
             onRetryActivity={() => void activityQuery.refetch()}
             onUpdateProfile={isGuest ? undefined : handleUpdateProfile}
