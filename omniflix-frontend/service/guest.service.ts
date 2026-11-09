@@ -80,6 +80,8 @@ export function saveActivityGuestData(
     case "MOVIE":
       if (externalId.startsWith("tmdb:movies:")) {
         externalId = externalId.slice("tmdb:movies:".length);
+      } else if (externalId.startsWith("tmdb-")) {
+        externalId = externalId.slice("tmdb-".length);
       }
       break;
     case "SERIES":

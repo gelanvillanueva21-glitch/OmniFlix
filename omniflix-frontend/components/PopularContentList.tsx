@@ -8,6 +8,8 @@ import { ErrorState } from "./SectionHeader";
 import Link from "next/link";
 import { EntertainmentType } from "@/app/generated/prisma/enums";
 import { saveActivityGuestData } from "@/service/guest.service";
+import { saveActivityHistory } from "@/service/profile.service";
+import { useAuth } from "@/components/AuthProvider";
 
 interface PopularContentListProps {
     readonly title: string;
@@ -66,12 +68,29 @@ function PopularListItem({
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = item.coverImage !== undefined && !imageFailed;
     const href = mediaHref(item);
+    const { user } = useAuth();
 
     function handleClick() {
+        const entertainmentType = entertainmentTypeByMediaType[item.type];
+        const apiSource = item.source.toLowerCase();
+
+        if (user !== null) {
+            // Logged in — persist the activity server-side. Best effort:
+            // a failed write must never block navigation.
+            void saveActivityHistory({
+                externalId: item.id,
+                apiSource,
+                type: entertainmentType,
+            }).catch((error) => {
+                console.error("Activity could not be recorded", error);
+            });
+            return;
+        }
+
         saveActivityGuestData({
             externalId: item.id,
-            apiSource: item.source.toLowerCase(),
-            entertainmentType: entertainmentTypeByMediaType[item.type],
+            apiSource,
+            entertainmentType,
         });
     }
 

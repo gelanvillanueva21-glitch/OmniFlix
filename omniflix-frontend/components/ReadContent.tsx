@@ -3,7 +3,15 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowLeftIcon, ImageIcon } from "@/components/icons/icons";
+import {
+    ArrowLeftIcon,
+    BookmarkIcon,
+    CheckCircleIcon,
+    HeartIcon,
+    ImageIcon,
+    MoreVerticalIcon,
+} from "@/components/icons/icons";
+import { useMoreMenu } from "@/components/moreMenu";
 import { MediaCarousel } from "@/components/MediaCarousel";
 import type { MediaItem } from "@/lib/media";
 
@@ -143,6 +151,8 @@ export function ReadContent({
     const [imageFailed, setImageFailed] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [chapterQuery, setChapterQuery] = useState("");
+    const moreWrapperRef = useRef<HTMLDivElement | null>(null);
+    const moreMenu = useMoreMenu(moreWrapperRef);
 
     // Novel Load More state. Comics never pass `loadMoreChapters`, so this
     // stays inert for them.
@@ -313,13 +323,67 @@ export function ReadContent({
                         >
                             Read Chapter 1
                         </button>
-                        <button
-                            type="button"
-                            disabled
-                            className="actionButton secondaryButton"
+                        <div
+                            ref={moreWrapperRef}
+                            className="series-detail-more-wrapper"
                         >
-                            Bookmark
-                        </button>
+                            <button
+                                type="button"
+                                className="series-detail-more-button"
+                                aria-haspopup="menu"
+                                aria-expanded={moreMenu.open}
+                                aria-controls={
+                                    moreMenu.open
+                                        ? moreMenu.popoverId
+                                        : undefined
+                                }
+                                aria-label="More actions"
+                                onClick={moreMenu.toggle}
+                            >
+                                <MoreVerticalIcon className="series-detail-control-icon" />
+                            </button>
+
+                            {moreMenu.open && (
+                                <div
+                                    id={moreMenu.popoverId}
+                                    role="menu"
+                                    aria-label="List options"
+                                    className="series-detail-more-popover"
+                                >
+                                    {[
+                                        {
+                                            key: "READLIST",
+                                            label: "ReadList",
+                                            Icon: BookmarkIcon,
+                                        },
+                                        {
+                                            key: "FAVORITE",
+                                            label: "Favorite",
+                                            Icon: HeartIcon,
+                                        },
+                                        {
+                                            key: "COMPLETED",
+                                            label: "Complete",
+                                            Icon: CheckCircleIcon,
+                                        },
+                                    ].map(({ key, label, Icon }) => (
+                                        <button
+                                            key={key}
+                                            type="button"
+                                            role="menuitem"
+                                            disabled
+                                            className="series-detail-list-option"
+                                            title="Saving to lists is not available yet."
+                                        >
+                                            <Icon className="series-detail-list-option-icon" />
+                                            <span className="series-detail-list-option-label">
+                                                {label}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className="chaptersHeader">
