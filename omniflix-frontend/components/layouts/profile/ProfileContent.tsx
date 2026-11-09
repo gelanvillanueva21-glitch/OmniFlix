@@ -298,7 +298,10 @@ export function ProfileContent({
             {/* ── Guest: History only ── */}
             {isGuest && (
                 <section className="profile-guest-section">
-                    <SectionHeader title="History" />
+                    <SectionHeader
+    title="History"
+    seeAllHref="/profile/guest"
+/>
                     <h3 className="sr-only">Browsing history</h3>
                     {guestHistory.length === 0 ? (
                         <div className="profile-guest-history-slot">

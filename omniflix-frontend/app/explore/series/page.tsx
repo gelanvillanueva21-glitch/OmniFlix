@@ -16,6 +16,7 @@ import {
     usePopularSeries,
     useSeriesBrowse,
 } from "@/components/layouts/series/seriesQueries";
+import { selectRandomSeries } from "@/lib/selectRandomFeaturedMedia";
 
 
 export default function SeriesPage() {
@@ -37,7 +38,11 @@ export default function SeriesPage() {
     const queryError = browseQuery.error;
     const refetch = () => browseQuery.refetch();
 
-    const featuredSeries = popularSeries[0] ?? browseItems.find(
+
+    const featuredSeries = selectRandomSeries({
+        tv: popularSeries,
+        anime: popularAnime,
+    }) ?? popularSeries[0] ?? browseItems.find(
         (item) => item.type === "series",
     );
 

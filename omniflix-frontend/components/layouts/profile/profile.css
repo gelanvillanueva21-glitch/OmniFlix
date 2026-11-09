@@ -557,3 +557,32 @@
 .change-password-submit {
     @apply w-full py-2.5 px-4 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] active:bg-[#6D28D9] text-white font-medium text-sm transition-all duration-200 shadow-lg shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D946EF] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed sm:w-auto;
 }
+
+/* ── Guest activity history page (app/profile/[type]/) ── */
+.guest-activity-page {
+    @apply mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-0;
+}
+
+.guest-activity-header {
+    @apply flex items-center justify-between gap-4;
+}
+
+.guest-activity-header-left {
+    @apply flex min-w-0 items-center gap-2 sm:gap-3;
+}
+
+.guest-activity-back {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[#A1A1AA] transition-colors hover:bg-[#242429] hover:text-[#F5F5F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
+}
+
+.guest-activity-title {
+    @apply truncate font-[family-name:var(--font-space-grotesk)] text-xl font-bold text-[#F5F5F5] sm:text-2xl;
+}
+
+.guest-activity-clear {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[#A1A1AA] transition-colors hover:bg-[#F87171]/10 hover:text-[#F87171] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.guest-activity-empty {
+    @apply min-h-48;
+}

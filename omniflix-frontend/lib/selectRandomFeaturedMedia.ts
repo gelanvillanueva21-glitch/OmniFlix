@@ -22,3 +22,33 @@ export function selectRandomFeaturedMedia(
 
   return eligible[Math.floor(Math.random() * eligible.length)];
 }
+
+interface RandomItemProps {
+  items: MediaItem[];
+}
+
+
+export function selectRandomMediaFeatured({ items }: RandomItemProps): MediaItem | null {
+  if (items.length === 0) {
+    return null;
+  }
+
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+
+interface RandomSeriesProps {
+  tv: MediaItem[];
+  anime: MediaItem[];
+}
+
+export function selectRandomSeries({ tv, anime }: RandomSeriesProps): MediaItem | null {
+  const eligible: MediaItem[] = [...tv, ...anime];
+
+  if (eligible.length === 0) {
+    return null;
+  }
+
+  return eligible[Math.floor(Math.random() * eligible.length)];
+}
+

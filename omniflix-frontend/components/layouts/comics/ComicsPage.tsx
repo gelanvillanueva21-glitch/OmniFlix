@@ -31,6 +31,7 @@ import {
 import type { MediaItem } from "@/lib/media";
 import { COMICK_SOURCE_TYPE } from "@/service/suwayomi/suwayomi.service";
 import useDebounce from '@/lib/debounce';
+import { selectRandomMediaFeatured } from "@/lib/selectRandomFeaturedMedia";
 
 interface ComicsPageProps {
     sourceType: string;
@@ -108,7 +109,6 @@ function ComicsPageContent({
         catalogQuery.data?.pages.flatMap((page) => page.items) ?? [],
     );
     const firstPageItems = catalogQuery.data?.pages[0]?.items ?? [];
-    const featuredItem = firstPageItems[0];
     const carouselItems = firstPageItems.slice(0, 12);
 
     // Sidebar popular content has its OWN catalog query, pinned to the
@@ -123,6 +123,7 @@ function ComicsPageContent({
         false,
     );
     const popularItems = popularCatalogQuery.data?.items.slice(0, 12) ?? [];
+    const featuredItem = selectRandomMediaFeatured({ items: popularItems }) ?? firstPageItems[0];
 
     if (isAuthLoading && sourceType === COMICK_SOURCE_TYPE) {
         return (

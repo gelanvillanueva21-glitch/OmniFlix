@@ -3,15 +3,24 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ImageIcon } from "@/components/icons/icons";
-import { mediaHref, mediaTypeLabel, type MediaItem } from "@/lib/media";
+import { mediaHref, MediaType, mediaTypeLabel, type MediaItem } from "@/lib/media";
 import { ErrorState } from "./SectionHeader";
 import Link from "next/link";
+import { EntertainmentType } from "@/app/generated/prisma/enums";
+import { saveActivityGuestData } from "@/service/guest.service";
 
 interface PopularContentListProps {
     readonly title: string;
     readonly items: MediaItem[];
     readonly error?: string;
 }
+
+const entertainmentTypeByMediaType: Record<MediaType, EntertainmentType> = {
+    comics: "COMIC",
+    novels: "NOVEL",
+    movies: "MOVIE",
+    series: "SERIES",
+};
 
 /**
  * Compact vertical list for the right sidebar. Shows rating only when the
@@ -57,6 +66,15 @@ function PopularListItem({
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = item.coverImage !== undefined && !imageFailed;
     const href = mediaHref(item);
+
+    function handleClick() {
+        saveActivityGuestData({
+            externalId: item.id,
+            apiSource: item.source.toLowerCase(),
+            entertainmentType: entertainmentTypeByMediaType[item.type],
+        });
+    }
+
 
     const popularItem = (
         <li className="popular-list-item">
@@ -105,7 +123,10 @@ function PopularListItem({
         )
 
     return (
-        <Link href={href}>
+        <Link 
+            href={href}
+            onClick={handleClick}
+        >
             {popularItem}
         </Link>
     );
