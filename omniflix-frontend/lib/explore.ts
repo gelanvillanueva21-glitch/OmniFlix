@@ -1,4 +1,4 @@
-import type { Genre, MediaItem } from "./media";
+import type { MediaItem } from "./media";
 
 export interface ExplorePopularMedia {
     comics: MediaItem[];
@@ -11,7 +11,6 @@ export interface ExploreData {
     featured: MediaItem | null;
     trending: MediaItem[];
     recommended: MediaItem[];
-    genres: Genre[];
     discover: MediaItem[];
     popular: ExplorePopularMedia;
     errors: Record<string, string | undefined>;

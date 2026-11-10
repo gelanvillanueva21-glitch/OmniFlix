@@ -5,7 +5,7 @@ import { getSuwayomiComics } from "@/service/suwayomi/suwayomi.service";
 import { getTmdbMedia } from "@/service/tmdb/tmdb.service";
 import { uniqueMediaItems } from "@/service/provider-client.service";
 import type { ExploreData } from "@/lib/explore";
-import type { Genre, MediaItem } from "@/lib/media";
+import type { MediaItem } from "@/lib/media";
 
 interface ProviderResult<T> { items: T; error?: string; }
 
@@ -39,7 +39,7 @@ export async function GET() {
         featured: allItems[0] ?? null,
         trending: allItems.slice(0, 12),
         recommended: allItems.slice(12, 24),
-        genres: createGenres(allItems),
+
         discover: allItems,
         popular: {
             comics: comics.items,
@@ -99,14 +99,4 @@ function logAndSummarize(error: unknown): string {
     return "A content provider is unavailable right now.";
 }
 
-function createGenres(mediaItems: MediaItem[]): Genre[] {
-    const labels = new Set(mediaItems.flatMap((item) => item.genres ?? []));
 
-    return [...labels]
-        .sort()
-        .slice(0, 12)
-        .map((label) => ({
-            id: label.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-            label,
-        }));
-}

@@ -36,30 +36,41 @@ interface ResolvedEntry {
     readonly recordId: number;
 }
 
+interface ResolvedEntries {
+    readonly entries: ResolvedEntry[];
+    readonly failedCount: number;
+}
+
 /**
- * Resolves raw collection records into real provider metadata, dropping
- * entries whose provider fetch fails (same rule as the profile carousels).
- * Each resolved card keeps its stored row id so deletes can target the API.
+ * Resolves raw collection records into real provider metadata. Each resolved
+ * card keeps its stored row id so deletes can target the correct API record.
  */
 async function resolveRecordsToEntries(
     records: UserEntertainmentItem[],
-): Promise<ResolvedEntry[]> {
-    const settled = await Promise.allSettled(
-        records.map(async (record) => ({
-            media: await fetchEntertainmentMetadata(record),
-            recordId: record.id,
-        })),
-    );
+): Promise<ResolvedEntries> {
+    const entries: ResolvedEntry[] = [];
+    let failedCount = 0;
 
-    const resolved: ResolvedEntry[] = [];
-    for (const result of settled) {
-        if (result.status === "fulfilled") {
-            resolved.push(result.value);
-        } else {
-            console.error("Collection entry could not be loaded", result.reason);
+    for (let offset = 0; offset < records.length; offset += 4) {
+        const batch = records.slice(offset, offset + 4);
+        const settled = await Promise.allSettled(
+            batch.map(async (record) => ({
+                media: await fetchEntertainmentMetadata(record),
+                recordId: record.id,
+            })),
+        );
+
+        for (const result of settled) {
+            if (result.status === "fulfilled") {
+                entries.push(result.value);
+            } else {
+                failedCount += 1;
+                console.error("Collection entry could not be loaded", result.reason);
+            }
         }
     }
-    return resolved;
+
+    return { entries, failedCount };
 }
 
 interface AuthorizedActivityPageClientProps {
@@ -101,34 +112,33 @@ export default function AuthorizedActivityPageClient({
         return all.filter((record) => record.entertainmentType === wanted);
     }, [collectionQuery.data, mediaType]);
 
+    const recordSetKey = JSON.stringify(
+        records.map((record) => [
+            record.id,
+            record.externalId,
+            record.apiSource,
+            record.entertainmentType,
+        ]),
+    );
+    const itemsQueryKey = [
+        "profile",
+        "collections",
+        "authorized-activity-items",
+        purposeType,
+        mediaType ?? "all",
+        recordSetKey,
+    ] as const;
+
     const itemsQuery = useQuery({
-        queryKey: [
-            "profile",
-            "collections",
-            "authorized-activity-items",
-            purposeType,
-            mediaType ?? "all",
-            records.length,
-        ],
+        queryKey: itemsQueryKey,
         queryFn: () => resolveRecordsToEntries(records),
         enabled: collectionQuery.isSuccess,
         staleTime: 5 * 60 * 1000,
     });
 
-    /** Card id → stored row id, so a delete targets the right API record. */
-    const recordIdByMediaId = useMemo(() => {
-        const map = new Map<string, number>();
-        for (const entry of itemsQuery.data ?? []) {
-            map.set(entry.media.id, entry.recordId);
-        }
-        return map;
-    }, [itemsQuery.data]);
-
-    const items = useMemo(
-        () => (itemsQuery.data ?? []).map((entry) => entry.media),
-        [itemsQuery.data],
-    );
-    const visibleItems = items.slice(0, visibleCount);
+    const entries = itemsQuery.data?.entries ?? [];
+    const items = entries.map((entry) => entry.media);
+    const visibleEntries = entries.slice(0, visibleCount);
     const hasNextPage = visibleCount < items.length;
 
     function handleLoadMore() {
@@ -137,38 +147,34 @@ export default function AuthorizedActivityPageClient({
 
     /**
      * Deletes one collection row through the entertainment API (DELETE with
-     * the row id + purpose) and syncs both react-query caches so the grid,
-     * the counts and the profile page all reflect the removal immediately.
+     * the row id + purpose), then invalidates both collection queries so the
+     * See All page and Profile page reload the authoritative records.
      */
-    async function handleDelete(media: MediaItem) {
-        const recordId = recordIdByMediaId.get(media.id);
-        if (recordId === undefined) return;
+    async function handleDelete(entry: ResolvedEntry) {
         try {
-            await deleteEntertainment({ id: recordId, purpose: purposeType });
+            await deleteEntertainment({
+                id: entry.recordId,
+                purpose: purposeType,
+            });
         } catch (error) {
             console.error("Collection entry could not be deleted", error);
             return;
         }
-        queryClient.setQueryData<ResolvedEntry[]>(
-            [
-                "profile",
-                "collections",
-                "authorized-activity-items",
-                purposeType,
-                mediaType ?? "all",
-                recordIdByMediaId.size,
-            ],
-            (current) =>
-                (current ?? []).filter((entry) => entry.media.id !== media.id),
-        );
-        queryClient.invalidateQueries({
-            queryKey: [
-                "profile",
-                "collections",
-                "authorized-activity",
-                purposeType,
-            ],
-        });
+        await Promise.all([
+            queryClient.invalidateQueries({
+                queryKey: [
+                    "profile",
+                    "collections",
+                    "authorized-activity",
+                    purposeType,
+                ],
+                exact: true,
+            }),
+            queryClient.invalidateQueries({
+                queryKey: ["profile", "collections", purposeType],
+                exact: true,
+            }),
+        ]);
     }
 
     const purpose = purposeLabel(purposeType);
@@ -232,21 +238,38 @@ export default function AuthorizedActivityPageClient({
         <div className="guest-activity-page">
             {header}
 
-            {items.length === 0 ? (
+            {items.length === 0 && itemsQuery.data?.failedCount === 0 ? (
                 <div className="guest-activity-empty">
                     <EmptyState
                         title={`Nothing in ${purpose} yet`}
                         description={`Titles you add to ${purpose} will appear here.`}
                     />
                 </div>
+            ) : items.length === 0 ? (
+                <ErrorState
+                    message={`${itemsQuery.data?.failedCount ?? 0} collection item${
+                        itemsQuery.data?.failedCount === 1 ? "" : "s"
+                    } could not be loaded.`}
+                    onRetry={() => void itemsQuery.refetch()}
+                />
             ) : (
                 <>
+                    {(itemsQuery.data?.failedCount ?? 0) > 0 && (
+                        <p
+                            className="profile-collections-status"
+                            role="status"
+                        >
+                            {itemsQuery.data?.failedCount} item
+                            {itemsQuery.data?.failedCount === 1 ? "" : "s"} could
+                            not be loaded.
+                        </p>
+                    )}
                     <ul role="list" className="media-grid">
-                        {visibleItems.map((item) => (
-                            <li key={item.id}>
+                        {visibleEntries.map((entry) => (
+                            <li key={entry.recordId}>
                                 <MediaCard
-                                    media={item}
-                                    onDelete={handleDelete}
+                                    media={entry.media}
+                                    onDelete={() => handleDelete(entry)}
                                 />
                             </li>
                         ))}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ExploreLayout } from "@/components/layouts/explore/ExploreLayout";
 import { MediaCard } from "@/components/MediaCard";
 import { MediaCarousel } from "@/components/MediaCarousel";
-import { GenreSelector } from "@/components/layouts/explore/GenreSelector";
+
 import { PopularContentList } from "@/components/PopularContentList";
 import { SearchBar } from "@/components/SearchBar";
 import { LoadMoreControl } from "@/components/LoadMoreControl";
@@ -169,15 +169,7 @@ export default function ExplorePage() {
                 )}
             </section>
 
-            {/* 5. Browse by Genre */}
-            <section className="explore-genre-section">
-                <GenreSelector
-                    genres={exploreData.genres}
-                    items={exploreData.discover}
-                />
-            </section>
-
-            {/* 6. Discover More (server-paginated grid) */}
+            {/* 5. Discover More (server-paginated grid) */}
             <section aria-labelledby="discover-heading" className="explore-discover-section">
                 <SectionHeader title="Discover More" />
                 {discoverQuery.isPending ? (

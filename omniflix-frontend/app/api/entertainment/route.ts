@@ -13,6 +13,30 @@ const VALID_PURPOSES = new Set<EntertainmentListType>([
     "DROPPED",
 ]);
 
+const VALID_ENTERTAINMENT_TYPES = new Set<EntertainmentType>([
+    "COMIC",
+    "NOVEL",
+    "MOVIE",
+    "SERIES",
+]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isEntertainmentListType(
+    value: unknown,
+): value is EntertainmentListType {
+    return typeof value === "string" && VALID_PURPOSES.has(value as EntertainmentListType);
+}
+
+function isEntertainmentType(value: unknown): value is EntertainmentType {
+    return (
+        typeof value === "string" &&
+        VALID_ENTERTAINMENT_TYPES.has(value as EntertainmentType)
+    );
+}
+
 export async function GET(request: Request) {
     const purpose = new URL(request.url).searchParams.get("purpose");
 
@@ -62,13 +86,6 @@ export async function GET(request: Request) {
 }
 
 
-type EntertanmentRequestBody = {
-    externalId: string;
-    apiSource: string;
-    purpose: EntertainmentListType;
-    entertainmentType: EntertainmentType;
-}
-
 export async function POST(request: Request) {
     let requestBody: unknown;
     try {
@@ -79,21 +96,26 @@ export async function POST(request: Request) {
             { status: 400 },
         );
     }
-    
-    const data = requestBody as EntertanmentRequestBody;
 
     if (
-        !data.externalId ||
-        !data.apiSource ||
-        !data.purpose ||
-        !VALID_PURPOSES.has(data.purpose) ||
-        !data.entertainmentType
+        !isRecord(requestBody) ||
+        typeof requestBody.externalId !== "string" ||
+        requestBody.externalId.trim().length === 0 ||
+        typeof requestBody.apiSource !== "string" ||
+        requestBody.apiSource.trim().length === 0 ||
+        !isEntertainmentListType(requestBody.purpose) ||
+        !isEntertainmentType(requestBody.entertainmentType)
     ) {
         return Response.json(
             { message: "Missing or invalid required fields." },
             { status: 400 },
         );
     }
+
+    const externalId = requestBody.externalId;
+    const apiSource = requestBody.apiSource;
+    const purpose = requestBody.purpose;
+    const entertainmentType = requestBody.entertainmentType;
 
     try {
         const cookieHeader = (await cookies()).toString();
@@ -104,10 +126,10 @@ export async function POST(request: Request) {
         const entertainment = await prisma.entertainment.create({
             data: {
                 profileId: profile.id,
-                externalId: data.externalId,
-                apiSource: data.apiSource,
-                purpose: data.purpose,
-                entertainmentType: data.entertainmentType,
+                externalId,
+                apiSource,
+                purpose,
+                entertainmentType,
             },
             select: {
                 id: true,
@@ -152,18 +174,21 @@ export async function DELETE(request: Request) {
         );
     }
 
-    const data = requestBody as { id: number; purpose: EntertainmentListType };
-    
     if (
-        !data.id || 
-        !data.purpose || 
-        !VALID_PURPOSES.has(data.purpose)
+        !isRecord(requestBody) ||
+        typeof requestBody.id !== "number" ||
+        !Number.isSafeInteger(requestBody.id) ||
+        requestBody.id <= 0 ||
+        !isEntertainmentListType(requestBody.purpose)
     ) {
         return Response.json(
             { message: "Missing or invalid required fields." },
             { status: 400 },
         );
     }
+
+    const id = requestBody.id;
+    const purpose = requestBody.purpose;
 
     try {
         const cookieHeader = (await cookies()).toString();
@@ -173,9 +198,9 @@ export async function DELETE(request: Request) {
 
         await prisma.entertainment.deleteMany({
             where: {
-                id: data.id,
+                id,
                 profileId: profile.id,
-                purpose: data.purpose,
+                purpose,
             },
         });
 
