@@ -11,7 +11,7 @@ import {
     type MediaType,
 } from "@/lib/media";
 import { saveActivityGuestData } from "@/service/guest.service";
-import { saveActivityHistory } from "@/service/profile.service";
+import { getActivityHistory, saveActivityHistory } from "@/service/profile.service";
 import { useAuth } from "@/components/AuthProvider";
 import type { EntertainmentType } from "@/service/types/profile.payload";
 
@@ -47,20 +47,28 @@ export function MediaCard({
     const href = mediaHref(media);
     const { user } = useAuth();
 
-    function handleClick() {
+    async function handleClick() {
         const entertainmentType = entertainmentTypeByMediaType[media.type];
         const apiSource = media.source.toLowerCase();
 
         if (user !== null) {
             // Logged in — persist the activity server-side. Best effort:
             // a failed write must never block navigation.
-            void saveActivityHistory({
-                externalId: media.id,
-                apiSource,
-                type: entertainmentType,
-            }).catch((error) => {
+            try {
+                const currentActivity = await getActivityHistory();
+                const alreadyExists = currentActivity.some(
+                    (item) => item.externalId === String(media.id),
+                );
+                if (alreadyExists) return;
+
+                await saveActivityHistory({
+                    externalId: media.id,
+                    apiSource,
+                    type: entertainmentType,
+                });
+            } catch (error) {
                 console.error("Activity could not be recorded", error);
-            });
+            }
             return;
         }
 

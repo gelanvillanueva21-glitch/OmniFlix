@@ -11,9 +11,11 @@ import {
     LogOutIcon,
     PencilIcon,
     CameraIcon,
+    TrashIcon,
 } from "@/components/icons/icons";
 import { ProfileAuthResponse } from "@/service/types/profile.auth.payload";
 import { MediaCarousel } from "@/components/MediaCarousel";
+import { clearActivityHistory } from "@/service/profile.service";
 
 /** Matches the backend picture upload validation (5 MB). */
 const MAX_PROFILE_PICTURE_BYTES = 5 * 1024 * 1024;
@@ -74,6 +76,10 @@ export function ProfileSidebar({
     const [displayNameDraft, setDisplayNameDraft] = useState("");
     const [pictureDraft, setPictureDraft] = useState<File | null>(null);
     const [picturePreviewUrl, setPicturePreviewUrl] = useState<string | null>(null);
+    const [isDeletingActivity, setIsDeletingActivity] = useState(false);
+    const [deleteActivityError, setDeleteActivityError] = useState<string | null>(
+        null,
+    );
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const savedDisplayName = profile?.display_name ?? user?.username ?? "";
@@ -90,6 +96,24 @@ export function ProfileSidebar({
             }
         };
     }, [picturePreviewUrl]);
+
+    /** Wipes the signed-in user's activity history via the history API. */
+    async function handleClearActivity() {
+        if (isDeletingActivity) return;
+
+        setIsDeletingActivity(true);
+        setDeleteActivityError(null);
+        try {
+            await clearActivityHistory();
+            onRetryActivity?.();
+        } catch {
+            setDeleteActivityError(
+                "Could not clear your history. Please try again.",
+            );
+        } finally {
+            setIsDeletingActivity(false);
+        }
+    }
 
     function enterEditMode() {
         setDisplayNameDraft(savedDisplayName);
@@ -379,9 +403,25 @@ export function ProfileSidebar({
                 )}
 
                 <div className="profile-history-box">
-                    <p className="profile-history-heading">
-                        History
-                    </p>
+                    <div className="profile-history-heading-slot">
+                        <p className="profile-history-heading">
+                            History
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => void handleClearActivity()}
+                            disabled={isDeletingActivity}
+                            aria-label="Clear activity history"
+                            className="profile-history-clear-button"
+                        >
+                            <TrashIcon className="profile-history-clear-button-icon" />
+                        </button>
+                    </div>
+                    {deleteActivityError && (
+                        <p className="profile-history-delete-error" role="alert">
+                            {deleteActivityError}
+                        </p>
+                    )}
                     {isActivityLoading ? (
                         <p className="profile-history-loading-text" role="status">
                             Loading recent activity...

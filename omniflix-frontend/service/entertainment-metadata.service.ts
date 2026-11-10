@@ -60,6 +60,7 @@ async function fetchComicMetadata(
     const { sourceId, comicId } = parseSuwayomiExternalId(item.externalId);
     const response = await fetch(`/api/comics/${sourceId}/${comicId}`);
     if (!response.ok) {
+        console.log(sourceId, comicId)
         throw new Error(
             `Comic ${item.externalId} could not be loaded (status ${response.status}).`,
         );

@@ -27,6 +27,24 @@ export function getEntertainmentCollection(
     );
 }
 
+/**
+ * Saves one entertainment item into one of the profile's collections via the
+ * Next.js /api/entertainment route (POST). The backend stores only the
+ * identity tuple (externalId, apiSource) plus purpose/type, so the record can
+ * be re-fetched from its provider later.
+ */
+export function saveEntertainment(payload: {
+    externalId: string;
+    apiSource: string;
+    purpose: EntertainmentListType;
+    entertainmentType: EntertainmentType;
+}): Promise<UserEntertainmentItem> {
+    return NextApiRequest<ApiResponse<UserEntertainmentItem>>("entertainment", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    }).then((response) => response.data);
+}
+
 export function getActivityHistory(): Promise<UserHistoryItem[]> {
     return getApiData<UserHistoryItem[]>("history");
 }
@@ -46,6 +64,16 @@ export function saveActivityHistory(payload: {
         method: "POST",
         body: JSON.stringify(payload),
     }).then((response) => response.data);
+}
+
+/**
+ * Deletes every recorded activity of the authenticated profile via the
+ * Next.js history API route (DELETE handler).
+ */
+export function clearActivityHistory(): Promise<number> {
+    return NextApiRequest<ApiResponse<{ deletedCount: number }>>("history", {
+        method: "DELETE",
+    }).then((response) => response.data.deletedCount);
 }
 
 export function getSearchHistory(): Promise<UserSearch[]> {

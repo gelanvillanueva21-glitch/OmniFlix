@@ -6,6 +6,7 @@ import {
     useState,
     type ReactNode,
 } from "react";
+import "@/components/Notification.css";
 import { useMoreMenu } from "@/components/moreMenu";
 import Image from "next/image";
 import Link from "next/link";
@@ -24,6 +25,20 @@ import {
     PlayIcon,
 } from "@/components/icons/icons";
 import type { MediaItem } from "@/lib/media";
+import { useAuth } from "./AuthProvider";
+import {
+    saveCompleted,
+    saveFavorite,
+    saveWatchList,
+    type SaveContentArgs,
+} from "@/service/save.content.service";
+import {
+    saveArgsFromJikanAnime,
+    saveArgsFromTmdbMovie,
+    saveArgsFromTmdbSeries,
+} from "@/service/save.content.service";
+import { Notification } from "./Notification";
+import type { EntertainmentListType } from "@/service/types/profile.payload";
 import type {
     JikanAnimeFetchPayload,
     JikanEpisode,
@@ -130,17 +145,20 @@ export function WatchReadContent({
         ) : detailState.contentType === "movie" ? (
             <MovieDetail
                 payload={detailState.payload}
+                saveArgs={saveArgsFromTmdbMovie(detailState.payload)}
                 onBack={handleBack}
             />
         ) : detailState.provider === "tmdb" ? (
             <TmdbSeriesDetail
                 payload={detailState.payload}
+                saveArgs={saveArgsFromTmdbSeries(detailState.payload)}
                 lists={detailState.lists}
                 onBack={handleBack}
             />
         ) : (
             <JikanAnimeDetail
                 payload={detailState.payload}
+                saveArgs={saveArgsFromJikanAnime(detailState.payload)}
                 lists={detailState.lists}
                 onBack={handleBack}
             />
@@ -170,9 +188,11 @@ export function WatchReadContent({
 
 function MovieDetail({
     payload,
+    saveArgs,
     onBack,
 }: {
     payload: TmdbMovieFetchPayload;
+    saveArgs: SaveContentArgs;
     onBack: () => void;
 }) {
     const title = payload.title ?? payload.originalTitle ?? "Untitled movie";
@@ -200,6 +220,7 @@ function MovieDetail({
                 data={metadata}
                 onBack={onBack}
                 contentType="movie"
+                saveArgs={saveArgs}
             />
         </article>
     );
@@ -207,10 +228,12 @@ function MovieDetail({
 
 function TmdbSeriesDetail({
     payload,
+    saveArgs,
     lists,
     onBack,
 }: {
     payload: TmdbSeriesFetchPayload;
+    saveArgs: SaveContentArgs;
     lists: SeriesListState;
     onBack: () => void;
 }) {
@@ -242,6 +265,7 @@ function TmdbSeriesDetail({
                 onBack={onBack}
                 contentType="series"
                 lists={lists}
+                saveArgs={saveArgs}
                 data={{
                     title,
                     posterImage: series.poster_path
@@ -396,10 +420,12 @@ function TmdbEpisodeList({
 
 function JikanAnimeDetail({
     payload,
+    saveArgs,
     lists,
     onBack,
 }: {
     payload: JikanAnimeFetchPayload;
+    saveArgs: SaveContentArgs;
     lists: SeriesListState;
     onBack: () => void;
 }) {
@@ -419,6 +445,7 @@ function JikanAnimeDetail({
                 onBack={onBack}
                 contentType="series"
                 lists={lists}
+                saveArgs={saveArgs}
                 data={{
                     title,
                     posterImage: anime.imageUrl ?? undefined,
@@ -512,11 +539,13 @@ function DetailHeader({
     onBack,
     contentType,
     lists,
+    saveArgs,
 }: {
     data: DetailHeaderData;
     onBack: () => void;
     contentType: "movie" | "series";
     lists?: SeriesListState;
+    saveArgs: SaveContentArgs;
 }) {
     const metadataParts = [
         <span key="provider" className="series-detail-metadata-provider">
@@ -616,7 +645,9 @@ function DetailHeader({
                     )}
                     <DetailActions
                         contentType={contentType}
+                        title={data.title}
                         lists={lists}
+                        saveArgs={saveArgs}
                     />
                 </div>
             </div>
@@ -705,16 +736,66 @@ function DetailFact({ label, value }: { label: string; value: string }) {
 
 function DetailActions({
     contentType,
+    title,
     lists,
+    saveArgs,
 }: {
     contentType: "movie" | "series";
+    title: string;
     lists?: SeriesListState;
+    saveArgs: SaveContentArgs;
 }) {
     const moreWrapperRef = useRef<HTMLDivElement | null>(null);
     const moreMenu = useMoreMenu(moreWrapperRef);
     const { open: moreOpen } = moreMenu;
+    // The three-dot list menu only makes sense for signed-in users.
+    const { isAuthenticated } = useAuth();
+    // Rectangle banner shown when a save was skipped (item already in list).
+    const [notification, setNotification] = useState<string | null>(null);
+
+    /** Label of the list a menu key stands for, used in the notification. */
+    const LIST_LABELS: Record<EntertainmentListType, string> = {
+        FAVORITE: "Favorite",
+        WATCHLIST: "Watchlist",
+        READLIST: "ReadList",
+        COMPLETED: "Completed",
+        ON_HOLD: "On Hold",
+        DROPPED: "Dropped",
+    };
+
+    /**
+     * Persists the item into the chosen list. Each key maps to one of the
+     * dedicated save functions, which hardcode their EntertainmentListType.
+     */
+    async function handleSaving(key: string): Promise<void> {
+        const saveFn =
+            key === "FAVORITE"
+                ? saveFavorite
+                : key === "WATCHLIST"
+                    ? saveWatchList
+                    : saveCompleted;
+        try {
+            const saved = await saveFn(saveArgs);
+            moreMenu.close();
+            // undefined ⇒ the item was already in that list, nothing was saved.
+            if (saved === undefined) {
+                setNotification(
+                    `${title} is already in your ${LIST_LABELS[key as EntertainmentListType]}`,
+                );
+            }
+        } catch (error) {
+            console.error("Could not save to list", error);
+        }
+    }
 
     return (
+        <>
+        {notification !== null && (
+            <Notification
+                message={notification}
+                onDismiss={() => setNotification(null)}
+            />
+        )}
         <div className="series-detail-actions">
             <button
                 type="button"
@@ -730,6 +811,7 @@ function DetailActions({
                 Play
             </button>
 
+            {isAuthenticated && (
             <div
                 ref={moreWrapperRef}
                 className="series-detail-more-wrapper"
@@ -768,18 +850,12 @@ function DetailActions({
                                         key={key}
                                         type="button"
                                         role="menuitem"
-                                        disabled
                                         className={`series-detail-list-option${
                                             selected
                                                 ? " series-detail-list-option-selected"
                                                 : ""
                                         }`}
-                                        title={
-                                            selected
-                                                ? `Already in your ${label.toLowerCase()} list.`
-                                                : "Saving to lists is not available yet."
-                                        }
-                                        onClick={moreMenu.close}
+                                        onClick={() => handleSaving(key)}
                                     >
                                         <Icon className="series-detail-list-option-icon" />
                                         <span className="series-detail-list-option-label">
@@ -795,7 +871,9 @@ function DetailActions({
                     </div>
                 )}
             </div>
+            )}
         </div>
+        </>
     );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import {
@@ -14,6 +15,7 @@ import {
     BellIcon,
     SearchIcon,
 } from "@/components/icons/icons";
+import { getProfile } from "@/service/profile.auth.service";
 
 export default function ExploreLayout({ children }: { children: ReactNode }) {
     const { user, isAuthenticated, logout } = useAuth();
@@ -45,6 +47,12 @@ function ExploreShell({
     onSignOut: () => void;
 }) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const profileQuery = useQuery({
+        queryKey: ["profile", "info"],
+        queryFn: getProfile,
+        enabled: isAuthenticated && user !== null,
+        retry: false,
+    });
 
     useDismissableOverlay(isDrawerOpen, () => setIsDrawerOpen(false));
 
@@ -64,7 +72,10 @@ function ExploreShell({
                 <Suspense fallback={<div className="explore-nav-heading-group" />}>
                     <AccountNavigation
                         isAuthenticated={isAuthenticated}
-                        username={user?.username}
+                        username={
+                            profileQuery.data?.display_name?.trim() ||
+                            user?.username
+                        }
                         onSignOut={onSignOut}
                         onNavigate={onNavigate}
                     />

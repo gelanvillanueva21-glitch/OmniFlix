@@ -67,6 +67,41 @@ export async function GET() {
     }
 }
 
+/**
+ * Clears every recorded activity belonging to the authenticated profile.
+ * The profile is resolved first so the delete is always scoped to the
+ * signed-in user's own history rows.
+ */
+export async function DELETE() {
+    try {
+        const cookieHeader = (await cookies()).toString();
+        const profile = await getProfile({
+            headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+        });
+
+        const result = await prisma.activity.deleteMany({
+            where: {
+                profileId: profile.id,
+            },
+        });
+
+        return Response.json({
+            message: "Activity history cleared successfully.",
+            data: { deletedCount: result.count },
+        });
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return getProfileApiErrorResponse(error);
+        }
+
+        console.error("History API request failed", error);
+        return Response.json(
+            { message: "Could not clear activity history." },
+            { status: 503 },
+        );
+    }
+}
+
 export async function POST(request: Request) {
     let requestBody: unknown;
     try {
