@@ -82,6 +82,14 @@
     @apply h-3 w-3 text-[#8B5CF6];
 }
 
+.media-card-poster-delete {
+    @apply absolute top-2 right-2 inline-flex items-center justify-center rounded-full bg-[#111111]/80 p-1.5 text-[#F5F5F5] backdrop-blur-sm transition-colors hover:bg-[#EF4444]/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
+}
+
+.media-card-poster-delete-icon {
+    @apply h-4 w-4 text-current;
+}
+
 .media-card-poster-caption {
     @apply min-w-0;
 }

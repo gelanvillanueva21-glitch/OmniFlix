@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { StarIcon, ImageIcon } from "@/components/icons/icons";
+import { StarIcon, ImageIcon, TrashIcon } from "@/components/icons/icons";
 import {
     mediaHref,
     mediaTypeLabel,
@@ -26,6 +26,12 @@ interface MediaCardProps {
     readonly media: MediaItem;
     /** "poster" for grid/carousel cards, "wide" for the featured banner. */
     readonly variant?: "poster" | "wide";
+    /**
+     * Optional delete affordance (authenticated collection pages only). When
+     * provided, a trash button is rendered over the poster; clicking it calls
+     * this handler instead of navigating.
+     */
+    readonly onDelete?: (media: MediaItem) => void | Promise<void>;
 }
 
 /**
@@ -40,6 +46,7 @@ interface MediaCardProps {
 export function MediaCard({
     media,
     variant = "poster",
+    onDelete,
 }: MediaCardProps) {
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = media.coverImage !== undefined && !imageFailed;
@@ -161,6 +168,22 @@ export function MediaCard({
                         <StarIcon className="media-card-poster-rating-icon" />
                         {media.rating.toFixed(1)}
                     </span>
+                )}
+                {onDelete !== undefined && (
+                    <button
+                        type="button"
+                        aria-label={`Delete ${media.title}`}
+                        className="media-card-poster-delete"
+                        onClick={(event) => {
+                            // The card body sits inside a wrapping Link on the
+                            // grid path — a delete press must never navigate.
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void onDelete(media);
+                        }}
+                    >
+                        <TrashIcon className="media-card-poster-delete-icon" />
+                    </button>
                 )}
             </div>
             <div className="media-card-poster-caption">

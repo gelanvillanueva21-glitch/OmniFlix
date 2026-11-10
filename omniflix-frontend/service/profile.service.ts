@@ -45,6 +45,21 @@ export function saveEntertainment(payload: {
     }).then((response) => response.data);
 }
 
+/**
+ * Deletes one stored collection row via the Next.js /api/entertainment route
+ * (DELETE). The route matches on (id, profileId, purpose), so both the row id
+ * and the owning purpose must be supplied.
+ */
+export function deleteEntertainment(payload: {
+    id: number;
+    purpose: EntertainmentListType;
+}): Promise<void> {
+    return NextApiRequest<ApiResponse<unknown>>("entertainment", {
+        method: "DELETE",
+        body: JSON.stringify(payload),
+    }).then(() => undefined);
+}
+
 export function getActivityHistory(): Promise<UserHistoryItem[]> {
     return getApiData<UserHistoryItem[]>("history");
 }
