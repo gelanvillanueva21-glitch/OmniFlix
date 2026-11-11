@@ -15,6 +15,7 @@ import {
 } from "@/components/icons/icons";
 import { ProfileAuthResponse } from "@/service/types/profile.auth.payload";
 import { MediaCarousel } from "@/components/MediaCarousel";
+import { mediaHref } from "@/lib/media";
 import { clearActivityHistory } from "@/service/profile.service";
 
 /** Matches the backend picture upload validation (5 MB). */
@@ -439,10 +440,36 @@ export function ProfileSidebar({
                             />
                         </div>
                     ) : (
-                        <MediaCarousel
-                            items={displayActivity.slice(0, 5)}
-                            label="Recent Activity"
-                        />
+                        <ul
+                            className="profile-history-list"
+                            aria-label="Recent Activity"
+                        >
+                            {displayActivity.map((item) => {
+                                const href = mediaHref(item);
+
+                                return (
+                                    <li
+                                        key={item.id}
+                                        className="profile-history-list-item"
+                                    >
+                                        {href ? (
+                                            <Link
+                                                href={href}
+                                                onClick={onNavigate}
+                                                className="profile-history-list-item-link"
+                                                title={item.title}
+                                            >
+                                                {item.title}
+                                            </Link>
+                                        ) : (
+                                            <span title={item.title}>
+                                                {item.title}
+                                            </span>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
                     )}
                 </div>
 

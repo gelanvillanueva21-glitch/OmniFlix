@@ -216,11 +216,29 @@
 }
 
 .profile-history-list {
-    @apply mt-3 space-y-2;
+    @apply mt-3 space-y-2 max-h-56 overflow-y-auto pr-1;
+    scrollbar-width: thin;
+    scrollbar-color: #29292E transparent;
+}
+
+.profile-history-list::-webkit-scrollbar {
+    @apply w-1.5;
+}
+
+.profile-history-list::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-[#29292E];
+}
+
+.profile-history-list::-webkit-scrollbar-track {
+    @apply bg-transparent;
 }
 
 .profile-history-list-item {
     @apply truncate text-xs text-[#A1A1AA];
+}
+
+.profile-history-list-item-link {
+    @apply block truncate transition-colors hover:text-[#8B5CF6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] rounded-sm;
 }
 
 .profile-sidebar-footer {
