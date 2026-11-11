@@ -60,6 +60,7 @@ async function fetchComicMetadata(
     const { sourceId, comicId } = parseSuwayomiExternalId(item.externalId);
     const response = await fetch(`/api/comics/${sourceId}/${comicId}`);
     if (!response.ok) {
+        console.log(sourceId, comicId)
         throw new Error(
             `Comic ${item.externalId} could not be loaded (status ${response.status}).`,
         );
@@ -78,10 +79,11 @@ async function fetchComicMetadata(
         id: payload.comic.id,
         title: payload.comic.title,
         type: "comics",
+        source: "suwayomi",
+        sourceLabel: payload.sourceName ?? "Comics",
         coverImage: payload.comic.coverImage,
         description: payload.comic.description,
         genres: payload.comic.genres,
-        source: payload.sourceName,
     };
 }
 
@@ -134,10 +136,11 @@ async function fetchNovelMetadata(
         id: `lncrawl:${payload.novel.id}`,
         title: payload.novel.title,
         type: "novels",
+        source: "lncrawl",
+        sourceLabel: "LNcrawl",
         coverImage: payload.novel.coverImage,
         description: payload.novel.description,
         genres: payload.novel.genres,
-        source: "LNcrawl",
     };
 }
 
@@ -169,12 +172,13 @@ function mapTmdbMovieToMediaItem(
         id: `tmdb:movies:${payload.id}`,
         title: payload.title ?? payload.originalTitle ?? "Untitled movie",
         type: "movies",
+        source: "tmdb",
+        sourceLabel: "TMDB",
         coverImage: payload.posterImage,
         description: payload.overview,
         genres: payload.genres.length ? payload.genres : undefined,
         rating: payload.rating,
         releaseYear: payload.releaseYear,
-        source: "TMDB",
     };
 }
 
@@ -258,6 +262,8 @@ function mapTmdbSeriesToMediaItem(
         id: `${TMDB_SERIES_PREFIX}${series.id ?? providerId}`,
         title: series.name ?? series.original_name ?? "Untitled series",
         type: "series",
+        source: "tmdb",
+        sourceLabel: "TMDB",
         coverImage: series.poster_path
             ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
             : undefined,
@@ -265,7 +271,6 @@ function mapTmdbSeriesToMediaItem(
         genres: genres.length ? genres : undefined,
         rating,
         releaseYear: getYear(series.first_air_date ?? undefined),
-        source: "TMDB",
     };
 }
 
@@ -284,6 +289,8 @@ function mapJikanAnimeToMediaItem(
         id: `jikan:${anime.malId ?? providerId}`,
         title: anime.title ?? anime.titleEnglish ?? "Untitled anime",
         type: "series",
+        source: "jikan",
+        sourceLabel: "Anime",
         coverImage:
             anime.images?.large || anime.images?.medium || anime.imageUrl ||
             undefined,
@@ -291,7 +298,6 @@ function mapJikanAnimeToMediaItem(
         genres: genres.length ? genres : undefined,
         rating,
         releaseYear: anime.year ?? getYear(anime.aired?.from ?? undefined),
-        source: "Anime",
     };
 }
 

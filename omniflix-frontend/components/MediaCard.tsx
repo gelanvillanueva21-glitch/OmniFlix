@@ -3,13 +3,35 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { StarIcon, ImageIcon } from "@/components/icons/icons";
-import { mediaHref, mediaTypeLabel, type MediaItem } from "@/lib/media";
+import { StarIcon, ImageIcon, TrashIcon } from "@/components/icons/icons";
+import {
+    mediaHref,
+    mediaTypeLabel,
+    type MediaItem,
+    type MediaType,
+} from "@/lib/media";
+import { saveActivityGuestData } from "@/service/guest.service";
+import { getActivityHistory, saveActivityHistory } from "@/service/profile.service";
+import { useAuth } from "@/components/AuthProvider";
+import type { EntertainmentType } from "@/service/types/profile.payload";
+
+const entertainmentTypeByMediaType: Record<MediaType, EntertainmentType> = {
+    comics: "COMIC",
+    novels: "NOVEL",
+    movies: "MOVIE",
+    series: "SERIES",
+};
 
 interface MediaCardProps {
     readonly media: MediaItem;
     /** "poster" for grid/carousel cards, "wide" for the featured banner. */
     readonly variant?: "poster" | "wide";
+    /**
+     * Optional delete affordance (authenticated collection pages only). When
+     * provided, a trash button is rendered over the poster; clicking it calls
+     * this handler instead of navigating.
+     */
+    readonly onDelete?: (media: MediaItem) => void | Promise<void>;
 }
 
 /**
@@ -24,19 +46,57 @@ interface MediaCardProps {
 export function MediaCard({
     media,
     variant = "poster",
+    onDelete,
 }: MediaCardProps) {
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = media.coverImage !== undefined && !imageFailed;
 
     const href = mediaHref(media);
+    const { user } = useAuth();
 
-    const sourceLabel = media.source
-        ? (media.source.toLowerCase() === "tmdb"
+    async function handleClick() {
+        const entertainmentType = entertainmentTypeByMediaType[media.type];
+        const apiSource = media.source.toLowerCase();
+
+        if (user !== null) {
+            // Logged in — persist the activity server-side. Best effort:
+            // a failed write must never block navigation.
+            try {
+                const currentActivity = await getActivityHistory();
+                const alreadyExists = currentActivity.some(
+                    (item) => item.externalId === String(media.id),
+                );
+                if (alreadyExists) return;
+
+                await saveActivityHistory({
+                    externalId: media.id,
+                    apiSource,
+                    type: entertainmentType,
+                });
+            } catch (error) {
+                console.error("Activity could not be recorded", error);
+            }
+            return;
+        }
+
+        saveActivityGuestData({
+            externalId: media.id,
+            apiSource,
+            entertainmentType,
+        });
+    }
+
+    const sourceLabel =
+        media.sourceLabel ??
+        (media.source.toLowerCase() === "tmdb"
             ? "TMDB"
-            : media.source.toLowerCase() === "jikan" || media.source.toLowerCase() === "anime"
-            ? "Anime"
-            : media.source)
-        : mediaTypeLabel(media.type);
+            : media.source.toLowerCase() === "jikan"
+                ? "Anime"
+                : media.source.toLowerCase() === "lncrawl"
+                    ? mediaTypeLabel("novels")
+                    : media.source.toLowerCase() === "suwayomi"
+                        ? mediaTypeLabel("comics")
+                        : media.source);
 
     const metadataParts = [
         sourceLabel,
@@ -109,6 +169,22 @@ export function MediaCard({
                         {media.rating.toFixed(1)}
                     </span>
                 )}
+                {onDelete !== undefined && (
+                    <button
+                        type="button"
+                        aria-label={`Delete ${media.title}`}
+                        className="media-card-poster-delete"
+                        onClick={(event) => {
+                            // The card body sits inside a wrapping Link on the
+                            // grid path — a delete press must never navigate.
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void onDelete(media);
+                        }}
+                    >
+                        <TrashIcon className="media-card-poster-delete-icon" />
+                    </button>
+                )}
             </div>
             <div className="media-card-poster-caption">
                 <h3
@@ -131,7 +207,11 @@ export function MediaCard({
     // One wrapping link covers the entire card: real link semantics, keyboard
     // focusable, and no nested interactive elements (the card body has none).
     return (
-        <Link href={href} className="media-card-link">
+        <Link
+            href={href}
+            className="media-card-link"
+            onClick={handleClick}
+        >
             {cardBody}
         </Link>
     );

@@ -15,6 +15,7 @@ import {
     usePopularMovies,
     usePopularMoviesBrowse,
 } from "@/components/layouts/movies/moviesQueries";
+import { selectRandomMediaFeatured } from "@/lib/selectRandomFeaturedMedia";
 
 export default function MoviesPage() {
     const browseQuery = usePopularMoviesBrowse();
@@ -27,7 +28,7 @@ export default function MoviesPage() {
     const sidebarQuery = usePopularMovies();
     const popularMovie = sidebarQuery.data?.items ?? [];
 
-    const featuredMovie = browseMovies[0];
+    const featuredMovie = selectRandomMediaFeatured({ items: popularMovie }) ?? browseMovies[0];
     const carouselItems = browseMovies.slice(0, POPULAR_MOVIES_LIMIT);
 
     const isPending = browseQuery.isPending;

@@ -15,6 +15,7 @@ import {
     useNovels,
     usePopularNovels,
 } from "@/components/layouts/novels/novelsQueries";
+import { selectRandomMediaFeatured } from "@/lib/selectRandomFeaturedMedia";
 
 export default function NovelsPage() {
     const novelsQuery = useNovels();
@@ -31,7 +32,7 @@ export default function NovelsPage() {
     const carouselItems = popularQuery.data ??
         (popularQuery.isError ? novels.slice(0, NOVELS_PAGE_SIZE) : []);
 
-    const featuredItem = novels[0];
+    const featuredItem = selectRandomMediaFeatured({ items: popularNovels }) ?? novels[0];
 
     // Search state — the exact Movies/Series page pattern: controlled input,
     // debounced query, per-query cached search request.

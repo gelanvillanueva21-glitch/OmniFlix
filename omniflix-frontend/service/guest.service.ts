@@ -62,17 +62,38 @@ function parseStoredEntries(raw: string | null): GuestActivityEntry[] {
 /**
  * Records one guest history activity.
  *
- * Accepts the same identity tuple the authenticated API uses
- * (`externalId` + `apiSource`), deduplicates it, prepends it to the stored
- * list (newest first, mirroring the `createdAt: "desc"` ordering used
- * server-side) and persists the JSON to localStorage.
+ * Uses `externalId` as the duplicate key. Existing ids are left unchanged;
+ * otherwise the new entry is prepended and persisted to localStorage.
  */
 export function saveActivityGuestData(
   payload: GuestActivityPayload,
 ): GuestActivityEntry[] {
   if (!isBrowser()) return [];
 
-  if (!payload.externalId || !payload.apiSource) {
+  let externalId = payload.externalId;
+  switch (payload.entertainmentType) {
+    case "NOVEL":
+      if (externalId.startsWith("lncrawl:")) {
+        externalId = externalId.slice("lncrawl:".length);
+      }
+      break;
+    case "MOVIE":
+      if (externalId.startsWith("tmdb:movies:")) {
+        externalId = externalId.slice("tmdb:movies:".length);
+      } else if (externalId.startsWith("tmdb-")) {
+        externalId = externalId.slice("tmdb-".length);
+      }
+      break;
+    case "SERIES":
+      if (externalId.startsWith("jikan:")) {
+        externalId = externalId.slice("jikan:".length);
+      } else if (externalId.startsWith("tmdb:series:")) {
+        externalId = externalId.slice("tmdb:series:".length);
+      }
+      break;
+  }
+
+  if (!externalId || !payload.apiSource) {
     throw new Error("Guest activity requires both externalId and apiSource.");
   }
 
@@ -82,23 +103,20 @@ export function saveActivityGuestData(
 
   const entries = fetchActivityGuestData();
 
-  // Identity is the full tuple: two providers can share the same externalId.
-  const identity = (entry: GuestActivityPayload) =>
-    `${entry.apiSource}|${entry.externalId}`;
-
-  const filtered = entries.filter(
-    (entry) => identity(entry) !== identity(payload),
+  const alreadyStored = entries.some(
+    (entry) => entry.externalId === externalId,
   );
+  if (alreadyStored) return entries;
 
   const newEntry: GuestActivityEntry = {
-    id: payload.externalId,
-    externalId: payload.externalId,
+    id: externalId,
+    externalId,
     apiSource: payload.apiSource,
     entertainmentType: payload.entertainmentType,
     createdAt: new Date().toISOString(),
   };
 
-  const updated = [newEntry, ...filtered].slice(0, 100); // cap history growth
+  const updated = [newEntry, ...entries].slice(0, 100); // cap history growth
 
   try {
     window.localStorage.setItem(

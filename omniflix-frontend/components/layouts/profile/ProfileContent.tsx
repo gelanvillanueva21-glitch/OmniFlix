@@ -182,6 +182,8 @@ function MediaCategoryRow({
     readonly items: MediaItem[];
     readonly label: string;
     readonly collectionLabel: string;
+    /** Optional "See all" destination passed straight to SectionHeader. */
+    readonly seeAllHref?: string;
 }) {
     if (items.length === 0) {
         return (
@@ -191,7 +193,11 @@ function MediaCategoryRow({
             />
         );
     }
-    return <MediaCarousel items={items} label={`${collectionLabel} — ${label}`} />;
+    return (
+        <>
+            <MediaCarousel items={items} label={`${collectionLabel} — ${label}`} />
+        </>
+    );
 }
 
 /**
@@ -284,11 +290,13 @@ export function ProfileContent({
                             </h3>
                             <SectionHeader
                                 title={`${MEDIA_CATEGORY_LABELS[category]} — ${collectionLabel}`}
+                                seeAllHref={`/profile/${category}?purpose_type=${selectedCollection}`}
                             />
                             <MediaCategoryRow
                                 items={metadata.itemsByCategory[category] ?? []}
                                 label={MEDIA_CATEGORY_LABELS[category]}
                                 collectionLabel={collectionLabel}
+                                seeAllHref={`/profile/${category}?purpose_type=${selectedCollection}`}
                             />
                         </section>
                     ))}
@@ -298,7 +306,10 @@ export function ProfileContent({
             {/* ── Guest: History only ── */}
             {isGuest && (
                 <section className="profile-guest-section">
-                    <SectionHeader title="History" />
+                    <SectionHeader
+    title="History"
+    seeAllHref="/profile/guest"
+/>
                     <h3 className="sr-only">Browsing history</h3>
                     {guestHistory.length === 0 ? (
                         <div className="profile-guest-history-slot">

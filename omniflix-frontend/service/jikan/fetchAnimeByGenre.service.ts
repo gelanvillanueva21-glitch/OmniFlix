@@ -76,6 +76,8 @@ function mapAnimeToMediaItem(anime: JikanSearchItem): MediaItem[] {
         id: `jikan:${malId}`,
         title,
         type: "series",
+        source: "jikan",
+        sourceLabel: "Anime",
         description: anime.synopsis?.trim() || undefined,
         coverImage:
             anime.images?.webp?.large_image_url ||
@@ -87,7 +89,6 @@ function mapAnimeToMediaItem(anime: JikanSearchItem): MediaItem[] {
                 ? Number(anime.score.toFixed(2))
                 : undefined,
         releaseYear: year,
-        source: "Anime",
     }];
 }
 

@@ -3,15 +3,26 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ImageIcon } from "@/components/icons/icons";
-import { mediaHref, mediaTypeLabel, type MediaItem } from "@/lib/media";
+import { mediaHref, MediaType, mediaTypeLabel, type MediaItem } from "@/lib/media";
 import { ErrorState } from "./SectionHeader";
 import Link from "next/link";
+import { EntertainmentType } from "@/app/generated/prisma/enums";
+import { saveActivityGuestData } from "@/service/guest.service";
+import { saveActivityHistory } from "@/service/profile.service";
+import { useAuth } from "@/components/AuthProvider";
 
 interface PopularContentListProps {
     readonly title: string;
     readonly items: MediaItem[];
     readonly error?: string;
 }
+
+const entertainmentTypeByMediaType: Record<MediaType, EntertainmentType> = {
+    comics: "COMIC",
+    novels: "NOVEL",
+    movies: "MOVIE",
+    series: "SERIES",
+};
 
 /**
  * Compact vertical list for the right sidebar. Shows rating only when the
@@ -57,6 +68,32 @@ function PopularListItem({
     const [imageFailed, setImageFailed] = useState(false);
     const showImage = item.coverImage !== undefined && !imageFailed;
     const href = mediaHref(item);
+    const { user } = useAuth();
+
+    function handleClick() {
+        const entertainmentType = entertainmentTypeByMediaType[item.type];
+        const apiSource = item.source.toLowerCase();
+
+        if (user !== null) {
+            // Logged in — persist the activity server-side. Best effort:
+            // a failed write must never block navigation.
+            void saveActivityHistory({
+                externalId: item.id,
+                apiSource,
+                type: entertainmentType,
+            }).catch((error) => {
+                console.error("Activity could not be recorded", error);
+            });
+            return;
+        }
+
+        saveActivityGuestData({
+            externalId: item.id,
+            apiSource,
+            entertainmentType,
+        });
+    }
+
 
     const popularItem = (
         <li className="popular-list-item">
@@ -105,7 +142,10 @@ function PopularListItem({
         )
 
     return (
-        <Link href={href}>
+        <Link 
+            href={href}
+            onClick={handleClick}
+        >
             {popularItem}
         </Link>
     );

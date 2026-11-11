@@ -1,11 +1,29 @@
 "use client";
 
 import { useRef, useState } from "react";
+import "@/components/Notification.css";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowLeftIcon, ImageIcon } from "@/components/icons/icons";
+import {
+    ArrowLeftIcon,
+    BookmarkIcon,
+    CheckCircleIcon,
+    HeartIcon,
+    ImageIcon,
+    MoreVerticalIcon,
+} from "@/components/icons/icons";
+import { useMoreMenu } from "@/components/moreMenu";
 import { MediaCarousel } from "@/components/MediaCarousel";
 import type { MediaItem } from "@/lib/media";
+import { useAuth } from "./AuthProvider";
+import {
+    saveCompleted,
+    saveFavorite,
+    saveReadList,
+    type SaveContentArgs,
+} from "@/service/save.content.service";
+import { Notification } from "./Notification";
+import type { EntertainmentListType } from "@/service/types/profile.payload";
 
 /**
  * Provider-neutral detail item. Comics map their `SuwayomiComicPayload`
@@ -140,9 +158,52 @@ export function ReadContent({
 }: ReadContentProps) {
 
     const router = useRouter();
+    // The three-dot list menu only makes sense for signed-in users, so it is
+    // rendered entirely (trigger button + popover) only when authenticated.
+    const { isAuthenticated } = useAuth();
+
+    /**
+     * Persists the item into the chosen list. Each key maps to one of the
+     * dedicated save functions, which hardcode their EntertainmentListType.
+     */
+    /** Label of the list a menu key stands for, used in the notification. */
+    const LIST_LABELS: Record<EntertainmentListType, string> = {
+        FAVORITE: "Favorite",
+        WATCHLIST: "Watchlist",
+        READLIST: "ReadList",
+        COMPLETED: "Completed",
+        ON_HOLD: "On Hold",
+        DROPPED: "Dropped",
+    };
+
+    async function handleSaving(key: string): Promise<void> {
+        const saveFn =
+            key === "FAVORITE"
+                ? saveFavorite
+                : key === "READLIST"
+                    ? saveReadList
+                    : saveCompleted;
+        try {
+            const saved = await saveFn(saveArgs);
+            moreMenu.close();
+            // undefined ⇒ the item was already in that list, nothing was saved.
+            if (saved === undefined) {
+                setNotification(
+                    `${data.title} is already in your ${LIST_LABELS[key as EntertainmentListType]}`,
+                );
+            }
+        } catch (error) {
+            console.error("Could not save to list", error);
+        }
+    }
+
     const [imageFailed, setImageFailed] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [chapterQuery, setChapterQuery] = useState("");
+    // Rectangle banner shown when a save was skipped (item already in list).
+    const [notification, setNotification] = useState<string | null>(null);
+    const moreWrapperRef = useRef<HTMLDivElement | null>(null);
+    const moreMenu = useMoreMenu(moreWrapperRef);
 
     // Novel Load More state. Comics never pass `loadMoreChapters`, so this
     // stays inert for them.
@@ -181,6 +242,19 @@ export function ReadContent({
         metadataParts,
         backHref,
     } = ui;
+
+    /**
+     * Derives the save identity for the three-dot list menu. The externalId is
+     * the provider-aware id (`suwayomi:<sourceId>:<comicId>` for comics, the
+     * LNCrawl uuid for novels); the apiSource comes from which catalog the
+     * item was opened from — `sourceName` "novels" means lncrawl, everything
+     * else is Suwayomi.
+     */
+    const saveArgs: SaveContentArgs = {
+        externalId: data.id,
+        apiSource: isSuwayomiId(data.id) ? "suwayomi" : "lncrawl",
+        entertainmentType: isSuwayomiId(data.id) ? "COMIC" : "NOVEL",
+    };
 
     const isNovel = sourceName === "novels";
     const canLoadMoreChapters =
@@ -228,6 +302,13 @@ export function ReadContent({
     }
 
     return (
+        <>
+        {notification !== null && (
+            <Notification
+                message={notification}
+                onDismiss={() => setNotification(null)}
+            />
+        )}
         <article className="readContent">
             <button
                 type="button"
@@ -313,13 +394,68 @@ export function ReadContent({
                         >
                             Read Chapter 1
                         </button>
-                        <button
-                            type="button"
-                            disabled
-                            className="actionButton secondaryButton"
+                        {isAuthenticated && (
+                        <div
+                            ref={moreWrapperRef}
+                            className="series-detail-more-wrapper"
                         >
-                            Bookmark
-                        </button>
+                            <button
+                                type="button"
+                                className="series-detail-more-button"
+                                aria-haspopup="menu"
+                                aria-expanded={moreMenu.open}
+                                aria-controls={
+                                    moreMenu.open
+                                        ? moreMenu.popoverId
+                                        : undefined
+                                }
+                                aria-label="More actions"
+                                onClick={moreMenu.toggle}
+                            >
+                                <MoreVerticalIcon className="series-detail-control-icon" />
+                            </button>
+
+                            {moreMenu.open && (
+                                <div
+                                    id={moreMenu.popoverId}
+                                    role="menu"
+                                    aria-label="List options"
+                                    className="series-detail-more-popover"
+                                >
+                                    {[
+                                        {
+                                            key: "READLIST",
+                                            label: "ReadList",
+                                            Icon: BookmarkIcon,
+                                        },
+                                        {
+                                            key: "FAVORITE",
+                                            label: "Favorite",
+                                            Icon: HeartIcon,
+                                        },
+                                        {
+                                            key: "COMPLETED",
+                                            label: "Complete",
+                                            Icon: CheckCircleIcon,
+                                        },
+                                    ].map(({ key, label, Icon }) => (
+                                        <button
+                                            key={key}
+                                            type="button"
+                                            role="menuitem"
+                                            className="series-detail-list-option"
+                                            onClick={() => handleSaving(key)}
+                                        >
+                                            <Icon className="series-detail-list-option-icon" />
+                                            <span className="series-detail-list-option-label">
+                                                {label}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        )}
                     </div>
 
                     <div className="chaptersHeader">
@@ -400,9 +536,15 @@ export function ReadContent({
                 </section>
             )}
         </article>
+        </>
     )
 }
 
+
+/** Suwayomi comic ids carry the `suwayomi:` prefix; novel ids are plain uuids. */
+function isSuwayomiId(id: string): boolean {
+    return id.startsWith("suwayomi:");
+}
 
 /**
  * Renders the chapter upload date deterministically (fixed locale + UTC) so

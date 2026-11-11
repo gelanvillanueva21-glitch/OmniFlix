@@ -222,30 +222,7 @@
     @apply truncate;
 }
 
-/* ── GenreSelector ── */
-.genre-chip-section {
-    @apply space-y-4;
-}
 
-.genre-chip-list {
-    @apply flex flex-wrap gap-2;
-}
-
-.genre-chip {
-    @apply rounded-full border px-4 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6];
-}
-
-.genre-chip--selected {
-    @apply border-[#8B5CF6] bg-[#8B5CF6] text-white;
-}
-
-.genre-chip--unselected {
-    @apply border-[#29292E] bg-transparent text-[#A1A1AA] hover:border-[#8B5CF6]/50 hover:text-[#F5F5F5];
-}
-
-.genre-chip-count {
-    @apply ml-1.5 text-xs opacity-70;
-}
 
 /* ── Explore overview page (app/explore/page.tsx) ── */
 .explore-overview-utilities {
@@ -276,9 +253,7 @@
     @apply mb-8 space-y-4;
 }
 
-.explore-genre-section {
-    @apply mb-8;
-}
+
 
 .explore-discover-section {
     @apply space-y-4;

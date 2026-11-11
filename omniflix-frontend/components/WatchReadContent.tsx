@@ -1,14 +1,44 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+    useEffect,
+    useRef,
+    useState,
+    type ReactNode,
+} from "react";
+import "@/components/Notification.css";
+import { useMoreMenu } from "@/components/moreMenu";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExploreLayout } from "@/components/layouts/explore/ExploreLayout";
 import { DetailSkeleton } from "@/components/loading/ContentDetailLoad";
 import { MediaCarousel } from "@/components/MediaCarousel";
-import { ArrowLeftIcon, ImageIcon } from "@/components/icons/icons";
+import {
+    ArrowLeftIcon,
+    BookmarkIcon,
+    CheckCircleIcon,
+    CheckIcon,
+    HeartIcon,
+    ImageIcon,
+    MoreVerticalIcon,
+    PlayIcon,
+} from "@/components/icons/icons";
 import type { MediaItem } from "@/lib/media";
+import { useAuth } from "./AuthProvider";
+import {
+    saveCompleted,
+    saveFavorite,
+    saveWatchList,
+    type SaveContentArgs,
+} from "@/service/save.content.service";
+import {
+    saveArgsFromJikanAnime,
+    saveArgsFromTmdbMovie,
+    saveArgsFromTmdbSeries,
+} from "@/service/save.content.service";
+import { Notification } from "./Notification";
+import type { EntertainmentListType } from "@/service/types/profile.payload";
 import type {
     JikanAnimeFetchPayload,
     JikanEpisode,
@@ -115,17 +145,20 @@ export function WatchReadContent({
         ) : detailState.contentType === "movie" ? (
             <MovieDetail
                 payload={detailState.payload}
+                saveArgs={saveArgsFromTmdbMovie(detailState.payload)}
                 onBack={handleBack}
             />
         ) : detailState.provider === "tmdb" ? (
             <TmdbSeriesDetail
                 payload={detailState.payload}
+                saveArgs={saveArgsFromTmdbSeries(detailState.payload)}
                 lists={detailState.lists}
                 onBack={handleBack}
             />
         ) : (
             <JikanAnimeDetail
                 payload={detailState.payload}
+                saveArgs={saveArgsFromJikanAnime(detailState.payload)}
                 lists={detailState.lists}
                 onBack={handleBack}
             />
@@ -155,9 +188,11 @@ export function WatchReadContent({
 
 function MovieDetail({
     payload,
+    saveArgs,
     onBack,
 }: {
     payload: TmdbMovieFetchPayload;
+    saveArgs: SaveContentArgs;
     onBack: () => void;
 }) {
     const title = payload.title ?? payload.originalTitle ?? "Untitled movie";
@@ -185,6 +220,7 @@ function MovieDetail({
                 data={metadata}
                 onBack={onBack}
                 contentType="movie"
+                saveArgs={saveArgs}
             />
         </article>
     );
@@ -192,10 +228,12 @@ function MovieDetail({
 
 function TmdbSeriesDetail({
     payload,
+    saveArgs,
     lists,
     onBack,
 }: {
     payload: TmdbSeriesFetchPayload;
+    saveArgs: SaveContentArgs;
     lists: SeriesListState;
     onBack: () => void;
 }) {
@@ -227,6 +265,7 @@ function TmdbSeriesDetail({
                 onBack={onBack}
                 contentType="series"
                 lists={lists}
+                saveArgs={saveArgs}
                 data={{
                     title,
                     posterImage: series.poster_path
@@ -381,10 +420,12 @@ function TmdbEpisodeList({
 
 function JikanAnimeDetail({
     payload,
+    saveArgs,
     lists,
     onBack,
 }: {
     payload: JikanAnimeFetchPayload;
+    saveArgs: SaveContentArgs;
     lists: SeriesListState;
     onBack: () => void;
 }) {
@@ -404,6 +445,7 @@ function JikanAnimeDetail({
                 onBack={onBack}
                 contentType="series"
                 lists={lists}
+                saveArgs={saveArgs}
                 data={{
                     title,
                     posterImage: anime.imageUrl ?? undefined,
@@ -497,11 +539,13 @@ function DetailHeader({
     onBack,
     contentType,
     lists,
+    saveArgs,
 }: {
     data: DetailHeaderData;
     onBack: () => void;
     contentType: "movie" | "series";
     lists?: SeriesListState;
+    saveArgs: SaveContentArgs;
 }) {
     const metadataParts = [
         <span key="provider" className="series-detail-metadata-provider">
@@ -601,7 +645,9 @@ function DetailHeader({
                     )}
                     <DetailActions
                         contentType={contentType}
+                        title={data.title}
                         lists={lists}
+                        saveArgs={saveArgs}
                     />
                 </div>
             </div>
@@ -690,44 +736,66 @@ function DetailFact({ label, value }: { label: string; value: string }) {
 
 function DetailActions({
     contentType,
+    title,
     lists,
+    saveArgs,
 }: {
     contentType: "movie" | "series";
+    title: string;
     lists?: SeriesListState;
+    saveArgs: SaveContentArgs;
 }) {
-    const [moreOpen, setMoreOpen] = useState(false);
-    const wrapperRef = useRef<HTMLDivElement | null>(null);
-    const popoverId = useId();
+    const moreWrapperRef = useRef<HTMLDivElement | null>(null);
+    const moreMenu = useMoreMenu(moreWrapperRef);
+    const { open: moreOpen } = moreMenu;
+    // The three-dot list menu only makes sense for signed-in users.
+    const { isAuthenticated } = useAuth();
+    // Rectangle banner shown when a save was skipped (item already in list).
+    const [notification, setNotification] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (!moreOpen) {
-            return;
-        }
+    /** Label of the list a menu key stands for, used in the notification. */
+    const LIST_LABELS: Record<EntertainmentListType, string> = {
+        FAVORITE: "Favorite",
+        WATCHLIST: "Watchlist",
+        READLIST: "ReadList",
+        COMPLETED: "Completed",
+        ON_HOLD: "On Hold",
+        DROPPED: "Dropped",
+    };
 
-        function handlePointerDown(event: PointerEvent) {
-            if (
-                wrapperRef.current !== null &&
-                !wrapperRef.current.contains(event.target as Node)
-            ) {
-                setMoreOpen(false);
+    /**
+     * Persists the item into the chosen list. Each key maps to one of the
+     * dedicated save functions, which hardcode their EntertainmentListType.
+     */
+    async function handleSaving(key: string): Promise<void> {
+        const saveFn =
+            key === "FAVORITE"
+                ? saveFavorite
+                : key === "WATCHLIST"
+                    ? saveWatchList
+                    : saveCompleted;
+        try {
+            const saved = await saveFn(saveArgs);
+            moreMenu.close();
+            // undefined ⇒ the item was already in that list, nothing was saved.
+            if (saved === undefined) {
+                setNotification(
+                    `${title} is already in your ${LIST_LABELS[key as EntertainmentListType]}`,
+                );
             }
+        } catch (error) {
+            console.error("Could not save to list", error);
         }
-
-        function handleKeyDown(event: KeyboardEvent) {
-            if (event.key === "Escape") {
-                setMoreOpen(false);
-            }
-        }
-
-        document.addEventListener("pointerdown", handlePointerDown);
-        document.addEventListener("keydown", handleKeyDown);
-        return () => {
-            document.removeEventListener("pointerdown", handlePointerDown);
-            document.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [moreOpen]);
+    }
 
     return (
+        <>
+        {notification !== null && (
+            <Notification
+                message={notification}
+                onDismiss={() => setNotification(null)}
+            />
+        )}
         <div className="series-detail-actions">
             <button
                 type="button"
@@ -743,93 +811,118 @@ function DetailActions({
                 Play
             </button>
 
-            <div ref={wrapperRef} className="series-detail-more-wrapper">
+            {isAuthenticated && (
+            <div
+                ref={moreWrapperRef}
+                className="series-detail-more-wrapper"
+            >
                 <button
                     type="button"
                     className="series-detail-more-button"
-                    aria-haspopup={contentType === "series" ? "menu" : undefined}
-                    aria-expanded={
-                        contentType === "series" ? moreOpen : undefined
-                    }
+                    aria-haspopup="menu"
+                    aria-expanded={moreOpen}
                     aria-controls={
-                        contentType === "series" && moreOpen
-                            ? popoverId
-                            : undefined
+                        moreOpen ? moreMenu.popoverId : undefined
                     }
                     aria-label="More actions"
-                    disabled={contentType === "movie"}
-                    title={
-                        contentType === "movie"
-                            ? "Movie list actions are not available yet."
-                            : undefined
-                    }
-                    onClick={() => {
-                        if (contentType === "series") {
-                            setMoreOpen((current) => !current);
-                        }
-                    }}
+                    onClick={moreMenu.toggle}
                 >
                     <MoreVerticalIcon className="series-detail-control-icon" />
                 </button>
 
-                {contentType === "series" && moreOpen && lists !== undefined && (
+                {moreOpen && (
                     <div
-                        id={popoverId}
+                        id={moreMenu.popoverId}
                         role="menu"
                         aria-label="List options"
                         className="series-detail-more-popover"
                     >
-                        {lists.loading ? (
+                        {contentType === "series" &&
+                        lists !== undefined &&
+                        lists.loading ? (
                             <p className="series-detail-list-status">
                                 Checking your lists…
                             </p>
                         ) : (
-                            [
-                                {
-                                    key: "FAVORITE",
-                                    label: "Favorite",
-                                    selected: lists.favorite,
-                                    Icon: HeartIcon,
-                                },
-                                {
-                                    key: "WATCHLIST",
-                                    label: "Watchlist",
-                                    selected: lists.watchlist,
-                                    Icon: BookmarkIcon,
-                                },
-                            ].map(({ key, label, selected, Icon }) => (
-                                <button
-                                    key={key}
-                                    type="button"
-                                    role="menuitem"
-                                    disabled
-                                    className={`series-detail-list-option${
-                                        selected
-                                            ? " series-detail-list-option-selected"
-                                            : ""
-                                    }`}
-                                    title={
-                                        selected
-                                            ? `Already in your ${label.toLowerCase()} list.`
-                                            : "Saving to lists is not available yet."
-                                    }
-                                    onClick={() => setMoreOpen(false)}
-                                >
-                                    <Icon className="series-detail-list-option-icon" />
-                                    <span className="series-detail-list-option-label">
-                                        {label}
-                                    </span>
-                                    {selected && (
-                                        <CheckIcon className="series-detail-list-option-selected-icon" />
-                                    )}
-                                </button>
-                            ))
+                            moreMenuOptions(contentType, lists).map(
+                                ({ key, label, selected, Icon }) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        role="menuitem"
+                                        className={`series-detail-list-option${
+                                            selected
+                                                ? " series-detail-list-option-selected"
+                                                : ""
+                                        }`}
+                                        onClick={() => handleSaving(key)}
+                                    >
+                                        <Icon className="series-detail-list-option-icon" />
+                                        <span className="series-detail-list-option-label">
+                                            {label}
+                                        </span>
+                                        {selected && (
+                                            <CheckIcon className="series-detail-list-option-selected-icon" />
+                                        )}
+                                    </button>
+                                ),
+                            )
                         )}
                     </div>
                 )}
             </div>
+            )}
         </div>
+        </>
     );
+}
+
+/**
+ * Menu options for the three-dot popover. Series with loaded list state
+ * reflect the actual favorite/watchlist flags; movies (and series without
+ * list state) show permanently-disabled placeholder options.
+ */
+function moreMenuOptions(
+    contentType: "movie" | "series",
+    lists: SeriesListState | undefined,
+): readonly { key: string; label: string; selected: boolean; Icon: (props: { className?: string }) => ReactNode }[] {
+    if (contentType === "series" && lists !== undefined && !lists.loading) {
+        return [
+            {
+                key: "FAVORITE",
+                label: "Favorite",
+                selected: lists.favorite,
+                Icon: HeartIcon,
+            },
+            {
+                key: "WATCHLIST",
+                label: "Watchlist",
+                selected: lists.watchlist,
+                Icon: BookmarkIcon,
+            },
+            {
+                key: "COMPLETED",
+                label: "Complete",
+                selected: false,
+                Icon: CheckCircleIcon,
+            },
+        ];
+    }
+    return [
+        { key: "FAVORITE", label: "Favorite", selected: false, Icon: HeartIcon },
+        {
+            key: "WATCHLIST",
+            label: "Watchlist",
+            selected: false,
+            Icon: BookmarkIcon,
+        },
+        {
+            key: "COMPLETED",
+            label: "Complete",
+            selected: false,
+            Icon: CheckCircleIcon,
+        },
+    ];
 }
 
 function WatchDetailError({
@@ -864,88 +957,4 @@ function formatAirDate(airDate: string): string {
         month: "short",
         day: "numeric",
     }).format(date);
-}
-
-function PlayIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className={className ?? "series-detail-control-icon"}
-            aria-hidden={true}
-        >
-            <path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.1-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14Z" />
-        </svg>
-    );
-}
-
-function HeartIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.75}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className ?? "series-detail-list-option-icon"}
-            aria-hidden={true}
-        >
-            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-        </svg>
-    );
-}
-
-function BookmarkIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.75}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className ?? "series-detail-list-option-icon"}
-            aria-hidden={true}
-        >
-            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" />
-        </svg>
-    );
-}
-
-function CheckIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2.25}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className ?? "series-detail-list-option-selected-icon"}
-            aria-hidden={true}
-        >
-            <path d="M20 6 9 17l-5-5" />
-        </svg>
-    );
-}
-
-function MoreVerticalIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className={className ?? "series-detail-control-icon"}
-            aria-hidden={true}
-        >
-            <circle cx="12" cy="5" r="1.6" />
-            <circle cx="12" cy="12" r="1.6" />
-            <circle cx="12" cy="19" r="1.6" />
-        </svg>
-    );
 }

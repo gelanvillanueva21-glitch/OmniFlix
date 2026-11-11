@@ -210,7 +210,8 @@ export async function searchTmdbTv(
                 coverImage: item.poster_path
                     ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
                     : undefined,
-                source: "TMDB",
+                source: "tmdb",
+                sourceLabel: "TMDB",
                 rating,
                 year,
                 releaseYear: year,
@@ -427,6 +428,8 @@ function mapResult(
         id: `tmdb:${type}:${result.id}`,
         title,
         type,
+        source: "tmdb",
+        sourceLabel: type === "movies" ? "Movies" : "Series",
         coverImage: result.poster_path
             ? `https://image.tmdb.org/t/p/w500${result.poster_path}`
             : undefined,

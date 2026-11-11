@@ -85,7 +85,9 @@ export default function ProfilePageClient() {
     });
     const activityQuery = useQuery({
         queryKey: ["profile", "activity"],
-        queryFn: getActivityHistory,
+        // Fetch + resolve into MediaItems in one step: mapHistoryToMediaItems
+        // awaits provider metadata, so data arrives ready for the carousels.
+        queryFn: async () => mapHistoryToMediaItems(await getActivityHistory()),
         enabled: queryEnabled,
         retry: false,
     });
@@ -141,7 +143,7 @@ export default function ProfilePageClient() {
 
     const isGuest = !isAuthenticated || user === null;
     const guestHistory = isGuest ? (guestHistoryQuery.data ?? []) : [];
-    const recentActivity = mapHistoryToMediaItems(activityQuery.data ?? []);
+    const recentActivity = activityQuery.data ?? [];
     const collectionError = getQueryErrorMessage(collectionQuery.error);
     const activityError = getQueryErrorMessage(activityQuery.error);
 
